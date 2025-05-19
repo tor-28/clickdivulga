@@ -1,4 +1,3 @@
-
 body {
   font-family: 'Segoe UI', sans-serif;
   background-color: #f9f9f9;
@@ -18,6 +17,11 @@ body {
   text-align: center;
   width: 100%;
   max-width: 400px;
+}
+
+.logo {
+  max-width: 160px;
+  margin-bottom: 20px;
 }
 
 input[type="email"], input[type="password"] {
