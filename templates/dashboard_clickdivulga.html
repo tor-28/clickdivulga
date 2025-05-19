@@ -39,32 +39,29 @@
       </div>
     </div>
 
-    <div class="products">
-      <h3>🔥 Produtos Quentes</h3>
-      <div class="product-list">
-        {% for produto in produtos_quentes %}
-          <div class="product-card">
-            <strong>{{ produto.nome }}</strong><br>
-            <small>{{ produto.cliques }} cliques</small><br>
-            <button onclick="copiarLink('{{ produto.slug }}', this)">Copiar Link</button>
-            <span class="copiado-msg" style="display:none; color:green; font-size: 0.9rem; margin-top: 4px;">✅ Copiado!</span>
-          </div>
-        {% endfor %}
+    <<div class="products">
+  <h3>🔗 Seus Links Recentes</h3>
+  <div class="product-list">
+    {% for link in links_recentes %}
+      <div class="product-card">
+        <strong>{{ link.titulo or link.slug }}</strong><br>
+        <small>{{ link.cliques }} cliques - {{ link.categoria }}</small><br>
+        <button onclick="copiarLink('{{ link.slug }}', this)">Copiar Link</button>
+        <span class="copiado-msg" style="display:none; color:green; font-size: 0.9rem; margin-top: 4px;">✅ Copiado!</span>
       </div>
-    </div>
+    {% endfor %}
   </div>
+</div>
 
-  <script>
-    function copiarLink(slug, botao) {
-      const url = window.location.origin + "/r/" + slug;
-      navigator.clipboard.writeText(url).then(() => {
-        const msg = botao.nextElementSibling;
-        msg.style.display = "inline";
-        setTimeout(() => {
-          msg.style.display = "none";
-        }, 2000);
-      });
-    }
-  </script>
+<script>
+  function copiarLink(slug, botao) {
+    const url = window.location.origin + "/r/" + slug;
+    navigator.clipboard.writeText(url).then(() => {
+      const msg = botao.nextElementSibling;
+      msg.style.display = "inline";
+      setTimeout(() => { msg.style.display = "none"; }, 2000);
+    });
+  }
+</script>
 </body>
 </html>
