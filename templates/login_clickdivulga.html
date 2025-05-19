@@ -11,19 +11,19 @@
 </head>
 <body>
   <div class="container">
-    <img src="../static/img/clickdivulga-logo.png" alt="ClickDivulga" class="logo">
+    <img src="../static/img/clickdivulga-logo.png" alt="ClickDivulga" class="logo" onerror="this.style.display='none';">
     <h2>Entrar na Plataforma</h2>
     <form id="loginForm" method="POST">
-      <input type="email" id="email" placeholder="E-mail" required>
-      <input type="password" id="senha" placeholder="Senha" required>
+      <input type="email" id="email" name="email" placeholder="E-mail" required>
+      <input type="password" id="senha" name="senha" placeholder="Senha" required>
       <button type="submit">Entrar</button>
     </form>
   </div>
 
   <script>
     document.addEventListener("DOMContentLoaded", function () {
-      if (!firebase || !firebase.auth) {
-        alert("Erro ao carregar o Firebase. Verifique sua conexão.");
+      if (typeof firebase === "undefined") {
+        alert("Erro ao carregar Firebase. Verifique a conexão.");
         return;
       }
 
@@ -35,20 +35,26 @@
       firebase.initializeApp(firebaseConfig);
 
       const form = document.getElementById("loginForm");
-
       form.addEventListener("submit", async function (e) {
         e.preventDefault();
+
         const email = document.getElementById("email").value;
         const senha = document.getElementById("senha").value;
 
         try {
           const user = await firebase.auth().signInWithEmailAndPassword(email, senha);
           const token = await user.user.getIdToken();
+
+          // Garante que não existam múltiplos inputs duplicados
+          const existingInput = document.querySelector("input[name='idToken']");
+          if (existingInput) existingInput.remove();
+
           const input = document.createElement("input");
           input.type = "hidden";
           input.name = "idToken";
           input.value = token;
           form.appendChild(input);
+
           form.submit();
         } catch (error) {
           alert("Erro ao logar: " + error.message);
