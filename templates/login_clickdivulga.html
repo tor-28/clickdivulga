@@ -4,8 +4,10 @@
   <meta charset="UTF-8">
   <title>Login - ClickDivulga</title>
   <link rel="stylesheet" href="../static/css/login.css">
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+
+  <!-- Firebase compatível com navegador -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 </head>
 <body>
   <div class="container">
@@ -25,9 +27,11 @@
         authDomain: "clickdivulga-83a73.firebaseapp.com",
         projectId: "clickdivulga-83a73"
       };
+
       firebase.initializeApp(firebaseConfig);
 
       const form = document.getElementById("loginForm");
+
       form.addEventListener("submit", async function (e) {
         e.preventDefault();
 
