@@ -1,0 +1,45 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - ClickDivulga</title>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+</head>
+<body>
+  <h2>Login</h2>
+  <form id="loginForm" method="POST">
+    <input type="email" id="email" placeholder="E-mail" required><br>
+    <input type="password" id="senha" placeholder="Senha" required><br>
+    <button type="button" onclick="loginUser()">Entrar</button>
+  </form>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "SUA_API_KEY",
+      authDomain: "SUA_APP.firebaseapp.com",
+      projectId: "SUA_APP"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    async function loginUser() {
+      const email = document.getElementById("email").value;
+      const senha = document.getElementById("senha").value;
+      try {
+        const user = await firebase.auth().signInWithEmailAndPassword(email, senha);
+        const token = await user.user.getIdToken();
+        const form = document.getElementById("loginForm");
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "idToken";
+        input.value = token;
+        form.appendChild(input);
+        form.submit();
+      } catch (error) {
+        alert("Erro ao logar: " + error.message);
+      }
+    }
+  </script>
+</body>
+</html>
