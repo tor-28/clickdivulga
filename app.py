@@ -1,35 +1,45 @@
+
 from flask import Flask, render_template, request, redirect, url_for, session
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
 from functools import wraps
 import os
+import base64
+import tempfile
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "clickdivulga-super-secret")
+app.secret_key = os.getenv("SECRET_KEY", "clickdivulga-default-secret")
 
-# Inicializar Firebase
-if not firebase_admin._apps:
-    cred_path = os.getenv("FIREBASE_CREDENTIALS", "firebase_key.json")
-    cred = credentials.Certificate(cred_path)
-    firebase_admin.initialize_app(cred)
+# Inicializar Firebase com base64 da key
+firebase_b64 = os.getenv("FIREBASE_KEY_B64")
+if firebase_b64:
+    decoded = base64.b64decode(firebase_b64)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as temp_file:
+        temp_file.write(decoded)
+        temp_file.flush()
+        cred = credentials.Certificate(temp_file.name)
+        firebase_admin.initialize_app(cred)
+else:
+    raise Exception("FIREBASE_KEY_B64 não configurado no ambiente")
 
 db = firestore.client()
 
-# Middleware para verificar login ativo
+# Middleware de verificação de login
 def verificar_login(f):
     @wraps(f)
-    def wrapper(*args, **kwargs):
+    def decorated_function(*args, **kwargs):
         if "usuario" not in session:
             return redirect(url_for("login"))
         return f(*args, **kwargs)
-    return wrapper
+    return decorated_function
 
-# Rota inicial → redireciona para login
 @app.route("/")
 def index():
     return redirect(url_for("login"))
 
-# Rota de login
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -45,48 +55,40 @@ def login():
             return "Token inválido ou expirado", 401
     return render_template("login_clickdivulga.html")
 
-# Painel principal
 @app.route("/painel")
 @verificar_login
 def painel():
     return render_template("meus_links_clickdivulga.html")
 
-# Criar novo link
 @app.route("/criar-link")
 @verificar_login
 def criar_link():
     return render_template("criar_link_clickdivulga.html")
 
-# Estatísticas
 @app.route("/estatisticas")
 @verificar_login
 def estatisticas():
     return render_template("estatisticas_clickdivulga.html")
 
-# Telegram Automático
 @app.route("/telegram")
 @verificar_login
 def telegram():
     return render_template("telegram_clickdivulga.html")
 
-# Instagram Automático
 @app.route("/instagram")
 @verificar_login
 def instagram():
     return render_template("instagram_clickdivulga.html")
 
-# Painel Administrativo
 @app.route("/admin")
 @verificar_login
 def admin():
     return render_template("admin_clickdivulga.html")
 
-# Logout
 @app.route("/logout")
 def logout():
     session.pop("usuario", None)
     return redirect(url_for("login"))
 
-# Iniciar servidor local
 if __name__ == "__main__":
     app.run(debug=True)
