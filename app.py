@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request, redirect, url_for, session
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
@@ -7,13 +6,14 @@ import os
 import base64
 import tempfile
 from dotenv import load_dotenv
+from datetime import datetime
 
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "clickdivulga-default-secret")
 
-# Inicializar Firebase com base64 da key
+# Inicializar Firebase com chave base64
 firebase_b64 = os.getenv("FIREBASE_KEY_B64")
 if firebase_b64:
     decoded = base64.b64decode(firebase_b64)
@@ -23,11 +23,11 @@ if firebase_b64:
         cred = credentials.Certificate(temp_file.name)
         firebase_admin.initialize_app(cred)
 else:
-    raise Exception("FIREBASE_KEY_B64 não configurado no ambiente")
+    raise Exception("FIREBASE_KEY_B64 não configurado")
 
 db = firestore.client()
 
-# Middleware de verificação de login
+# Middleware de login
 def verificar_login(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -60,11 +60,6 @@ def login():
 def painel():
     return render_template("meus_links_clickdivulga.html")
 
-@app.route("/criar-link")
-@verificar_login
-def criar_link():
-    return render_template("criar_link_clickdivulga.html")
-
 @app.route("/estatisticas")
 @verificar_login
 def estatisticas():
@@ -89,6 +84,46 @@ def admin():
 def logout():
     session.pop("usuario", None)
     return redirect(url_for("login"))
+
+# 🔗 Criar link encurtado
+@app.route("/criar-link", methods=["GET", "POST"])
+@verificar_login
+def criar_link():
+    if request.method == "POST":
+        slug = request.form.get("slug").strip()
+        destino = request.form.get("url_destino").strip()
+        uid = session["usuario"]["uid"]
+
+        doc_ref = db.collection("links_encurtados").document(slug)
+        if doc_ref.get().exists:
+            return "Slug já está em uso. Escolha outro.", 400
+
+        doc_ref.set({
+            "slug": slug,
+            "url_destino": destino,
+            "uid": uid,
+            "cliques": 0,
+            "criado_em": datetime.now().isoformat()
+        })
+        return redirect(url_for("painel"))
+    return render_template("criar_link_clickdivulga.html")
+
+# 🔁 Redirecionar e registrar clique
+@app.route("/r/<slug>")
+def redirecionar(slug):
+    doc = db.collection("links_encurtados").document(slug).get()
+    if doc.exists:
+        dados = doc.to_dict()
+        db.collection("links_encurtados").document(slug).update({
+            "cliques": firestore.Increment(1)
+        })
+        db.collection("logs_cliques").add({
+            "slug": slug,
+            "data": datetime.now().isoformat(),
+            "ip": request.remote_addr
+        })
+        return redirect(dados["url_destino"])
+    return "Link não encontrado", 404
 
 if __name__ == "__main__":
     app.run(debug=True)
