@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <title>Login - ClickDivulga</title>
   <link rel="stylesheet" href="../static/css/login.css">
-
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
 </head>
@@ -13,20 +11,15 @@
   <div class="container">
     <img src="../static/img/clickdivulga-logo.png" alt="ClickDivulga" class="logo" onerror="this.style.display='none';">
     <h2>Entrar na Plataforma</h2>
-    <form id="loginForm" method="POST">
-      <input type="email" id="email" name="email" placeholder="E-mail" required>
-      <input type="password" id="senha" name="senha" placeholder="Senha" required>
+    <form id="loginForm">
+      <input type="email" id="email" placeholder="E-mail" required>
+      <input type="password" id="senha" placeholder="Senha" required>
       <button type="submit">Entrar</button>
     </form>
   </div>
 
   <script>
     document.addEventListener("DOMContentLoaded", function () {
-      if (typeof firebase === "undefined") {
-        alert("Erro ao carregar Firebase. Verifique a conexão.");
-        return;
-      }
-
       const firebaseConfig = {
         apiKey: "AIzaSyCkHdx3if2M3GQUwaKNywZNYznOAov0aC8",
         authDomain: "clickdivulga-83a73.firebaseapp.com",
@@ -45,20 +38,22 @@
           const user = await firebase.auth().signInWithEmailAndPassword(email, senha);
           const token = await user.user.getIdToken();
 
-          // Garante que não existam múltiplos inputs duplicados
-          const existingInput = document.querySelector("input[name='idToken']");
-          if (existingInput) existingInput.remove();
+          const response = await fetch("/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ idToken: token })
+          });
 
-          const input = document.createElement("input");
-          input.type = "hidden";
-          input.name = "idToken";
-          input.value = token;
-          form.appendChild(input);
-
-          form.submit();
+          if (response.redirected) {
+            window.location.href = response.url;
+          } else {
+            const erro = await response.text();
+            alert("Erro no login: " + erro);
+            console.error("Falha:", erro);
+          }
         } catch (error) {
           alert("Erro ao logar: " + error.message);
-          console.error("Erro Firebase:", error);
+          console.error("Firebase Error:", error);
         }
       });
     });
