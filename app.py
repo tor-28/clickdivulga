@@ -59,9 +59,16 @@ def login():
 @verificar_login
 def painel():
     uid = session["usuario"]["uid"]
-docs = db.collection("links_encurtados").where("uid", "==", uid).stream()
-links = [{"slug": d.get("slug"), "url_destino": d.get("url_destino"), "cliques": d.get("cliques", 0)} for d in docs]
-return render_template("meus_links_clickdivulga.html", links=links)
+    docs = db.collection("links_encurtados").where("uid", "==", uid).stream()
+    links = [
+        {
+            "slug": d.get("slug"),
+            "url_destino": d.get("url_destino"),
+            "cliques": d.get("cliques", 0)
+        }
+        for d in docs
+    ]
+    return render_template("meus_links_clickdivulga.html", links=links)
 
 @app.route("/estatisticas")
 @verificar_login
