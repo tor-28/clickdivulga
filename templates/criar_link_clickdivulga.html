@@ -4,15 +4,68 @@
   <meta charset="UTF-8">
   <title>Criar Link</title>
   <link rel="stylesheet" href="../static/css/criar_link.css">
-  <style>/* mesmo estilo do anterior */</style>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f9f9f9;
+    }
+    .topo {
+      background-color: #6c2bd9;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+    .container {
+      padding: 2rem;
+      max-width: 600px;
+      margin: 2rem auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    .logo {
+      max-width: 180px;
+      margin-top: 10px;
+    }
+    input[type="text"], input[type="url"] {
+      width: 100%;
+      padding: 0.8rem;
+      margin: 1rem 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+    button {
+      width: 100%;
+      background-color: #6c2bd9;
+      color: white;
+      border: none;
+      padding: 0.8rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #5a23b8;
+    }
+  </style>
 </head>
 <body>
   <div class="topo">
     <img src="../static/img/clickdivulga-logo.png" class="logo" alt="ClickDivulga Logo">
-    <h1>Criar Link</h1>
+    <h1>Criar Link Encurtado</h1>
   </div>
   <div class="container">
-    <p>Crie um novo link encurtado personalizado.</p>
+    <form method="POST">
+      <label for="slug">Nome do Link (slug personalizado):</label>
+      <input type="text" name="slug" id="slug" placeholder="ex: grupo-vip" required>
+
+      <label for="url_destino">URL de Destino:</label>
+      <input type="url" name="url_destino" id="url_destino" placeholder="ex: https://wa.me/..." required>
+
+      <button type="submit">Criar Link</button>
+    </form>
   </div>
 </body>
 </html>
