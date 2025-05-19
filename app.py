@@ -76,18 +76,38 @@ def logout():
 @verificar_login
 def painel():
     uid = session["usuario"]["uid"]
-    print(f"📊 Carregando painel para UID: {uid}")
+    email = session["usuario"]["email"]
+    print(f"📊 Carregando dashboard para UID: {uid}")
+
+    hoje = datetime.now().date()
+    inicio_mes = hoje.replace(day=1)
+
+    links_hoje = 0
+    cliques_mes = 0
+    produtos = {}
+
     docs = db.collection("links_encurtados").where("uid", "==", uid).stream()
-    links = [
-        {
-            "slug": d.get("slug"),
-            "url_destino": d.get("url_destino"),
-            "cliques": d.get("cliques", 0)
-        }
-        for d in docs
-    ]
-    print(f"🔗 {len(links)} links encontrados.")
-    return render_template("meus_links_clickdivulga.html", links=links)
+    for doc in docs:
+        d = doc.to_dict()
+        criado_em = datetime.fromisoformat(d.get("criado_em"))
+        if criado_em.date() == hoje:
+            links_hoje += 1
+        if criado_em.date() >= inicio_mes:
+            cliques_mes += d.get("cliques", 0)
+
+        nome = d.get("slug")  # usar slug como nome simbólico por enquanto
+        produtos[nome] = produtos.get(nome, 0) + d.get("cliques", 0)
+
+    produto_mais_clicado = max(produtos, key=produtos.get) if produtos else "Nenhum"
+    produtos_ordenados = sorted(produtos.items(), key=lambda x: x[1], reverse=True)[:5]
+    produtos_quentes = [{"nome": nome, "cliques": cliques, "slug": nome} for nome, cliques in produtos_ordenados]
+
+    return render_template("dashboard_clickdivulga.html",
+                           links_hoje=links_hoje,
+                           cliques_mes=cliques_mes,
+                           produto_mais_clicado=produto_mais_clicado,
+                           produtos_quentes=produtos_quentes)
+
 
 @app.route("/criar-link", methods=["GET", "POST"])
 @verificar_login
