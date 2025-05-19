@@ -1,0 +1,127 @@
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f5f5fc;
+  display: flex;
+  height: 100vh;
+}
+
+.sidebar {
+  background-color: #6c2bd9;
+  width: 220px;
+  padding: 2rem 1rem;
+  color: white;
+}
+
+.sidebar h2 {
+  font-size: 1.3rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.menu a {
+  display: flex;
+  align-items: center;
+  color: white;
+  text-decoration: none;
+  padding: 0.8rem;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  transition: background 0.2s;
+}
+
+.menu a:hover, .menu a.active {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.menu i {
+  margin-right: 10px;
+}
+
+.content {
+  flex-grow: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.cards {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.card {
+  background-color: white;
+  padding: 1.2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  flex: 1;
+  min-width: 220px;
+}
+
+.card h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.card .big {
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+.card.yellow {
+  background-color: #fff3d6;
+}
+
+.card .btn {
+  display: inline-block;
+  margin-top: 1rem;
+  background-color: #ff9900;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.products {
+  margin-top: 2rem;
+}
+
+.products h3 {
+  margin-bottom: 1rem;
+}
+
+.product-list {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.product-card {
+  background-color: white;
+  border-radius: 12px;
+  padding: 1rem;
+  width: 220px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.product-card button {
+  margin-top: 0.75rem;
+  background-color: #6c2bd9;
+  color: white;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 6px;
+  width: 100%;
+  cursor: pointer;
+}
