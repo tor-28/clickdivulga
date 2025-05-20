@@ -300,12 +300,8 @@ def grupos():
 
     # 📅 Filtro por data
     filtro = request.args.get("filtro", "todos")
-    dias = None
-    if filtro.isdigit():
-        dias = int(filtro)
-        data_limite = datetime.now() - timedelta(days=dias)
-    else:
-        data_limite = None
+    dias = int(filtro) if filtro.isdigit() else None
+    data_limite = datetime.now() - timedelta(days=dias) if dias else None
 
     # 🔎 Buscar grupos
     grupos_query = db.collection("links_encurtados") \
@@ -320,7 +316,10 @@ def grupos():
         criado_em = dados.get("criado_em", "")
         if data_limite:
             try:
-                data_criacao = datetime.fromisoformat(criado_em)
+                if isinstance(criado_em, str):
+                    data_criacao = datetime.fromisoformat(criado_em)
+                else:
+                    data_criacao = criado_em
                 if data_criacao < data_limite:
                     continue
             except:
@@ -348,7 +347,7 @@ def grupos():
         "mais_clicado": mais_clicado
     }
 
-    # 📊 Cliques por hora (filtrado)
+    # 📊 Cliques por hora
     cliques_por_hora = [0] * 24
     logs = db.collection("logs_cliques").where("uid", "==", uid).stream()
     for doc in logs:
@@ -362,11 +361,36 @@ def grupos():
         except:
             continue
 
+    # 🏆 Rankings
+    ranking_cliques = sorted(grupos, key=lambda g: g["cliques"], reverse=True)[:5]
+    ranking_conversao = sorted(grupos, key=lambda g: g["conversao"], reverse=True)[:5]
+    ranking_entradas = sorted(grupos, key=lambda g: g["entradas"], reverse=True)[:5]
+
+    # 📈 Gráfico comparativo
+    comparativo_labels = [g["slug"] for g in grupos]
+    comparativo_data = [g["cliques"] for g in grupos]
+
+    # 💡 Recomendações
+    recomendacoes = []
+    for g in grupos:
+        if g["conversao"] >= 80 and g["cliques"] >= 30:
+            recomendacoes.append(f"🔥 O grupo *{g['slug']}* está com alta conversão ({g['conversao']}%)")
+        if g["cliques"] >= 50 and g["entradas"] == 0:
+            recomendacoes.append(f"⚠️ O grupo *{g['slug']}* teve muitos cliques mas nenhuma entrada.")
+        if g["cliques"] <= 5:
+            recomendacoes.append(f"📉 O grupo *{g['slug']}* teve poucos cliques. Avalie sua divulgação.")
+
     return render_template("desempenho_de_grupos.html",
         grupos=grupos,
         cliques=cliques_por_hora,
         resumo=resumo,
-        filtro=filtro
+        filtro=filtro,
+        ranking_cliques=ranking_cliques,
+        ranking_conversao=ranking_conversao,
+        ranking_entradas=ranking_entradas,
+        comparativo_labels=comparativo_labels,
+        comparativo_data=comparativo_data,
+        recomendacoes=recomendacoes
     )
 
 @app.route("/atualizar-entradas", methods=["POST"])
