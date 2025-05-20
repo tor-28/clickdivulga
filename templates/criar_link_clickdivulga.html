@@ -21,69 +21,66 @@
       <h1>📎 Gerar Link Camuflado com Rastreamento</h1>
     </div>
 
-    <!-- Formulário -->
-    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom:40px;">
-      <form method="POST">
-        <label>
-          Nome do Link (slug personalizado):
-          <input type="text" name="slug" placeholder="ex: grupo-vip-ofertas" required>
-        </label>
+   <!-- 🔗 Formulário de Criação de Link -->
+<div style="background: white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin: 0 auto 40px; max-width: 600px;">
+  <form method="POST">
+    <label style="display: block; margin-bottom: 16px;">
+      Nome do Link (slug personalizado):
+      <input type="text" name="slug" placeholder="ex: grupo-vip-ofertas" required>
+    </label>
 
-        <label>
-          URL de destino (link final):
-          <input type="url" name="url_destino" placeholder="Cole aqui o link do WhatsApp, produto ou página" required>
-        </label>
+    <label style="display: block; margin-bottom: 16px;">
+      URL de destino (link final):
+      <input type="url" name="url_destino" placeholder="Cole aqui o link do WhatsApp, produto ou página" required>
+    </label>
 
-        <label>
-          Tipo de link:
-          <select name="tipo" required>
-            <option value="whatsapp">Grupo WhatsApp</option>
-            <option value="produto">Produto</option>
-            <option value="contador">Contador de Cliques (sem redirecionar)</option>
-          </select>
-        </label>
+    <label style="display: block; margin-bottom: 16px;">
+      Tipo de link:
+      <select name="tipo" required>
+        <option value="whatsapp">Grupo WhatsApp</option>
+        <option value="produto">Produto</option>
+        <option value="contador">Contador de Cliques (sem redirecionar)</option>
+      </select>
+    </label>
 
-        <button type="submit">Criar Link Camuflado</button>
+    <button type="submit">Criar Link Camuflado</button>
 
-        <p class="info" style="margin-top: 20px; background-color: #f4f4f4; padding: 10px; border-left: 4px solid #5e3ea1; border-radius: 6px;">
-          O link gerado será camuflado como: <br>
-          <code>https://clickdivulga.com/r/&lt;slug&gt;</code><br>
-          e poderá ser usado para rastrear cliques e engajamento com segurança.
-        </p>
-      </form>
-    </div>
+    <p class="info" style="margin-top: 20px; background-color: #f1f1f1; padding: 10px; border-left: 4px solid #5e3ea1; border-radius: 5px;">
+      O link gerado será camuflado como: <br>
+      <code>https://clickdivulga.com/r/&lt;slug&gt;</code><br>
+      e poderá ser usado para rastrear cliques e engajamento com segurança.
+    </p>
+  </form>
+</div>
 
-    <!-- Lista de links -->
-    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
-      <h2 style="margin-bottom:20px;">🧾 Seus Links Criados</h2>
-      {% if links %}
-      <table class="group-table">
-        <thead>
-          <tr>
-            <th>Slug</th>
-            <th>Tipo</th>
-            <th>Cliques</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for link in links %}
-          <tr>
-            <td>{{ link.slug }}</td>
-            <td>{{ link.categoria }}</td>
-            <td>{{ link.cliques }}</td>
-            <td>
-              <a href="/editar-link/{{ link.id }}" class="btn">✏️ Editar</a>
-              <a href="/excluir-link/{{ link.id }}" class="btn danger" onclick="return confirm('Tem certeza que deseja excluir este link?')">🗑️ Excluir</a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-        <p>Você ainda não criou nenhum link.</p>
-      {% endif %}
-    </div>
-  </div>
-</body>
-</html>
+  <!-- Lista de links -->
+<div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-top: 40px;">
+  <h2 style="margin-bottom:20px;">🧾 Seus Links Criados</h2>
+  {% if links %}
+  <table class="group-table">
+    <thead>
+      <tr>
+        <th>Slug</th>
+        <th>Tipo</th>
+        <th>Cliques</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for link in links %}
+      <tr>
+        <td><strong>{{ link.slug }}</strong></td>
+        <td>{{ link.categoria }}</td>
+        <td>{{ link.cliques }}</td>
+        <td style="display: flex; justify-content: center; gap: 10px;">
+          <a href="/editar-link/{{ link.id }}" class="btn">✏️ Editar</a>
+          <a href="/excluir-link/{{ link.id }}" class="btn danger" onclick="return confirm('Tem certeza que deseja excluir este link?')">🗑️ Excluir</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p style="padding: 10px; color: #666;">Você ainda não criou nenhum link.</p>
+  {% endif %}
+</div>
