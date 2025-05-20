@@ -40,30 +40,33 @@
     </div>
 
     <!-- 🔗 Links Recentes -->
-    <div style="margin-top: 40px;">
-      <h2 style="margin-bottom: 20px;">🔗 Seus Links Recentes</h2>
-      <div class="product-list">
-        {% for link in links_recentes %}
-        <div class="product-card">
-          <strong>{{ link.get('titulo') or link.get('slug') }}</strong><br>
-          <small>{{ link.get('cliques', 0) }} cliques – {{ link.get('categoria', 'indefinido') }}</small><br>
-          <button onclick="copiarLink('{{ link.get('slug') }}', this)">Copiar Link</button>
-          <span class="copiado-msg" style="display:none; color:green; font-size: 0.9rem; margin-top: 4px;">✅ Copiado!</span>
-        </div>
-        {% endfor %}
-      </div>
+<div style="margin-top: 40px;">
+  <h2 style="margin-bottom: 20px;">🔗 Seus Links Recentes</h2>
+  <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+    {% for link in links_recentes[:4] %}
+    <div style="
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      width: 230px;
+      text-align: left;
+      border: 1px solid #eee;
+    ">
+      <strong style="font-size: 1rem; color: #333;">{{ link.get('titulo') or link.get('slug') }}</strong><br>
+      <small style="color: #666;">{{ link.get('cliques', 0) }} cliques – {{ link.get('categoria', 'Sem categoria') }}</small><br><br>
+      <button onclick="copiarLink('{{ link.get('slug') }}', this)" style="
+        background-color: #5e3ea1;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+      ">Copiar Link</button>
+      <span class="copiado-msg" style="display:none; color:green; font-size: 0.85rem; margin-left: 6px;">✅ Copiado!</span>
     </div>
+    {% endfor %}
   </div>
+</div>
 
-  <script>
-    function copiarLink(slug, botao) {
-      const url = window.location.origin + "/r/" + slug;
-      navigator.clipboard.writeText(url).then(() => {
-        const msg = botao.nextElementSibling;
-        msg.style.display = "inline";
-        setTimeout(() => { msg.style.display = "none"; }, 2000);
-      });
-    }
-  </script>
-</body>
-</html>
