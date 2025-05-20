@@ -157,31 +157,98 @@ def painel():
 @app.route("/criar-link", methods=["GET", "POST"])
 @verificar_login
 def criar_link():
+    uid = session["usuario"]["uid"]
+    
     if request.method == "POST":
-        slug = request.form.get("slug").strip()
-        destino = request.form.get("url_destino").strip()
-        uid = session["usuario"]["uid"]
+        slug = request.form["slug"].strip()
+        url_destino = request.form["url_destino"].strip()
+        tipo = request.form["tipo"]
 
-        categoria = "outro"
-        if "whatsapp" in destino:
-            categoria = "grupo"
-        elif "shopee.com.br" in destino:
-            categoria = "produto"
+        # Verifica se o slug já existe
+        existente = db.collection("links_encurtados").where("slug", "==", slug).get()
+        if existente:
+            flash("Esse slug já está em uso. Escolha outro.", "error")
+            return redirect("/criar-link")
 
-        doc_ref = db.collection("links_encurtados").document(slug)
-        if doc_ref.get().exists:
-            return "Slug já está em uso. Escolha outro.", 400
-
-        doc_ref.set({
+        dados = {
             "slug": slug,
-            "url_destino": destino,
+            "url_destino": url_destino,
+            "categoria": tipo,
             "uid": uid,
             "cliques": 0,
-            "categoria": categoria,
             "criado_em": datetime.now().isoformat()
+        }
+
+        db.collection("links_encurtados").add(dados)
+        flash("Link criado com sucesso!", "success")
+        return redirect("/criar-link")
+
+    # Recupera todos os links do usuário
+    links_ref = db.collection("links_encurtados").where("uid", "==", uid).order_by("criado_em", direction=firestore.Query.DESCENDING)
+    links_docs = links_ref.stream()
+
+    links = []
+    for doc in links_docs:
+        dados = doc.to_dict()
+        dados["id"] = doc.id
+        links.append({
+            "id": doc.id,
+            "slug": dados.get("slug"),
+            "cliques": dados.get("cliques", 0),
+            "categoria": dados.get("categoria", "indefinido")
         })
-        return redirect(url_for("painel"))
-    return render_template("criar_link_clickdivulga.html")
+
+    return render_template("criar_link.html", links=links)
+
+@app.route("/excluir-link/<id>")
+@verificar_login
+def excluir_link(id):
+    uid = session["usuario"]["uid"]
+
+    doc_ref = db.collection("links_encurtados").document(id)
+    doc = doc_ref.get()
+
+    if doc.exists and doc.to_dict().get("uid") == uid:
+        doc_ref.delete()
+        flash("Link excluído com sucesso!", "success")
+    else:
+        flash("Ação não autorizada ou link inexistente.", "error")
+
+    return redirect("/criar-link")
+
+@app.route("/editar-link/<id>", methods=["GET", "POST"])
+@verificar_login
+def editar_link(id):
+    uid = session["usuario"]["uid"]
+    doc_ref = db.collection("links_encurtados").document(id)
+    doc = doc_ref.get()
+
+    if not doc.exists or doc.to_dict().get("uid") != uid:
+        flash("Link não encontrado ou acesso não autorizado.", "error")
+        return redirect("/criar-link")
+
+    if request.method == "POST":
+        slug = request.form["slug"].strip()
+        url_destino = request.form["url_destino"].strip()
+        tipo = request.form["tipo"]
+
+        doc_ref.update({
+            "slug": slug,
+            "url_destino": url_destino,
+            "categoria": tipo,
+        })
+
+        flash("Link atualizado com sucesso!", "success")
+        return redirect("/criar-link")
+
+    dados = doc.to_dict()
+
+    return render_template("editar_link.html", link={
+        "id": id,
+        "slug": dados.get("slug"),
+        "url_destino": dados.get("url_destino"),
+        "categoria": dados.get("categoria")
+    })
 
 @app.route("/r/<slug>")
 def redirecionar(slug):
