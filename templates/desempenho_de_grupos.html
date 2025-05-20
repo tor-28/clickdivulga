@@ -28,6 +28,13 @@
           <option value="15" {% if filtro == '15' %}selected{% endif %}>Últimos 15 dias</option>
           <option value="30" {% if filtro == '30' %}selected{% endif %}>Últimos 30 dias</option>
         </select>
+
+        <label for="tipo">Tipo:</label>
+        <select name="tipo" id="tipo" onchange="this.form.submit()" style="padding: 6px 10px; border-radius: 8px;">
+          <option value="todos" {% if tipo == 'todos' %}selected{% endif %}>Todos</option>
+          <option value="grupo" {% if tipo == 'grupo' %}selected{% endif %}>Grupos</option>
+          <option value="produto" {% if tipo == 'produto' %}selected{% endif %}>Produtos</option>
+        </select>
       </form>
     </div>
 
@@ -63,7 +70,12 @@
       <tbody>
         {% for grupo in grupos %}
         <tr>
-          <td>{{ grupo.slug }}</td>
+          <td>
+            <strong>{{ grupo.slug }}</strong><br>
+            {% for tag in grupo.etiquetas %}
+              <span style="font-size: 0.8rem; color: #555;">{{ tag }}</span>{% if not loop.last %} • {% endif %}
+            {% endfor %}
+          </td>
           <td><a href="/r/{{ grupo.slug }}" target="_blank">Abrir</a></td>
           <td>{{ grupo.cliques }}</td>
           <td>
