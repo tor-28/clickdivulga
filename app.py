@@ -299,7 +299,7 @@ def grupos():
             doc.reference.update({"entradas": entradas})
         return redirect("/grupos")
 
-    # Lista de grupos
+    # Lista de grupos do usuário
     grupos_ref = db.collection("links_encurtados") \
         .where("uid", "==", uid) \
         .where("categoria", "==", "grupo") \
@@ -320,7 +320,20 @@ def grupos():
             "conversao": conversao
         })
 
-    # Cliques por hora
+    # 🧠 Resumo geral
+    total_cliques = sum(grupo["cliques"] for grupo in grupos)
+    total_grupos = len(grupos)
+    media_cliques = round(total_cliques / total_grupos, 2) if total_grupos else 0
+    mais_clicado = max(grupos, key=lambda g: g["cliques"])["slug"] if grupos else "Nenhum"
+
+    resumo = {
+        "total_cliques": total_cliques,
+        "total_grupos": total_grupos,
+        "media_cliques": media_cliques,
+        "mais_clicado": mais_clicado
+    }
+
+    # ⏱️ Cliques por hora
     cliques_por_hora = [0] * 24
     logs = db.collection("logs_cliques") \
         .where("uid", "==", uid) \
@@ -338,7 +351,12 @@ def grupos():
                 continue
         cliques_por_hora[hora] += 1
 
-    return render_template("desempenho_de_grupos.html", grupos=grupos, cliques=cliques_por_hora)
+    return render_template(
+        "desempenho_de_grupos.html",
+        grupos=grupos,
+        cliques=cliques_por_hora,
+        resumo=resumo
+    )
 
 @app.route("/atualizar-entradas", methods=["POST"])
 @verificar_login
