@@ -34,6 +34,27 @@ def verificar_login(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# 🔧 Atualiza categorias automaticamente com base no destino
+def atualizar_categoria_links(uid):
+    try:
+        links = db.collection("links_encurtados") \
+            .where("uid", "==", uid).stream()
+        for doc in links:
+            dados = doc.to_dict()
+            url = dados.get("url_destino", "")
+            categoria_atual = dados.get("categoria", "")
+            nova_categoria = "outro"
+
+            if "whatsapp.com" in url:
+                nova_categoria = "grupo"
+            elif "shopee.com.br" in url:
+                nova_categoria = "produto"
+
+            if categoria_atual != nova_categoria:
+                doc.reference.update({"categoria": nova_categoria})
+    except Exception as e:
+        print(f"Erro ao atualizar categorias automaticamente: {e}")
+
 @app.route("/")
 def index():
     return redirect(url_for("login"))
@@ -65,10 +86,8 @@ def painel():
     uid = session["usuario"]["uid"]
     print(f"📊 Carregando dashboard para UID: {uid}")
 
-    # 🔄 Atualiza categorias dos links se estiverem vazias
     atualizar_categoria_links(uid)
 
-    # 🔢 Links do dia
     hoje = datetime.now().date().isoformat()
     links_hoje = db.collection("links_encurtados") \
         .where("uid", "==", uid) \
@@ -76,7 +95,6 @@ def painel():
         .stream()
     total_links_hoje = sum(1 for _ in links_hoje)
 
-    # 📈 Total de cliques no mês
     agora = datetime.now()
     inicio_mes = agora.replace(day=1).isoformat()
     cliques_mes = 0
@@ -87,7 +105,6 @@ def painel():
     for _ in links_mes:
         cliques_mes += 1
 
-    # 🥇 Produto mais clicado
     produtos = db.collection("links_encurtados") \
         .where("uid", "==", uid) \
         .where("categoria", "==", "produto") \
@@ -96,7 +113,6 @@ def painel():
     produto_mais_clicado = next(produtos, None)
     nome_produto = produto_mais_clicado.get("titulo") if produto_mais_clicado else "Nenhum"
 
-    # 🧑‍🤝‍🧑 Grupo mais clicado
     grupos = db.collection("links_encurtados") \
         .where("uid", "==", uid) \
         .where("categoria", "==", "grupo") \
@@ -105,7 +121,6 @@ def painel():
     grupo_mais_clicado = next(grupos, None)
     nome_grupo = grupo_mais_clicado.get("titulo") if grupo_mais_clicado else "Nenhum"
 
-    # 🔗 Links recentes
     links_recentes = db.collection("links_encurtados") \
         .where("uid", "==", uid) \
         .order_by("criado_em", direction=firestore.Query.DESCENDING) \
@@ -136,7 +151,6 @@ def criar_link():
         destino = request.form.get("url_destino").strip()
         uid = session["usuario"]["uid"]
 
-        # Detectar categoria automática
         categoria = "outro"
         if "whatsapp" in destino:
             categoria = "grupo"
@@ -169,6 +183,7 @@ def redirecionar(slug):
         })
         db.collection("logs_cliques").add({
             "slug": slug,
+            "uid": dados.get("uid", ""),
             "data": datetime.now().isoformat(),
             "ip": request.remote_addr
         })
@@ -234,7 +249,6 @@ def atualizar_categorias_links():
             url = dados.get("url_destino", "")
             categoria = dados.get("categoria", "")
 
-            # Detectar nova categoria, apenas se não houver ou estiver incorreta
             nova_categoria = "outro"
             if "whatsapp" in url:
                 nova_categoria = "grupo"
@@ -250,3 +264,5 @@ def atualizar_categorias_links():
     except Exception as e:
         return f"❌ Erro ao atualizar categorias: {e}"
 
+if __name__ == "__main__":
+    app.run(debug=True)
