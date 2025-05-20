@@ -22,23 +22,69 @@
       <h1>📊 Desempenho de Grupos no WhatsApp</h1>
     </div>
 
-    <!-- 🔹 Cards de Resumo Geral -->
-    <div class="cards" style="display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
-      <div class="card">
-        <h3>Total de Cliques</h3>
-        <p class="big">{{ resumo.total_cliques }}</p>
-      </div>
-      <div class="card">
-        <h3>Grupos Ativos</h3>
-        <p class="big">{{ resumo.total_grupos }}</p>
-      </div>
-      <div class="card">
-        <h3>Média por Grupo</h3>
-        <p class="big">{{ resumo.media_cliques }}</p>
-      </div>
-      <div class="card">
-        <h3>Mais Clicado</h3>
-        <p class="big">{{ resumo.mais_clicado }}</p>
+    <!-- 🔹 Cards de Resumo em Container Estilizado -->
+    <div style="
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin: 30px auto;
+      max-width: 1000px;
+    ">
+      <div class="cards" style="
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 30px;
+      ">
+        <div class="card" style="
+          flex: 1 1 200px;
+          max-width: 230px;
+          background: #f8f8fc;
+          padding: 20px;
+          border-radius: 12px;
+          text-align: center;
+          border: 1px solid #e3dfff;
+        ">
+          <h3>Total de Cliques</h3>
+          <p class="big" style="font-size: 26px; font-weight: bold; color: #5e3ea1;">{{ resumo.total_cliques }}</p>
+        </div>
+        <div class="card" style="
+          flex: 1 1 200px;
+          max-width: 230px;
+          background: #f8f8fc;
+          padding: 20px;
+          border-radius: 12px;
+          text-align: center;
+          border: 1px solid #e3dfff;
+        ">
+          <h3>Grupos Ativos</h3>
+          <p class="big" style="font-size: 26px; font-weight: bold; color: #5e3ea1;">{{ resumo.total_grupos }}</p>
+        </div>
+        <div class="card" style="
+          flex: 1 1 200px;
+          max-width: 230px;
+          background: #f8f8fc;
+          padding: 20px;
+          border-radius: 12px;
+          text-align: center;
+          border: 1px solid #e3dfff;
+        ">
+          <h3>Média por Grupo</h3>
+          <p class="big" style="font-size: 26px; font-weight: bold; color: #5e3ea1;">{{ resumo.media_cliques }}</p>
+        </div>
+        <div class="card" style="
+          flex: 1 1 200px;
+          max-width: 230px;
+          background: #f8f8fc;
+          padding: 20px;
+          border-radius: 12px;
+          text-align: center;
+          border: 1px solid #e3dfff;
+        ">
+          <h3>Mais Clicado</h3>
+          <p class="big" style="font-size: 24px; font-weight: bold; color: #5e3ea1;">{{ resumo.mais_clicado }}</p>
+        </div>
       </div>
     </div>
 
