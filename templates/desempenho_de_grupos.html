@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Desempenho de Grupos - ClickDivulga</title>
   <link rel="stylesheet" href="../static/css/grupos.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="sidebar">
@@ -51,6 +52,37 @@
         {% endfor %}
       </tbody>
     </table>
+
+    <hr style="margin: 40px 0;">
+
+    <h2 style="margin-bottom: 20px;">⏱️ Distribuição de Cliques por Horário</h2>
+    <div style="background:white; padding:20px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+      <canvas id="graficoCliques"></canvas>
+    </div>
   </div>
+
+  <script>
+    const cliques = {{ cliques | tojson }};
+    const labels = [...Array(24).keys()].map(h => h.toString().padStart(2, '0') + ":00");
+
+    const ctx = document.getElementById('graficoCliques').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Cliques por hora',
+          data: cliques,
+          backgroundColor: '#5e3ea1'
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  </script>
 </body>
 </html>
