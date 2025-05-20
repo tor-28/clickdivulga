@@ -272,32 +272,44 @@ def redirecionar(slug):
         return redirect(dados["url_destino"])
     return "Link não encontrado", 404
 
-@app.route("/grupos")
+@app.route("/grupos", methods=["GET", "POST"])
 @verificar_login
 def grupos():
     uid = session["usuario"]["uid"]
-    docs = db.collection("links_encurtados").where("uid", "==", uid).stream()
+
+    # Atualização manual de entradas
+    if request.method == "POST":
+        slug = request.form["slug"]
+        entradas = int(request.form.get("entradas", 0))
+
+        doc_ref = db.collection("links_encurtados").where("uid", "==", uid).where("slug", "==", slug).limit(1)
+        docs = list(doc_ref.stream())
+        if docs:
+            docs[0].reference.update({"entradas": entradas})
+        return redirect("/grupos")
+
+    # Buscar todos os links de categoria grupo
+    grupos_ref = db.collection("links_encurtados") \
+        .where("uid", "==", uid) \
+        .where("categoria", "==", "whatsapp") \
+        .stream()
 
     grupos = []
-    for doc in docs:
+    for doc in grupos_ref:
         dados = doc.to_dict()
-        url = dados.get("url_destino", "")
-        if "whatsapp.com" in url:
-            slug = dados.get("slug")
-            cliques = dados.get("cliques", 0)
-            entradas = dados.get("entradas", 0)
-            conversao = 0
-            if cliques > 0:
-                conversao = round((entradas / cliques) * 100, 2)
-            grupos.append({
-                "slug": slug,
-                "url": url,
-                "cliques": cliques,
-                "entradas": entradas,
-                "conversao": conversao
-            })
+        slug = dados.get("slug")
+        cliques = int(dados.get("cliques", 0))
+        entradas = int(dados.get("entradas", 0))
+        conversao = round((entradas / cliques) * 100, 2) if cliques > 0 else 0
 
-    return render_template("desempenho_de_grupos.html", grupos=grupos)
+        grupos.append({
+            "slug": slug,
+            "cliques": cliques,
+            "entradas": entradas,
+            "conversao": conversao
+        })
+
+    return render_template("grupos.html", grupos=grupos)
 
 @app.route("/atualizar-entradas", methods=["POST"])
 @verificar_login
