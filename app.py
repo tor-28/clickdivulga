@@ -88,6 +88,7 @@ def painel():
 
     atualizar_categoria_links(uid)
 
+    # LINKS GERADOS HOJE
     hoje = datetime.now().date().isoformat()
     links_hoje = db.collection("links_encurtados") \
         .where("uid", "==", uid) \
@@ -95,45 +96,55 @@ def painel():
         .stream()
     total_links_hoje = sum(1 for _ in links_hoje)
 
+    # CLIQUES NO MÊS
     agora = datetime.now()
     inicio_mes = agora.replace(day=1).isoformat()
-    cliques_mes = 0
-    links_mes = db.collection("logs_cliques") \
-        .where("data", ">=", inicio_mes) \
-        .where("uid", "==", uid) \
-        .stream()
-    for _ in links_mes:
-        cliques_mes += 1
+    cliques_mes = sum(1 for _ in db.collection("logs_cliques")
+                      .where("data", ">=", inicio_mes)
+                      .where("uid", "==", uid)
+                      .stream())
 
-    produtos = db.collection("links_encurtados") \
-        .where("uid", "==", uid) \
-        .where("categoria", "==", "produto") \
-        .order_by("cliques", direction=firestore.Query.DESCENDING) \
-        .limit(1).stream()
-    produto_mais_clicado = next(produtos, None)
-    nome_produto = produto_mais_clicado.get("titulo") if produto_mais_clicado and "titulo" in produto_mais_clicado.to_dict() else "Sem nome"
+    # PRODUTO MAIS CLICADO
+    try:
+        produtos = db.collection("links_encurtados") \
+            .where("uid", "==", uid) \
+            .where("categoria", "==", "produto") \
+            .order_by("cliques", direction=firestore.Query.DESCENDING) \
+            .limit(1).stream()
+        produto_mais_clicado = next(produtos, None)
+        nome_produto = produto_mais_clicado.to_dict().get("titulo", "Sem nome") if produto_mais_clicado else "Nenhum"
+    except Exception as e:
+        print("Erro ao buscar produto mais clicado:", e)
+        nome_produto = "Nenhum"
 
-    grupos = db.collection("links_encurtados") \
-        .where("uid", "==", uid) \
-        .where("categoria", "==", "grupo") \
-        .order_by("cliques", direction=firestore.Query.DESCENDING) \
-        .limit(1).stream()
-    grupo_mais_clicado = next(grupos, None)
-    nome_grupo = grupo_mais_clicado.get("titulo") if grupo_mais_clicado else "Nenhum"
+    # GRUPO MAIS CLICADO
+    try:
+        grupos = db.collection("links_encurtados") \
+            .where("uid", "==", uid) \
+            .where("categoria", "==", "grupo") \
+            .order_by("cliques", direction=firestore.Query.DESCENDING) \
+            .limit(1).stream()
+        grupo_mais_clicado = next(grupos, None)
+        nome_grupo = grupo_mais_clicado.to_dict().get("titulo", "Sem nome") if grupo_mais_clicado else "Nenhum"
+    except Exception as e:
+        print("Erro ao buscar grupo mais clicado:", e)
+        nome_grupo = "Nenhum"
 
+    # LINKS RECENTES
     links_recentes = db.collection("links_encurtados") \
         .where("uid", "==", uid) \
         .order_by("criado_em", direction=firestore.Query.DESCENDING) \
         .limit(4).stream()
-    links_formatados = [
-        {
-            "slug": doc.get("slug"),
-            "titulo": doc.get("titulo"),
-            "cliques": doc.get("cliques", 0),
-            "categoria": doc.get("categoria", "indefinido")
-        }
-        for doc in links_recentes
-    ]
+
+    links_formatados = []
+    for doc in links_recentes:
+        dados = doc.to_dict()
+        links_formatados.append({
+            "slug": dados.get("slug"),
+            "titulo": dados.get("titulo", ""),
+            "cliques": dados.get("cliques", 0),
+            "categoria": dados.get("categoria", "indefinido")
+        })
 
     return render_template("dashboard_clickdivulga.html",
         links_hoje=total_links_hoje,
