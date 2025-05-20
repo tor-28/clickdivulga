@@ -121,3 +121,47 @@ def redirecionar(slug):
 
         return redirect(dados["url_destino"])
     return "Link não encontrado", 404
+
+@app.route("/grupos")
+@verificar_login
+def grupos():
+    uid = session["usuario"]["uid"]
+    docs = db.collection("links_encurtados").where("uid", "==", uid).stream()
+
+    grupos = []
+    for doc in docs:
+        dados = doc.to_dict()
+        url = dados.get("url_destino", "")
+        if "whatsapp.com" in url:
+            slug = dados.get("slug")
+            cliques = dados.get("cliques", 0)
+            entradas = dados.get("entradas", 0)
+            conversao = 0
+            if cliques > 0:
+                conversao = round((entradas / cliques) * 100, 2)
+            grupos.append({
+                "slug": slug,
+                "url": url,
+                "cliques": cliques,
+                "entradas": entradas,
+                "conversao": conversao
+            })
+
+    return render_template("desempenho_de_grupos.html", grupos=grupos)
+
+@app.route("/atualizar-entradas", methods=["POST"])
+@verificar_login
+def atualizar_entradas():
+    slug = request.form.get("slug")
+    entradas = int(request.form.get("entradas", 0))
+
+    try:
+        db.collection("links_encurtados").document(slug).update({
+            "entradas": entradas
+        })
+        flash("Entradas atualizadas com sucesso!", "success")
+    except Exception as e:
+        print("Erro ao atualizar entradas:", e)
+        flash("Erro ao atualizar entradas.", "error")
+
+    return redirect(url_for("grupos"))
