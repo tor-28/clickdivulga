@@ -22,30 +22,32 @@
     </div>
 
    <!-- 🔗 Formulário de Criação de Link -->
-<div style="background: white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin: 0 auto 40px; max-width: 600px;">
+<div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 40px; max-width: 700px;">
+  <h2 style="margin-bottom: 20px; color: #5e3ea1;">📎 Gerar Link Camuflado com Rastreamento</h2>
+
   <form method="POST">
-    <label style="display: block; margin-bottom: 16px;">
-      Nome do Link (slug personalizado):
-      <input type="text" name="slug" placeholder="ex: grupo-vip-ofertas" required>
-    </label>
+    <div style="margin-bottom: 20px;">
+      <label style="font-weight: 600;">Nome do Link (slug personalizado):</label>
+      <input type="text" name="slug" placeholder="ex: grupo-vip-ofertas" required style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
+    </div>
 
-    <label style="display: block; margin-bottom: 16px;">
-      URL de destino (link final):
-      <input type="url" name="url_destino" placeholder="Cole aqui o link do WhatsApp, produto ou página" required>
-    </label>
+    <div style="margin-bottom: 20px;">
+      <label style="font-weight: 600;">URL de destino (link final):</label>
+      <input type="url" name="url_destino" placeholder="Cole aqui o link do WhatsApp, produto ou página" required style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
+    </div>
 
-    <label style="display: block; margin-bottom: 16px;">
-      Tipo de link:
-      <select name="tipo" required>
+    <div style="margin-bottom: 20px;">
+      <label style="font-weight: 600;">Tipo de link:</label>
+      <select name="tipo" required style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
         <option value="whatsapp">Grupo WhatsApp</option>
         <option value="produto">Produto</option>
         <option value="contador">Contador de Cliques (sem redirecionar)</option>
       </select>
-    </label>
+    </div>
 
-    <button type="submit">Criar Link Camuflado</button>
+    <button type="submit" style="background-color: #5e3ea1; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">Criar Link Camuflado</button>
 
-    <p class="info" style="margin-top: 20px; background-color: #f1f1f1; padding: 10px; border-left: 4px solid #5e3ea1; border-radius: 5px;">
+    <p style="margin-top: 20px; background-color: #f1f1f1; padding: 14px; border-left: 4px solid #5e3ea1; border-radius: 6px; font-size: 0.95rem;">
       O link gerado será camuflado como: <br>
       <code>https://clickdivulga.com/r/&lt;slug&gt;</code><br>
       e poderá ser usado para rastrear cliques e engajamento com segurança.
