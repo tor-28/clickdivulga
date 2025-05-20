@@ -108,6 +108,9 @@ def redirecionar(slug):
     doc = db.collection("links_encurtados").document(slug).get()
     if doc.exists:
         dados = doc.to_dict()
+        url_destino = dados["url_destino"]
+
+        # Log de clique
         db.collection("links_encurtados").document(slug).update({
             "cliques": firestore.Increment(1)
         })
@@ -116,8 +119,8 @@ def redirecionar(slug):
             "data": datetime.now().isoformat(),
             "ip": request.remote_addr
         })
-        return redirect(dados["url_destino"])
-    return "Link não encontrado", 404
 
-if __name__ == "__main__":
-    app.run(debug=True)
+        # Renderiza página com redirecionamento inteligente
+        return render_template("redir_whatsapp.html", url=url_destino)
+
+    return "Link não encontrado", 404
