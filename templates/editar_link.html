@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Editar Link - ClickDivulga</title>
-  <link rel="stylesheet" href="../static/css/criar_link.css">
+  <link rel="stylesheet" href="../static/css/grupos.css">
 </head>
 <body>
   <div class="sidebar">
@@ -21,33 +21,36 @@
       <h1>✏️ Editar Link</h1>
     </div>
 
-    <form method="POST">
-      <label>
-        Nome do Link (slug personalizado):
-        <input type="text" name="slug" value="{{ link.slug }}" required>
-      </label>
+    <!-- Formulário estilizado -->
+    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom:40px;">
+      <form method="POST">
+        <label>
+          Nome do Link (slug personalizado):
+          <input type="text" name="slug" value="{{ link.slug }}" required>
+        </label>
 
-      <label>
-        URL de destino:
-        <input type="url" name="url_destino" value="{{ link.url_destino }}" required>
-      </label>
+        <label>
+          URL de destino:
+          <input type="url" name="url_destino" value="{{ link.url_destino }}" required>
+        </label>
 
-      <label>
-        Tipo de link:
-        <select name="tipo" required>
-          <option value="whatsapp" {% if link.categoria == 'whatsapp' %}selected{% endif %}>Grupo WhatsApp</option>
-          <option value="produto" {% if link.categoria == 'produto' %}selected{% endif %}>Produto</option>
-          <option value="contador" {% if link.categoria == 'contador' %}selected{% endif %}>Contador de Cliques</option>
-        </select>
-      </label>
+        <label>
+          Tipo de link:
+          <select name="tipo" required>
+            <option value="whatsapp" {% if link.categoria == 'whatsapp' %}selected{% endif %}>Grupo WhatsApp</option>
+            <option value="produto" {% if link.categoria == 'produto' %}selected{% endif %}>Produto</option>
+            <option value="contador" {% if link.categoria == 'contador' %}selected{% endif %}>Contador de Cliques</option>
+          </select>
+        </label>
 
-      <button type="submit">Salvar Alterações</button>
+        <button type="submit">Salvar Alterações</button>
 
-      <p class="info">
-        O link permanecerá acessível via: <br>
-        <code>https://clickdivulga.com/r/{{ link.slug }}</code>
-      </p>
-    </form>
+        <p class="info" style="margin-top: 20px; background-color: #f4f4f4; padding: 10px; border-left: 4px solid #5e3ea1; border-radius: 6px;">
+          O link permanecerá acessível via: <br>
+          <code>https://clickdivulga.com/r/{{ link.slug }}</code>
+        </p>
+      </form>
+    </div>
   </div>
 </body>
 </html>
