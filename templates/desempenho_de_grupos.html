@@ -31,48 +31,32 @@
       </form>
     </div>
 
-    <!-- 🔹 Cards de Resumo em Container Estilizado -->
-    <div style="
-      background: white;
-      padding: 30px;
-      border-radius: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      margin: 30px auto;
-      max-width: 1000px;
-    ">
-      <div class="cards" style="
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 30px;
-      ">
+    <!-- 🔹 Cards de Resumo -->
+    <div style="background: white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin: 30px auto; max-width: 1000px;">
+      <div class="cards" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px;">
+        {% for card in [
+          ('Total de Cliques', resumo.total_cliques),
+          ('Grupos Ativos', resumo.total_grupos),
+          ('Média por Grupo', resumo.media_cliques),
+          ('Mais Clicado', resumo.mais_clicado)
+        ] %}
         <div class="card" style="flex: 1 1 200px; max-width: 230px; background: #f8f8fc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e3dfff;">
-          <h3>Total de Cliques</h3>
-          <p class="big" style="font-size: 26px; font-weight: bold; color: #5e3ea1;">{{ resumo.total_cliques }}</p>
+          <h3>{{ card[0] }}</h3>
+          <p class="big" style="font-size: 26px; font-weight: bold; color: #5e3ea1;">{{ card[1] }}</p>
         </div>
-        <div class="card" style="flex: 1 1 200px; max-width: 230px; background: #f8f8fc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e3dfff;">
-          <h3>Grupos Ativos</h3>
-          <p class="big" style="font-size: 26px; font-weight: bold; color: #5e3ea1;">{{ resumo.total_grupos }}</p>
-        </div>
-        <div class="card" style="flex: 1 1 200px; max-width: 230px; background: #f8f8fc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e3dfff;">
-          <h3>Média por Grupo</h3>
-          <p class="big" style="font-size: 26px; font-weight: bold; color: #5e3ea1;">{{ resumo.media_cliques }}</p>
-        </div>
-        <div class="card" style="flex: 1 1 200px; max-width: 230px; background: #f8f8fc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e3dfff;">
-          <h3>Mais Clicado</h3>
-          <p class="big" style="font-size: 24px; font-weight: bold; color: #5e3ea1;">{{ resumo.mais_clicado }}</p>
-        </div>
+        {% endfor %}
       </div>
     </div>
 
+    <!-- 📈 Tabela de Grupos -->
     <table class="group-table">
       <thead>
         <tr>
           <th>Slug</th>
           <th>Link</th>
           <th>Cliques</th>
-          <th>Entradas (manual)</th>
-          <th>Taxa de Conversão</th>
+          <th>Entradas</th>
+          <th>Conversão</th>
           <th>Ação</th>
         </tr>
       </thead>
@@ -90,26 +74,59 @@
             </form>
           </td>
           <td>{{ grupo.conversao }}%</td>
-          <td><a href="/r/{{ grupo.slug }}" target="_blank">Copiar Link</a></td>
+          <td><a href="/r/{{ grupo.slug }}" target="_blank">Copiar</a></td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
 
+    <!-- 📊 Gráfico de Cliques por Hora -->
     <hr style="margin: 40px 0;">
-
-    <h2 style="margin-bottom: 20px;">⏱️ Distribuição de Cliques por Horário</h2>
-    <div style="background:white; padding:20px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+    <h2>⏱️ Cliques por Horário</h2>
+    <div style="background:white; padding:20px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1); margin-bottom: 40px;">
       <canvas id="graficoCliques"></canvas>
     </div>
+
+    <!-- 📊 Gráfico Comparativo -->
+    <h2>📈 Comparativo de Cliques por Grupo</h2>
+    <div style="background:white; padding:20px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1); margin-bottom: 40px;">
+      <canvas id="graficoComparativo"></canvas>
+    </div>
+
+    <!-- 🏆 Rankings -->
+    <h2>🏆 Rankings</h2>
+    <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+      {% for titulo, lista in [
+        ('Mais Cliques', ranking_cliques),
+        ('Melhor Conversão', ranking_conversao),
+        ('Mais Entradas', ranking_entradas)
+      ] %}
+      <div style="flex: 1 1 300px; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #ddd;">
+        <h4 style="margin-bottom: 10px;">{{ titulo }}</h4>
+        <ol>
+          {% for g in lista %}
+          <li><strong>{{ g.slug }}</strong> – {{ g.cliques }} cliques, {{ g.entradas }} entradas, {{ g.conversao }}%</li>
+          {% endfor %}
+        </ol>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- 💡 Recomendações -->
+    {% if recomendacoes %}
+    <h2 style="margin-top: 50px;">💡 Recomendações Inteligentes</h2>
+    <ul style="background:#fff; padding: 20px; border-radius: 12px; box-shadow:0 1px 4px rgba(0,0,0,0.1);">
+      {% for rec in recomendacoes %}
+      <li style="margin-bottom: 10px;">{{ rec|safe }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
   </div>
 
   <script>
     const cliques = {{ cliques | tojson }};
     const labels = [...Array(24).keys()].map(h => h.toString().padStart(2, '0') + ":00");
-
-    const ctx = document.getElementById('graficoCliques').getContext('2d');
-    new Chart(ctx, {
+    new Chart(document.getElementById('graficoCliques').getContext('2d'), {
       type: 'bar',
       data: {
         labels: labels,
@@ -119,12 +136,22 @@
           backgroundColor: '#5e3ea1'
         }]
       },
-      options: {
-        responsive: true,
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
+      options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+
+    const compLabels = {{ comparativo_labels | tojson }};
+    const compData = {{ comparativo_data | tojson }};
+    new Chart(document.getElementById('graficoComparativo').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: compLabels,
+        datasets: [{
+          label: 'Cliques por grupo',
+          data: compData,
+          backgroundColor: '#8a6ae2'
+        }]
+      },
+      options: { responsive: true, scales: { y: { beginAtZero: true } } }
     });
   </script>
 </body>
