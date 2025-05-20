@@ -309,7 +309,7 @@ def grupos():
             "conversao": conversao
         })
 
-    return render_template("grupos.html", grupos=grupos)
+    return render_template("desempenho_de_grupos.html", grupos=grupos)
 
 @app.route("/atualizar-entradas", methods=["POST"])
 @verificar_login
