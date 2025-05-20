@@ -52,4 +52,22 @@
             <strong>{{ link.get('titulo') or link.get('slug') }}</strong><br>
             <small>{{ link.get('cliques', 0) }} cliques - {{ link.get('categoria', 'Sem categoria') }}</small><br>
             <button onclick="copiarLink('{{ link.get('slug') }}', this)">Copiar Link</button>
-            <span class="copiado-msg" style="display:none; color:green; font-size: 0.9rem; margin
+            <span class="copiado-msg" style="display:none; color:green; font-size: 0.9rem; margin-top: 4px;">✅ Copiado!</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function copiarLink(slug, botao) {
+      const url = window.location.origin + "/r/" + slug;
+      navigator.clipboard.writeText(url).then(() => {
+        const msg = botao.nextElementSibling;
+        msg.style.display = "inline";
+        setTimeout(() => { msg.style.display = "none"; }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>
