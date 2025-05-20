@@ -113,8 +113,14 @@ def criar_link():
     if request.method == "POST":
         slug = request.form.get("slug").strip()
         destino = request.form.get("url_destino").strip()
-        tipo = request.form.get("tipo", "produto")
         uid = session["usuario"]["uid"]
+
+        # Detectar categoria automática
+        categoria = "outro"
+        if "whatsapp" in destino:
+            categoria = "grupo"
+        elif "shopee.com.br" in destino:
+            categoria = "produto"
 
         doc_ref = db.collection("links_encurtados").document(slug)
         if doc_ref.get().exists:
@@ -124,8 +130,8 @@ def criar_link():
             "slug": slug,
             "url_destino": destino,
             "uid": uid,
-            "tipo": tipo,
             "cliques": 0,
+            "categoria": categoria,
             "criado_em": datetime.now().isoformat()
         })
         return redirect(url_for("painel"))
