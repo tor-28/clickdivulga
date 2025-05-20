@@ -194,7 +194,7 @@ body {
 .btn {
   display: inline-block;
   padding: 8px 14px;
-  background-color: #4c61c0;
+  background-color: #6e8cd1; /* tom azul claro para "Editar" */
   color: white;
   border: none;
   border-radius: 6px;
@@ -204,15 +204,15 @@ body {
 }
 
 .btn:hover {
-  background-color: #3e51a5;
+  background-color: #5b79bd;
 }
 
 .btn.danger {
-  background-color: #dc6666;
+  background-color: #f08181; /* tom coral claro para "Excluir" */
 }
 
 .btn.danger:hover {
-  background-color: #c04c4c;
+  background-color: #da5f5f;
 }
 
 /* MENSAGENS */
