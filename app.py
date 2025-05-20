@@ -96,12 +96,11 @@ def painel():
         .stream()
     total_links_hoje = sum(1 for _ in links_hoje)
 
-    # CLIQUES NO MÊS
-    agora = datetime.now()
-    inicio_mes = agora.replace(day=1).isoformat()
+    # CLIQUES NO MÊS (agora com timestamp real)
+    inicio_mes = datetime.now().replace(day=1)
     cliques_mes = sum(1 for _ in db.collection("logs_cliques")
-                      .where("data", ">=", inicio_mes)
                       .where("uid", "==", uid)
+                      .where("data", ">=", inicio_mes)
                       .stream())
 
     # PRODUTO MAIS CLICADO
