@@ -6,7 +6,7 @@ import base64
 import tempfile
 from functools import wraps
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -289,7 +289,6 @@ def grupos():
     if request.method == "POST":
         slug = request.form["slug"]
         entradas = int(request.form.get("entradas", 0))
-
         doc_ref = db.collection("links_encurtados") \
             .where("uid", "==", uid) \
             .where("slug", "==", slug) \
@@ -299,20 +298,36 @@ def grupos():
             doc.reference.update({"entradas": entradas})
         return redirect("/grupos")
 
-    # Lista de grupos do usuário
-    grupos_ref = db.collection("links_encurtados") \
+    # 📅 Filtro por data
+    filtro = request.args.get("filtro", "todos")
+    dias = None
+    if filtro.isdigit():
+        dias = int(filtro)
+        data_limite = datetime.now() - timedelta(days=dias)
+    else:
+        data_limite = None
+
+    # 🔎 Buscar grupos
+    grupos_query = db.collection("links_encurtados") \
         .where("uid", "==", uid) \
-        .where("categoria", "==", "grupo") \
-        .stream()
+        .where("categoria", "==", "grupo")
+    grupos_ref = grupos_query.stream()
 
     grupos = []
     for doc in grupos_ref:
         dados = doc.to_dict()
         slug = dados.get("slug")
+        criado_em = dados.get("criado_em", "")
+        if data_limite:
+            try:
+                data_criacao = datetime.fromisoformat(criado_em)
+                if data_criacao < data_limite:
+                    continue
+            except:
+                pass
         cliques = int(dados.get("cliques", 0))
         entradas = int(dados.get("entradas", 0))
         conversao = round((entradas / cliques) * 100, 2) if cliques > 0 else 0
-
         grupos.append({
             "slug": slug,
             "cliques": cliques,
@@ -320,8 +335,8 @@ def grupos():
             "conversao": conversao
         })
 
-    # 🧠 Resumo geral
-    total_cliques = sum(grupo["cliques"] for grupo in grupos)
+    # 🧠 Resumo
+    total_cliques = sum(g["cliques"] for g in grupos)
     total_grupos = len(grupos)
     media_cliques = round(total_cliques / total_grupos, 2) if total_grupos else 0
     mais_clicado = max(grupos, key=lambda g: g["cliques"])["slug"] if grupos else "Nenhum"
@@ -333,29 +348,25 @@ def grupos():
         "mais_clicado": mais_clicado
     }
 
-    # ⏱️ Cliques por hora
+    # 📊 Cliques por hora (filtrado)
     cliques_por_hora = [0] * 24
-    logs = db.collection("logs_cliques") \
-        .where("uid", "==", uid) \
-        .stream()
-
+    logs = db.collection("logs_cliques").where("uid", "==", uid).stream()
     for doc in logs:
         dados = doc.to_dict()
         data = dados.get("data")
-        if isinstance(data, datetime):
-            hora = data.hour
-        else:
-            try:
-                hora = datetime.fromisoformat(data).hour
-            except:
+        try:
+            dt = datetime.fromisoformat(data) if isinstance(data, str) else data
+            if data_limite and dt < data_limite:
                 continue
-        cliques_por_hora[hora] += 1
+            cliques_por_hora[dt.hour] += 1
+        except:
+            continue
 
-    return render_template(
-        "desempenho_de_grupos.html",
+    return render_template("desempenho_de_grupos.html",
         grupos=grupos,
         cliques=cliques_por_hora,
-        resumo=resumo
+        resumo=resumo,
+        filtro=filtro
     )
 
 @app.route("/atualizar-entradas", methods=["POST"])
