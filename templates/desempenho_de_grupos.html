@@ -18,8 +18,17 @@
   </div>
 
   <div class="content">
-    <div class="topbar">
+    <div class="topbar" style="display: flex; justify-content: space-between; align-items: center;">
       <h1>📊 Desempenho de Grupos no WhatsApp</h1>
+      <form method="GET">
+        <label for="filtro">Período:</label>
+        <select name="filtro" id="filtro" onchange="this.form.submit()" style="padding: 6px 10px; border-radius: 8px;">
+          <option value="todos" {% if filtro == 'todos' %}selected{% endif %}>Todos os tempos</option>
+          <option value="7" {% if filtro == '7' %}selected{% endif %}>Últimos 7 dias</option>
+          <option value="15" {% if filtro == '15' %}selected{% endif %}>Últimos 15 dias</option>
+          <option value="30" {% if filtro == '30' %}selected{% endif %}>Últimos 30 dias</option>
+        </select>
+      </form>
     </div>
 
     <!-- 🔹 Cards de Resumo em Container Estilizado -->
@@ -37,51 +46,19 @@
         justify-content: center;
         gap: 30px;
       ">
-        <div class="card" style="
-          flex: 1 1 200px;
-          max-width: 230px;
-          background: #f8f8fc;
-          padding: 20px;
-          border-radius: 12px;
-          text-align: center;
-          border: 1px solid #e3dfff;
-        ">
+        <div class="card" style="flex: 1 1 200px; max-width: 230px; background: #f8f8fc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e3dfff;">
           <h3>Total de Cliques</h3>
           <p class="big" style="font-size: 26px; font-weight: bold; color: #5e3ea1;">{{ resumo.total_cliques }}</p>
         </div>
-        <div class="card" style="
-          flex: 1 1 200px;
-          max-width: 230px;
-          background: #f8f8fc;
-          padding: 20px;
-          border-radius: 12px;
-          text-align: center;
-          border: 1px solid #e3dfff;
-        ">
+        <div class="card" style="flex: 1 1 200px; max-width: 230px; background: #f8f8fc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e3dfff;">
           <h3>Grupos Ativos</h3>
           <p class="big" style="font-size: 26px; font-weight: bold; color: #5e3ea1;">{{ resumo.total_grupos }}</p>
         </div>
-        <div class="card" style="
-          flex: 1 1 200px;
-          max-width: 230px;
-          background: #f8f8fc;
-          padding: 20px;
-          border-radius: 12px;
-          text-align: center;
-          border: 1px solid #e3dfff;
-        ">
+        <div class="card" style="flex: 1 1 200px; max-width: 230px; background: #f8f8fc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e3dfff;">
           <h3>Média por Grupo</h3>
           <p class="big" style="font-size: 26px; font-weight: bold; color: #5e3ea1;">{{ resumo.media_cliques }}</p>
         </div>
-        <div class="card" style="
-          flex: 1 1 200px;
-          max-width: 230px;
-          background: #f8f8fc;
-          padding: 20px;
-          border-radius: 12px;
-          text-align: center;
-          border: 1px solid #e3dfff;
-        ">
+        <div class="card" style="flex: 1 1 200px; max-width: 230px; background: #f8f8fc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e3dfff;">
           <h3>Mais Clicado</h3>
           <p class="big" style="font-size: 24px; font-weight: bold; color: #5e3ea1;">{{ resumo.mais_clicado }}</p>
         </div>
