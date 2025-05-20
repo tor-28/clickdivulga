@@ -11,6 +11,7 @@
     <div class="menu">
       <a href="/painel"><i>🏠</i> Dashboard</a>
       <a href="/criar-link" class="active"><i>➕</i> Criar Link</a>
+      <a href="/grupos"><i>📈</i> Desempenho por Grupos</a>
       <a href="/logout"><i>🚪</i> Sair</a>
     </div>
   </div>
@@ -48,6 +49,39 @@
         e poderá ser usado para rastrear cliques e engajamento com segurança.
       </p>
     </form>
+
+    <hr>
+
+    <div class="lista-links">
+      <h2>🧾 Seus Links Criados</h2>
+      {% if links %}
+        <table>
+          <thead>
+            <tr>
+              <th>Slug</th>
+              <th>Tipo</th>
+              <th>Cliques</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for link in links %}
+              <tr>
+                <td>{{ link.slug }}</td>
+                <td>{{ link.categoria }}</td>
+                <td>{{ link.cliques }}</td>
+                <td>
+                  <a href="/editar-link/{{ link.id }}" class="btn">✏️ Editar</a>
+                  <a href="/excluir-link/{{ link.id }}" class="btn danger" onclick="return confirm('Tem certeza que deseja excluir este link?')">🗑️ Excluir</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>Você ainda não criou nenhum link.</p>
+      {% endif %}
+    </div>
   </div>
 </body>
 </html>
