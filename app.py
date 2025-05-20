@@ -311,44 +311,58 @@ def grupos():
             doc.reference.update({"entradas": entradas})
         return redirect("/grupos")
 
-    # 📅 Filtro por data
-    filtro = request.args.get("filtro", "todos")
-    dias = int(filtro) if filtro.isdigit() else None
+    # Filtros
+    filtro_data = request.args.get("filtro", "todos")
+    filtro_tipo = request.args.get("tipo", "grupo")
+    dias = int(filtro_data) if filtro_data.isdigit() else None
     data_limite = datetime.now() - timedelta(days=dias) if dias else None
 
-    # 🔎 Buscar grupos
-    grupos_query = db.collection("links_encurtados") \
-        .where("uid", "==", uid) \
-        .where("categoria", "==", "grupo")
+    # Coleta dos grupos filtrados
+    grupos_query = db.collection("links_encurtados").where("uid", "==", uid)
+    if filtro_tipo != "todos":
+        grupos_query = grupos_query.where("categoria", "==", filtro_tipo)
     grupos_ref = grupos_query.stream()
 
-    grupos = []
+    grupos, comparativo_labels, comparativo_data = [], [], []
+    total_cliques = 0
+
     for doc in grupos_ref:
         dados = doc.to_dict()
         slug = dados.get("slug")
         criado_em = dados.get("criado_em", "")
-        if data_limite:
-            try:
-                if isinstance(criado_em, str):
-                    data_criacao = datetime.fromisoformat(criado_em)
-                else:
-                    data_criacao = criado_em
-                if data_criacao < data_limite:
-                    continue
-            except:
-                pass
+        try:
+            dt_criado = datetime.fromisoformat(criado_em) if isinstance(criado_em, str) else criado_em
+            if data_limite and dt_criado < data_limite:
+                continue
+        except:
+            continue
+
         cliques = int(dados.get("cliques", 0))
         entradas = int(dados.get("entradas", 0))
         conversao = round((entradas / cliques) * 100, 2) if cliques > 0 else 0
+
+        # Etiquetas visuais
+        etiquetas = []
+        if conversao >= 70:
+            etiquetas.append("🟢 Alta Conversão")
+        if cliques < 10:
+            etiquetas.append("🟡 Baixo Tráfego")
+        if entradas == 0:
+            etiquetas.append("🔴 Sem Entrada")
+
         grupos.append({
             "slug": slug,
             "cliques": cliques,
             "entradas": entradas,
-            "conversao": conversao
+            "conversao": conversao,
+            "etiquetas": etiquetas
         })
 
-    # 🧠 Resumo
-    total_cliques = sum(g["cliques"] for g in grupos)
+        comparativo_labels.append(slug)
+        comparativo_data.append(cliques)
+        total_cliques += cliques
+
+    # Resumo
     total_grupos = len(grupos)
     media_cliques = round(total_cliques / total_grupos, 2) if total_grupos else 0
     mais_clicado = max(grupos, key=lambda g: g["cliques"])["slug"] if grupos else "Nenhum"
@@ -360,7 +374,7 @@ def grupos():
         "mais_clicado": mais_clicado
     }
 
-    # 📊 Cliques por hora
+    # Cliques por hora (gráfico)
     cliques_por_hora = [0] * 24
     logs = db.collection("logs_cliques").where("uid", "==", uid).stream()
     for doc in logs:
@@ -374,16 +388,12 @@ def grupos():
         except:
             continue
 
-    # 🏆 Rankings
+    # Rankings
     ranking_cliques = sorted(grupos, key=lambda g: g["cliques"], reverse=True)[:5]
     ranking_conversao = sorted(grupos, key=lambda g: g["conversao"], reverse=True)[:5]
     ranking_entradas = sorted(grupos, key=lambda g: g["entradas"], reverse=True)[:5]
 
-    # 📈 Gráfico comparativo
-    comparativo_labels = [g["slug"] for g in grupos]
-    comparativo_data = [g["cliques"] for g in grupos]
-
-    # 💡 Recomendações
+    # Recomendações inteligentes
     recomendacoes = []
     for g in grupos:
         if g["conversao"] >= 80 and g["cliques"] >= 30:
@@ -395,9 +405,10 @@ def grupos():
 
     return render_template("desempenho_de_grupos.html",
         grupos=grupos,
-        cliques=cliques_por_hora,
+        filtro=filtro_data,
+        tipo=filtro_tipo,
         resumo=resumo,
-        filtro=filtro,
+        cliques=cliques_por_hora,
         ranking_cliques=ranking_cliques,
         ranking_conversao=ranking_conversao,
         ranking_entradas=ranking_entradas,
