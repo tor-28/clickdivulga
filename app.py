@@ -252,24 +252,34 @@ def editar_link(id):
 
 @app.route("/r/<slug>")
 def redirecionar(slug):
-    doc = db.collection("links_encurtados").document(slug).get()
-    if doc.exists:
+    # Busca por slug via where (já que os docs não usam slug como ID)
+    doc_ref = db.collection("links_encurtados").where("slug", "==", slug).limit(1).stream()
+    doc = next(doc_ref, None)
+
+    if doc:
         dados = doc.to_dict()
 
-        db.collection("links_encurtados").document(slug).update({
+        # Atualiza contador
+        doc.reference.update({
             "cliques": firestore.Increment(1)
         })
+
+        # Salva clique com timestamp real
         db.collection("logs_cliques").add({
             "slug": slug,
             "uid": dados.get("uid", ""),
-            "data": datetime.now().isoformat(),
-            "ip": request.remote_addr
+            "categoria": dados.get("categoria", ""),
+            "data": datetime.now(),  # agora é timestamp
+            "ip": request.remote_addr,
+            "user_agent": request.headers.get("User-Agent")
         })
 
-        if dados.get("tipo") == "contador":
+        # Se for um link do tipo contador, não redireciona
+        if dados.get("categoria") == "contador":
             return render_template("contador_clicks.html", slug=slug)
 
-        return redirect(dados["url_destino"])
+        return redirect(dados.get("url_destino", "/"))
+
     return "Link não encontrado", 404
 
 @app.route("/grupos", methods=["GET", "POST"])
