@@ -277,21 +277,25 @@ def redirecionar(slug):
 def grupos():
     uid = session["usuario"]["uid"]
 
-    # Atualização manual de entradas
     if request.method == "POST":
         slug = request.form["slug"]
         entradas = int(request.form.get("entradas", 0))
 
-        doc_ref = db.collection("links_encurtados").where("uid", "==", uid).where("slug", "==", slug).limit(1)
-        docs = list(doc_ref.stream())
-        if docs:
-            docs[0].reference.update({"entradas": entradas})
+        # Busca segura por slug + uid
+        ref = db.collection("links_encurtados") \
+            .where("uid", "==", uid) \
+            .where("slug", "==", slug) \
+            .limit(1).stream()
+
+        doc = next(ref, None)
+        if doc:
+            doc.reference.update({"entradas": entradas})
+
         return redirect("/grupos")
 
-    # Buscar todos os links de categoria grupo
     grupos_ref = db.collection("links_encurtados") \
         .where("uid", "==", uid) \
-        .where("categoria", "==", "whatsapp") \
+        .where("categoria", "==", "grupo") \
         .stream()
 
     grupos = []
@@ -316,12 +320,21 @@ def grupos():
 def atualizar_entradas():
     slug = request.form.get("slug")
     entradas = int(request.form.get("entradas", 0))
+    uid = session["usuario"]["uid"]
 
     try:
-        db.collection("links_encurtados").document(slug).update({
-            "entradas": entradas
-        })
-        flash("Entradas atualizadas com sucesso!", "success")
+        ref = db.collection("links_encurtados") \
+            .where("uid", "==", uid) \
+            .where("slug", "==", slug) \
+            .limit(1).stream()
+
+        doc = next(ref, None)
+        if doc:
+            doc.reference.update({"entradas": entradas})
+            flash("Entradas atualizadas com sucesso!", "success")
+        else:
+            flash("Link não encontrado.", "error")
+
     except Exception as e:
         print("Erro ao atualizar entradas:", e)
         flash("Erro ao atualizar entradas.", "error")
