@@ -198,7 +198,7 @@ def criar_link():
             "categoria": dados.get("categoria", "indefinido")
         })
 
-    return render_template("criar_link.html", links=links)
+    return render_template("criar_link_clickdivulga.html", links=links)
 
 @app.route("/excluir-link/<id>")
 @verificar_login
