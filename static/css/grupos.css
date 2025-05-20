@@ -191,28 +191,30 @@ body {
 }
 
 /* BOTÕES GERAIS */
-.btn {
+..btn {
   display: inline-block;
   padding: 8px 14px;
-  background-color: #6e8cd1; /* tom azul claro para "Editar" */
-  color: white;
+  background-color: #4c5fa8; /* azul escuro */
+  color: #ffffff; /* texto branco com alto contraste */
   border: none;
   border-radius: 6px;
   text-decoration: none;
   font-size: 0.9rem;
+  font-weight: 500;
   transition: background 0.2s ease;
 }
 
 .btn:hover {
-  background-color: #5b79bd;
+  background-color: #3a4a85;
 }
 
 .btn.danger {
-  background-color: #f08181; /* tom coral claro para "Excluir" */
+  background-color: #c94747; /* vermelho mais fechado e legível */
+  color: #fff;
 }
 
 .btn.danger:hover {
-  background-color: #da5f5f;
+  background-color: #a73535;
 }
 
 /* MENSAGENS */
