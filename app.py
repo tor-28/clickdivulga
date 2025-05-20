@@ -208,8 +208,21 @@ def excluir_link(id):
     doc = doc_ref.get()
 
     if doc.exists and doc.to_dict().get("uid") == uid:
+        dados = doc.to_dict()
+        slug = dados.get("slug")
+
+        # 1. Exclui o link
         doc_ref.delete()
-        flash("Link excluído com sucesso!", "success")
+
+        # 2. Exclui todos os logs de cliques com o mesmo slug e uid
+        logs = db.collection("logs_cliques") \
+            .where("slug", "==", slug) \
+            .where("uid", "==", uid) \
+            .stream()
+        for log in logs:
+            log.reference.delete()
+
+        flash(f"Link e cliques do grupo '{slug}' excluídos com sucesso!", "success")
     else:
         flash("Ação não autorizada ou link inexistente.", "error")
 
