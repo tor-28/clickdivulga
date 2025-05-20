@@ -6,27 +6,38 @@
   <link rel="stylesheet" href="../static/css/criar_link.css">
 </head>
 <body>
-  <div class="container">
-    <h2>Criar novo link</h2>
+  <div class="sidebar">
+    <h2>ClickDivulga</h2>
+    <div class="menu">
+      <a href="/painel"><i>🏠</i> Dashboard</a>
+      <a href="/criar-link" class="active"><i>➕</i> Criar Link</a>
+      <a href="/logout"><i>🚪</i> Sair</a>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="topbar">
+      <h1>📎 Gerar Link Camuflado com Rastreamento</h1>
+    </div>
+
     <form method="POST">
-      <label>Título descritivo:</label>
-      <input type="text" name="titulo" placeholder="Ex: Grupo VIP de Ofertas" required>
+      <label>
+        Nome do Link (slug personalizado):
+        <input type="text" name="slug" placeholder="ex: grupo-vip-ofertas" required>
+      </label>
 
-      <label>URL de destino:</label>
-      <input type="url" name="url_destino" placeholder="https://chat.whatsapp.com/..." required>
+      <label>
+        URL de destino (link final):
+        <input type="url" name="url_destino" placeholder="Cole aqui o link do WhatsApp, produto ou página" required>
+      </label>
 
-      <label>Slug personalizado:</label>
-      <input type="text" name="slug" placeholder="grupo-vip" required>
+      <button type="submit">Criar Link Camuflado</button>
 
-      <label>Categoria:</label>
-      <select name="categoria" required>
-        <option value="Grupo">Grupo WhatsApp</option>
-        <option value="Produto">Produto</option>
-        <option value="Promoção">Promoção</option>
-        <option value="Outros">Outros</option>
-      </select>
-
-      <button type="submit">Criar Link</button>
+      <p class="info">
+        O link gerado será camuflado como: <br>
+        <code>https://clickdivulga.com/r/&lt;slug&gt;</code><br>
+        e poderá ser usado para rastrear cliques e engajamento com segurança.
+      </p>
     </form>
   </div>
 </body>
