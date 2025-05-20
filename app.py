@@ -63,19 +63,49 @@ def logout():
 @verificar_login
 def painel():
     uid = session["usuario"]["uid"]
-    docs = db.collection("links_encurtados").where("uid", "==", uid).stream()
-    links = [d.to_dict() for d in docs]
+    print(f"📊 Carregando dashboard para UID: {uid}")
 
-    links_hoje = sum(1 for l in links if l.get("criado_em", "").startswith(datetime.now().strftime("%Y-%m-%d")))
-    cliques_mes = sum(l.get("cliques", 0) for l in links if datetime.now().strftime("%Y-%m") in l.get("criado_em", ""))
-    produto_mais_clicado = max(links, key=lambda x: x.get("cliques", 0), default={}).get("titulo", "-")
+    try:
+        # Consulta geral dos links do usuário
+        docs = db.collection("links_encurtados").where("uid", "==", uid).stream()
 
-    return render_template("dashboard_clickdivulga.html",
-        links_hoje=links_hoje,
-        cliques_mes=cliques_mes,
-        produto_mais_clicado=produto_mais_clicado,
-        links_recentes=sorted(links, key=lambda x: x.get("criado_em", ""), reverse=True)[:6]
-    )
+        links = []
+        cliques_total = 0
+        cliques_por_dia = {}
+        grupo_mais_clicado = {"slug": "", "cliques": 0}
+        produto_mais_clicado = {"slug": "", "cliques": 0}
+        links_recentes = []
+
+        for doc in docs:
+            data = doc.to_dict()
+            data["slug"] = doc.id
+            links.append(data)
+            cliques_total += data.get("cliques", 0)
+
+            # Agrupar por categoria
+            categoria = data.get("categoria", "")
+            if categoria == "grupo" and data.get("cliques", 0) > grupo_mais_clicado["cliques"]:
+                grupo_mais_clicado = {"slug": data["slug"], "cliques": data["cliques"]}
+            elif categoria == "produto" and data.get("cliques", 0) > produto_mais_clicado["cliques"]:
+                produto_mais_clicado = {"slug": data["slug"], "cliques": data["cliques"]}
+
+        # Links ordenados por data (recente primeiro)
+        links_ordenados = sorted(links, key=lambda x: x.get("criado_em", ""), reverse=True)
+        links_recentes = links_ordenados[:4]
+
+        # Contar links criados hoje
+        hoje = datetime.now().date()
+        links_hoje = sum(1 for l in links if "criado_em" in l and datetime.fromisoformat(l["criado_em"]).date() == hoje)
+
+        return render_template("dashboard_clickdivulga.html",
+                               links_hoje=links_hoje,
+                               cliques_mes=cliques_total,
+                               produto_mais_clicado=produto_mais_clicado["slug"] or "N/A",
+                               grupo_mais_clicado=grupo_mais_clicado["slug"] or "N/A",
+                               links_recentes=links_recentes)
+    except Exception as e:
+        print("❌ Erro ao carregar painel:", e)
+        return "Erro ao carregar painel", 500
 
 @app.route("/criar-link", methods=["GET", "POST"])
 @verificar_login
