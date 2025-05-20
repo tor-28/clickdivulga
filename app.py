@@ -201,3 +201,31 @@ def atualizar_entradas():
         flash("Erro ao atualizar entradas.", "error")
 
     return redirect(url_for("grupos"))
+
+@app.route("/atualizar-categorias")
+def atualizar_categorias_links():
+    try:
+        links = db.collection("links_encurtados").stream()
+        atualizados = 0
+
+        for doc in links:
+            dados = doc.to_dict()
+            url = dados.get("url_destino", "")
+            categoria = dados.get("categoria", "")
+
+            # Detectar nova categoria, apenas se não houver ou estiver incorreta
+            nova_categoria = "outro"
+            if "whatsapp" in url:
+                nova_categoria = "grupo"
+            elif "shopee.com.br" in url:
+                nova_categoria = "produto"
+
+            if categoria != nova_categoria:
+                doc.reference.update({"categoria": nova_categoria})
+                atualizados += 1
+
+        return f"✅ Categorias atualizadas com sucesso. Total alterados: {atualizados}"
+    
+    except Exception as e:
+        return f"❌ Erro ao atualizar categorias: {e}"
+
