@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Redirecionando...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 3rem;
+      background-color: #f4f4f4;
+    }
+    .loading {
+      margin-top: 2rem;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <h2>🔗 Redirecionando para o WhatsApp...</h2>
+  <p class="loading">Se não for redirecionado automaticamente, <a id="fallback" href="{{ url }}">clique aqui</a>.</p>
+
+  <script>
+    const url = "{{ url }}";
+    const code = url.split('/').pop();
+    const isMobile = /Android|iPhone/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      window.location.href = "whatsapp://chat?code=" + code;
+
+      // Fallback para URL normal após 2 segundos
+      setTimeout(() => {
+        window.location.href = url;
+      }, 2000);
+    } else {
+      window.location.href = url;
+    }
+  </script>
+</body>
+</html>
