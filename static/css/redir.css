@@ -1,0 +1,25 @@
+body {
+  font-family: 'Segoe UI', sans-serif;
+  text-align: center;
+  padding: 3rem 1rem;
+  background-color: #f9f9f9;
+  color: #333;
+}
+
+h2 {
+  color: #6c2bd9;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.loading {
+  font-size: 1.1rem;
+  color: #555;
+  margin-top: 2rem;
+}
+
+a#fallback {
+  color: #6c2bd9;
+  font-weight: bold;
+  text-decoration: none;
+}
