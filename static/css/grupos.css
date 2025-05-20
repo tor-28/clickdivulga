@@ -191,31 +191,32 @@ body {
 }
 
 /* BOTÕES GERAIS */
-..btn {
+.btn {
   display: inline-block;
   padding: 8px 14px;
-  background-color: #4c5fa8; /* azul escuro */
-  color: #ffffff; /* texto branco com alto contraste */
+  background-color: #5e3ea1;
+  color: white;
   border: none;
   border-radius: 6px;
   text-decoration: none;
   font-size: 0.9rem;
-  font-weight: 500;
   transition: background 0.2s ease;
+  font-weight: 500;
 }
 
 .btn:hover {
-  background-color: #3a4a85;
+  background-color: #432a85;
 }
 
 .btn.danger {
-  background-color: #c94747; /* vermelho mais fechado e legível */
-  color: #fff;
+  background-color: #e57373;
+  color: white;
 }
 
 .btn.danger:hover {
-  background-color: #a73535;
+  background-color: #c94444;
 }
+
 
 /* MENSAGENS */
 .copiado-msg {
