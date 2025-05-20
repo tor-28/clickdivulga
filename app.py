@@ -111,7 +111,7 @@ def painel():
         .order_by("cliques", direction=firestore.Query.DESCENDING) \
         .limit(1).stream()
     produto_mais_clicado = next(produtos, None)
-    nome_produto = produto_mais_clicado.get("titulo", "Sem nome") if produto_mais_clicado else "Nenhum"
+    nome_produto = produto_mais_clicado.get("titulo") if produto_mais_clicado and "titulo" in produto_mais_clicado.to_dict() else "Sem nome"
 
     grupos = db.collection("links_encurtados") \
         .where("uid", "==", uid) \
