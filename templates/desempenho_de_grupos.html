@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Desempenho de Grupos - ClickDivulga</title>
+  <link rel="stylesheet" href="../static/css/grupos.css">
+</head>
+<body>
+  <div class="sidebar">
+    <h2>ClickDivulga</h2>
+    <div class="menu">
+      <a href="/painel"><i>🏠</i> Dashboard</a>
+      <a href="/criar-link"><i>➕</i> Criar Link</a>
+      <a href="/grupos" class="active"><i>📊</i> Desempenho de Grupos</a>
+      <a href="/logout"><i>🚪</i> Sair</a>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="topbar">
+      <h1>📊 Desempenho de Grupos no WhatsApp</h1>
+    </div>
+
+    <table class="group-table">
+      <thead>
+        <tr>
+          <th>Slug</th>
+          <th>Link</th>
+          <th>Cliques</th>
+          <th>Entradas (manual)</th>
+          <th>Taxa de Conversão</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for grupo in grupos %}
+        <tr>
+          <td>{{ grupo.slug }}</td>
+          <td><a href="/r/{{ grupo.slug }}" target="_blank">Abrir</a></td>
+          <td>{{ grupo.cliques }}</td>
+          <td>
+            <form method="POST" action="/atualizar-entradas">
+              <input type="hidden" name="slug" value="{{ grupo.slug }}">
+              <input type="number" name="entradas" value="{{ grupo.entradas }}" min="0" class="entrada-input">
+              <button type="submit">Salvar</button>
+            </form>
+          </td>
+          <td>{{ grupo.conversao }}%</td>
+          <td><a href="/r/{{ grupo.slug }}" target="_blank">Copiar Link</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
