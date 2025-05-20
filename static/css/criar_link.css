@@ -48,9 +48,8 @@ body {
   padding: 2rem;
 }
 
-h1 {
+.topbar {
   margin-bottom: 1.5rem;
-  font-size: 1.5rem;
 }
 
 form {
@@ -63,14 +62,17 @@ form {
 
 label {
   display: block;
-  margin-bottom: 1rem;
+  margin-bottom: 1.2rem;
+  font-weight: 500;
 }
 
-input[type="text"], input[type="url"] {
+input[type="text"],
+input[type="url"] {
   width: 100%;
   padding: 0.8rem;
   border: 1px solid #ccc;
   border-radius: 8px;
+  margin-top: 0.4rem;
 }
 
 button {
@@ -80,5 +82,20 @@ button {
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
+  font-size: 1rem;
   cursor: pointer;
+}
+
+button:hover {
+  background-color: #5a23b8;
+}
+
+p.info {
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: #555;
+  background: #f8f8ff;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #6c2bd9;
 }
