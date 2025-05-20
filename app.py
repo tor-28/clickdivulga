@@ -83,8 +83,7 @@ def criar_link():
     if request.method == "POST":
         slug = request.form.get("slug").strip()
         destino = request.form.get("url_destino").strip()
-        titulo = request.form.get("titulo").strip()
-        categoria = request.form.get("categoria").strip()
+        tipo = request.form.get("tipo", "produto")
         uid = session["usuario"]["uid"]
 
         doc_ref = db.collection("links_encurtados").document(slug)
@@ -94,9 +93,8 @@ def criar_link():
         doc_ref.set({
             "slug": slug,
             "url_destino": destino,
-            "titulo": titulo,
-            "categoria": categoria,
             "uid": uid,
+            "tipo": tipo,
             "cliques": 0,
             "criado_em": datetime.now().isoformat()
         })
@@ -108,9 +106,7 @@ def redirecionar(slug):
     doc = db.collection("links_encurtados").document(slug).get()
     if doc.exists:
         dados = doc.to_dict()
-        url_destino = dados["url_destino"]
 
-        # Log de clique
         db.collection("links_encurtados").document(slug).update({
             "cliques": firestore.Increment(1)
         })
@@ -120,7 +116,8 @@ def redirecionar(slug):
             "ip": request.remote_addr
         })
 
-        # Renderiza página com redirecionamento inteligente
-        return render_template("redir_whatsapp.html", url=url_destino)
+        if dados.get("tipo") == "contador":
+            return render_template("contador_clicks.html", slug=slug)
 
+        return redirect(dados["url_destino"])
     return "Link não encontrado", 404
