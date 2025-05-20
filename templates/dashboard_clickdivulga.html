@@ -24,19 +24,19 @@
     <div class="cards">
       <div class="card">
         <h3>Links gerados hoje</h3>
-        <p class="big">{{ links_hoje }}</p>
+        <p class="big">{{ links_hoje or 0 }}</p>
       </div>
       <div class="card yellow">
         <h3>Cliques no mês</h3>
-        <p class="big">{{ cliques_mes }}</p>
+        <p class="big">{{ cliques_mes or 0 }}</p>
       </div>
       <div class="card">
         <h3>Produto mais clicado</h3>
-        <p class="big">{{ produto_mais_clicado }}</p>
+        <p class="big">{{ produto_mais_clicado or 'Nenhum' }}</p>
       </div>
       <div class="card">
         <h3>Grupo mais clicado</h3>
-        <p class="big">{{ grupo_mais_clicado }}</p>
+        <p class="big">{{ grupo_mais_clicado or 'Nenhum' }}</p>
       </div>
     </div>
 
@@ -45,9 +45,9 @@
       <div class="product-list">
         {% for link in links_recentes[:4] %}
           <div class="product-card">
-            <strong>{{ link.titulo or link.slug }}</strong><br>
-            <small>{{ link.cliques }} cliques - {{ link.categoria }}</small><br>
-            <button onclick="copiarLink('{{ link.slug }}', this)">Copiar Link</button>
+            <strong>{{ link.get('titulo') or link.get('slug') }}</strong><br>
+            <small>{{ link.get('cliques', 0) }} cliques - {{ link.get('categoria', 'Sem categoria') }}</small><br>
+            <button onclick="copiarLink('{{ link.get('slug') }}', this)">Copiar Link</button>
             <span class="copiado-msg" style="display:none; color:green; font-size: 0.9rem; margin-top: 4px;">✅ Copiado!</span>
           </div>
         {% endfor %}
