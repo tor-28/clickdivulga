@@ -69,7 +69,7 @@ body {
   color: #5e3ea1;
 }
 
-/* TABELA DE GRUPOS */
+/* TABELA */
 .group-table {
   width: 100%;
   border-collapse: collapse;
@@ -109,8 +109,9 @@ body {
   font-size: 0.95rem;
 }
 
+/* BOTÕES DENTRO DA TABELA */
 .group-table button {
-  background-color: #6c2bd9;
+  background-color: #4c61c0;
   color: white;
   padding: 0.4rem 0.8rem;
   border: none;
@@ -121,11 +122,11 @@ body {
 }
 
 .group-table button:hover {
-  background-color: #4e21ad;
+  background-color: #3e51a5;
 }
 
 .group-table a {
-  color: #6c2bd9;
+  color: #4c61c0;
   text-decoration: underline;
   font-weight: 500;
 }
@@ -189,11 +190,11 @@ body {
   color: #f57f17;
 }
 
-/* BOTÕES */
+/* BOTÕES GERAIS */
 .btn {
   display: inline-block;
   padding: 8px 14px;
-  background-color: #6c2bd9;
+  background-color: #4c61c0;
   color: white;
   border: none;
   border-radius: 6px;
@@ -203,15 +204,15 @@ body {
 }
 
 .btn:hover {
-  background-color: #4e21ad;
+  background-color: #3e51a5;
 }
 
 .btn.danger {
-  background-color: #d9534f;
+  background-color: #dc6666;
 }
 
 .btn.danger:hover {
-  background-color: #c9302c;
+  background-color: #c04c4c;
 }
 
 /* MENSAGENS */
@@ -249,7 +250,7 @@ body {
 }
 
 .product-card button {
-  background-color: #5e3ea1;
+  background-color: #4c61c0;
   color: white;
   border: none;
   padding: 8px 12px;
@@ -260,10 +261,10 @@ body {
 }
 
 .product-card button:hover {
-  background-color: #4b2995;
+  background-color: #3e51a5;
 }
 
-/* SCROLL RESPONSIVO */
+/* SCROLL */
 ::-webkit-scrollbar {
   width: 8px;
 }
