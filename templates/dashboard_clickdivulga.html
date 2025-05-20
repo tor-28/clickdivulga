@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Painel - ClickDivulga</title>
-  <link rel="stylesheet" href="../static/css/home.css">
+  <link rel="stylesheet" href="../static/css/grupos.css">
 </head>
 <body>
   <div class="sidebar">
@@ -21,49 +21,35 @@
       <h1>Bem-vindo, {{ session['usuario']['email'] }}</h1>
     </div>
 
-    <div class="cards">
-      <div class="card">
-        <h3>Links gerados hoje</h3>
-        <p class="big">{{ links_hoje or 0 }}</p>
-      </div>
-      <div class="card yellow">
-        <h3>Cliques no mês</h3>
-        <p class="big">{{ cliques_mes or 0 }}</p>
-      </div>
-      <div class="card">
-        <h3>Produto mais clicado</h3>
-        <p class="big">{{ produto_mais_clicado or 'Nenhum' }}</p>
-      </div>
-      <div class="card">
-        <h3>Grupo mais clicado</h3>
-        <p class="big">{{ grupo_mais_clicado or 'Nenhum' }}</p>
+    <!-- 🔹 Cards de Destaque -->
+    <div style="background: white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin: 30px auto; max-width: 1000px;">
+      <div class="cards" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px;">
+        <div class="card" style="flex: 1 1 200px; max-width: 230px; background: #f8f8fc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e3dfff;">
+          <h3>Links gerados hoje</h3>
+          <p class="big" style="font-size: 26px; font-weight: bold; color: #5e3ea1;">{{ links_hoje or 0 }}</p>
+        </div>
+        <div class="card" style="flex: 1 1 200px; max-width: 230px; background: #f8f8fc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e3dfff;">
+          <h3>Cliques no mês</h3>
+          <p class="big" style="font-size: 26px; font-weight: bold; color: #5e3ea1;">{{ cliques_mes or 0 }}</p>
+        </div>
+        <div class="card" style="flex: 1 1 200px; max-width: 230px; background: #f8f8fc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e3dfff;">
+          <h3>Produto mais clicado</h3>
+          <p class="big" style="font-size: 20px; font-weight: bold; color: #5e3ea1;">{{ produto_mais_clicado or 'Nenhum' }}</p>
+        </div>
+        <div class="card" style="flex: 1 1 200px; max-width: 230px; background: #f8f8fc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e3dfff;">
+          <h3>Grupo mais clicado</h3>
+          <p class="big" style="font-size: 20px; font-weight: bold; color: #5e3ea1;">{{ grupo_mais_clicado or 'Nenhum' }}</p>
+        </div>
       </div>
     </div>
 
-    <div class="products">
-      <h3>🔗 Seus Links Recentes</h3>
+    <!-- 🔗 Links Recentes -->
+    <div style="margin-top: 40px;">
+      <h2 style="margin-bottom: 20px;">🔗 Seus Links Recentes</h2>
       <div class="product-list">
         {% for link in links_recentes[:4] %}
           <div class="product-card">
             <strong>{{ link.get('titulo') or link.get('slug') }}</strong><br>
             <small>{{ link.get('cliques', 0) }} cliques - {{ link.get('categoria', 'Sem categoria') }}</small><br>
             <button onclick="copiarLink('{{ link.get('slug') }}', this)">Copiar Link</button>
-            <span class="copiado-msg" style="display:none; color:green; font-size: 0.9rem; margin-top: 4px;">✅ Copiado!</span>
-          </div>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-
-  <script>
-    function copiarLink(slug, botao) {
-      const url = window.location.origin + "/r/" + slug;
-      navigator.clipboard.writeText(url).then(() => {
-        const msg = botao.nextElementSibling;
-        msg.style.display = "inline";
-        setTimeout(() => { msg.style.display = "none"; }, 2000);
-      });
-    }
-  </script>
-</body>
-</html>
+            <span class="copiado-msg" style="display:none; color:green; font-size: 0.9rem; margin
