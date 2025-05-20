@@ -11,7 +11,7 @@
     <div class="menu">
       <a href="/painel" class="active"><i>🏠</i> Dashboard</a>
       <a href="/criar-link"><i>➕</i> Criar Link</a>
-      <a href="/grupos"><i>📊</i> Desempenho de Grupos</a>
+      <a href="/grupos"><i>📈</i> Desempenho</a>
       <a href="/logout"><i>🚪</i> Sair</a>
     </div>
   </div>
@@ -35,16 +35,15 @@
         <p class="big">{{ produto_mais_clicado }}</p>
       </div>
       <div class="card">
-        <h3>Ações Rápidas</h3>
-        <a href="/criar-link" class="btn">➕ Criar novo link</a><br><br>
-        <a href="/grupos" class="btn" style="background-color: #2b8bd9;">📊 Desempenho de Grupos</a>
+        <h3>Grupo mais clicado</h3>
+        <p class="big">{{ grupo_mais_clicado }}</p>
       </div>
     </div>
 
     <div class="products">
       <h3>🔗 Seus Links Recentes</h3>
       <div class="product-list">
-        {% for link in links_recentes %}
+        {% for link in links_recentes[:4] %}
           <div class="product-card">
             <strong>{{ link.titulo or link.slug }}</strong><br>
             <small>{{ link.cliques }} cliques - {{ link.categoria }}</small><br>
