@@ -65,47 +65,68 @@ def painel():
     uid = session["usuario"]["uid"]
     print(f"📊 Carregando dashboard para UID: {uid}")
 
-    try:
-        # Consulta geral dos links do usuário
-        docs = db.collection("links_encurtados").where("uid", "==", uid).stream()
+    # 🔄 Atualiza categorias dos links se estiverem vazias
+    atualizar_categoria_links(uid)
 
-        links = []
-        cliques_total = 0
-        cliques_por_dia = {}
-        grupo_mais_clicado = {"slug": "", "cliques": 0}
-        produto_mais_clicado = {"slug": "", "cliques": 0}
-        links_recentes = []
+    # 🔢 Links do dia
+    hoje = datetime.now().date().isoformat()
+    links_hoje = db.collection("links_encurtados") \
+        .where("uid", "==", uid) \
+        .where("criado_em", ">=", hoje) \
+        .stream()
+    total_links_hoje = sum(1 for _ in links_hoje)
 
-        for doc in docs:
-            data = doc.to_dict()
-            data["slug"] = doc.id
-            links.append(data)
-            cliques_total += data.get("cliques", 0)
+    # 📈 Total de cliques no mês
+    agora = datetime.now()
+    inicio_mes = agora.replace(day=1).isoformat()
+    cliques_mes = 0
+    links_mes = db.collection("logs_cliques") \
+        .where("data", ">=", inicio_mes) \
+        .where("uid", "==", uid) \
+        .stream()
+    for _ in links_mes:
+        cliques_mes += 1
 
-            # Agrupar por categoria
-            categoria = data.get("categoria", "")
-            if categoria == "grupo" and data.get("cliques", 0) > grupo_mais_clicado["cliques"]:
-                grupo_mais_clicado = {"slug": data["slug"], "cliques": data["cliques"]}
-            elif categoria == "produto" and data.get("cliques", 0) > produto_mais_clicado["cliques"]:
-                produto_mais_clicado = {"slug": data["slug"], "cliques": data["cliques"]}
+    # 🥇 Produto mais clicado
+    produtos = db.collection("links_encurtados") \
+        .where("uid", "==", uid) \
+        .where("categoria", "==", "produto") \
+        .order_by("cliques", direction=firestore.Query.DESCENDING) \
+        .limit(1).stream()
+    produto_mais_clicado = next(produtos, None)
+    nome_produto = produto_mais_clicado.get("titulo") if produto_mais_clicado else "Nenhum"
 
-        # Links ordenados por data (recente primeiro)
-        links_ordenados = sorted(links, key=lambda x: x.get("criado_em", ""), reverse=True)
-        links_recentes = links_ordenados[:4]
+    # 🧑‍🤝‍🧑 Grupo mais clicado
+    grupos = db.collection("links_encurtados") \
+        .where("uid", "==", uid) \
+        .where("categoria", "==", "grupo") \
+        .order_by("cliques", direction=firestore.Query.DESCENDING) \
+        .limit(1).stream()
+    grupo_mais_clicado = next(grupos, None)
+    nome_grupo = grupo_mais_clicado.get("titulo") if grupo_mais_clicado else "Nenhum"
 
-        # Contar links criados hoje
-        hoje = datetime.now().date()
-        links_hoje = sum(1 for l in links if "criado_em" in l and datetime.fromisoformat(l["criado_em"]).date() == hoje)
+    # 🔗 Links recentes
+    links_recentes = db.collection("links_encurtados") \
+        .where("uid", "==", uid) \
+        .order_by("criado_em", direction=firestore.Query.DESCENDING) \
+        .limit(4).stream()
+    links_formatados = [
+        {
+            "slug": doc.get("slug"),
+            "titulo": doc.get("titulo"),
+            "cliques": doc.get("cliques", 0),
+            "categoria": doc.get("categoria", "indefinido")
+        }
+        for doc in links_recentes
+    ]
 
-        return render_template("dashboard_clickdivulga.html",
-                               links_hoje=links_hoje,
-                               cliques_mes=cliques_total,
-                               produto_mais_clicado=produto_mais_clicado["slug"] or "N/A",
-                               grupo_mais_clicado=grupo_mais_clicado["slug"] or "N/A",
-                               links_recentes=links_recentes)
-    except Exception as e:
-        print("❌ Erro ao carregar painel:", e)
-        return "Erro ao carregar painel", 500
+    return render_template("dashboard_clickdivulga.html",
+        links_hoje=total_links_hoje,
+        cliques_mes=cliques_mes,
+        produto_mais_clicado=nome_produto,
+        grupo_mais_clicado=nome_grupo,
+        links_recentes=links_formatados
+    )
 
 @app.route("/criar-link", methods=["GET", "POST"])
 @verificar_login
