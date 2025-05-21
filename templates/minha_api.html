@@ -2,28 +2,43 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Minha API Shopee</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='grupos.css') }}">
+  <meta charset="UTF-8">
+  <title>API Shopee - ClickDivulga</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='grupos.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1>🔐 Cadastro da API Shopee</h1>
-        <form method="POST" class="formulario">
-            <label for="client_id">🆔 Client ID</label>
-            <input type="text" id="client_id" name="client_id" value="{{ dados.get('client_id', '') }}" required>
-
-            <label for="client_secret">🔑 Client Secret</label>
-            <input type="text" id="client_secret" name="client_secret" value="{{ dados.get('client_secret', '') }}" required>
-
-            <label for="access_token">🔓 Access Token</label>
-            <input type="text" id="access_token" name="access_token" value="{{ dados.get('access_token', '') }}" required>
-
-            <label for="refresh_token">♻️ Refresh Token</label>
-            <input type="text" id="refresh_token" name="refresh_token" value="{{ dados.get('refresh_token', '') }}">
-
-            <button type="submit">💾 Salvar Credenciais</button>
-        </form>
+  <div class="sidebar">
+    <h2>ClickDivulga</h2>
+    <div class="menu">
+      <a href="/painel"><i>🏠</i> Dashboard</a>
+      <a href="/criar-link"><i>➕</i> Criar Link</a>
+      <a href="/grupos"><i>📊</i> Desempenho de Grupos</a>
+      <a href="/produtos"><i>🛍️</i> Produtos</a>
+      <a href="/minha-api" class="active"><i>🔐</i> API Shopee</a>
+      <a href="/logout"><i>🚪</i> Sair</a>
     </div>
+  </div>
+
+  <div class="content">
+    <div class="topbar">
+      <h1>🔐 Credenciais da API Shopee</h1>
+    </div>
+
+    <div style="background: white; max-width: 600px; margin: auto; padding: 30px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06);">
+      <form method="POST">
+        <div style="margin-bottom: 20px;">
+          <label for="app_id" style="display: block; margin-bottom: 6px; font-weight: 600;">🆔 App ID</label>
+          <input type="text" id="app_id" name="app_id" value="{{ dados.get('app_id', '') }}" placeholder="Seu App ID da Shopee" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" required>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+          <label for="app_secret" style="display: block; margin-bottom: 6px; font-weight: 600;">🔑 App Secret</label>
+          <input type="text" id="app_secret" name="app_secret" value="{{ dados.get('app_secret', '') }}" placeholder="Seu App Secret da Shopee" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" required>
+        </div>
+
+        <button type="submit" class="btn" style="width: 100%;">💾 Salvar Credenciais</button>
+      </form>
+    </div>
+  </div>
 </body>
 </html>
