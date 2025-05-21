@@ -24,19 +24,21 @@
       <h1>🔐 Credenciais da API Shopee</h1>
     </div>
 
-    <div style="background: white; max-width: 600px; margin: auto; padding: 30px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06);">
+    <div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 40px; max-width: 700px;">
+      <h2 style="margin-bottom: 20px; color: #5e3ea1;">📎 Salve suas credenciais para consultar produtos com precisão</h2>
+
       <form method="POST">
         <div style="margin-bottom: 20px;">
-          <label for="app_id" style="display: block; margin-bottom: 6px; font-weight: 600;">🆔 App ID</label>
-          <input type="text" id="app_id" name="app_id" value="{{ dados.get('app_id', '') }}" placeholder="Seu App ID da Shopee" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" required>
+          <label style="font-weight: 600;">App ID:</label>
+          <input type="text" name="app_id" placeholder="Seu App ID da Shopee" value="{{ dados.get('app_id', '') }}" required style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
         </div>
 
-        <div style="margin-bottom: 30px;">
-          <label for="app_secret" style="display: block; margin-bottom: 6px; font-weight: 600;">🔑 App Secret</label>
-          <input type="text" id="app_secret" name="app_secret" value="{{ dados.get('app_secret', '') }}" placeholder="Seu App Secret da Shopee" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" required>
+        <div style="margin-bottom: 20px;">
+          <label style="font-weight: 600;">App Secret:</label>
+          <input type="text" name="app_secret" placeholder="Sua chave secreta da Shopee" value="{{ dados.get('app_secret', '') }}" required style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
         </div>
 
-        <button type="submit" class="btn" style="width: 100%;">💾 Salvar Credenciais</button>
+        <button type="submit" style="background-color: #5e3ea1; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">💾 Salvar API</button>
       </form>
     </div>
   </div>
