@@ -551,6 +551,11 @@ def buscar_produto():
 
     try:
         response = requests.post("https://affiliate.shopee.com.br/api/v1/product/info", headers=headers, json=body)
+
+        print("🔁 Resposta da Shopee:")
+        print(response.status_code)
+        print(response.text)
+
         if response.status_code == 200:
             result = response.json().get("data", [])
             produtos = []
@@ -565,8 +570,9 @@ def buscar_produto():
                 })
             return render_template("produtos_clickdivulga.html", produtos=produtos)
         else:
-            flash(f"Erro ao consultar API: {response.status_code}", "error")
+            flash(f"Erro {response.status_code}: {response.text}", "error")
             return redirect("/produtos")
+
     except Exception as e:
         flash(f"Erro na requisição: {str(e)}", "error")
         return redirect("/produtos")
