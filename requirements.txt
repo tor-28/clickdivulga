@@ -1,5 +1,6 @@
 Flask
 firebase-admin
-gunicorn
 python-dotenv
+requests
 apscheduler
+gunicorn
