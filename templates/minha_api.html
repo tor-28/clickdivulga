@@ -1,0 +1,29 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Minha API Shopee</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='grupos.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Cadastro da API Shopee</h1>
+        <form method="POST" class="formulario">
+            <label for="client_id">🆔 Client ID</label>
+            <input type="text" id="client_id" name="client_id" value="{{ dados.get('client_id', '') }}" required>
+
+            <label for="client_secret">🔑 Client Secret</label>
+            <input type="text" id="client_secret" name="client_secret" value="{{ dados.get('client_secret', '') }}" required>
+
+            <label for="access_token">🔓 Access Token</label>
+            <input type="text" id="access_token" name="access_token" value="{{ dados.get('access_token', '') }}" required>
+
+            <label for="refresh_token">♻️ Refresh Token</label>
+            <input type="text" id="refresh_token" name="refresh_token" value="{{ dados.get('refresh_token', '') }}">
+
+            <button type="submit">💾 Salvar Credenciais</button>
+        </form>
+    </div>
+</body>
+</html>
