@@ -499,6 +499,73 @@ def produtos():
 if __name__ == "__main__":
     app.run(debug=True)
 
+@app.route("/buscar-produto", methods=["POST"])
+@verificar_login
+def buscar_produto():
+    import re
+    import time
+    import hmac
+    import hashlib
+    import requests
+
+    uid = session["usuario"]["uid"]
+    url = request.form.get("url")
+
+    match = re.search(r"-i\.(\d+)\.(\d+)", url)
+    if not match:
+        flash("URL inválida. Não foi possível extrair shop_id e item_id.", "error")
+        return redirect("/produtos")
+
+    shop_id, item_id = match.groups()
+
+    # Buscar App ID e Secret do afiliado
+    doc = db.collection("api_shopee").document(uid).get()
+    if not doc.exists:
+        flash("Você precisa cadastrar sua API Shopee antes de buscar produtos.", "error")
+        return redirect("/minha-api")
+
+    cred = doc.to_dict()
+    app_id = cred.get("app_id")
+    app_secret = cred.get("app_secret")
+    timestamp = str(int(time.time() * 1000))
+    base_string = app_id + timestamp
+    sign = hmac.new(app_secret.encode(), base_string.encode(), hashlib.sha256).hexdigest()
+
+    headers = {
+        "AppId": app_id,
+        "Timestamp": timestamp,
+        "Authorization": sign,
+        "Content-Type": "application/json"
+    }
+
+    body = {
+        "products": [
+            {"shop_id": int(shop_id), "item_id": int(item_id)}
+        ]
+    }
+
+    try:
+        response = requests.post("https://affiliate.shopee.com.br/api/v1/product/info", headers=headers, json=body)
+        if response.status_code == 200:
+            result = response.json().get("data", [])
+            produtos = []
+            for produto in result:
+                produtos.append({
+                    "titulo": produto.get("name"),
+                    "imagem": produto.get("image"),
+                    "preco": produto.get("price"),
+                    "estoque": produto.get("stock"),
+                    "comissao": produto.get("commission", 0),
+                    "loja": produto.get("shop_name", "")
+                })
+            return render_template("produtos_clickdivulga.html", produtos=produtos)
+        else:
+            flash(f"Erro ao consultar API: {response.status_code}", "error")
+            return redirect("/produtos")
+    except Exception as e:
+        flash(f"Erro na requisição: {str(e)}", "error")
+        return redirect("/produtos")
+
 @app.route("/minha-api", methods=["GET", "POST"])
 @verificar_login
 def minha_api():
