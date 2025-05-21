@@ -3,7 +3,7 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Produtos da Shopee - ClickDivulga</title>
+  <title>Produtos - ClickDivulga</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='grupos.css') }}">
 </head>
 <body>
@@ -21,27 +21,45 @@
 
   <div class="content">
     <div class="topbar">
-      <h1>🛍️ Produtos Recentes da Shopee</h1>
+      <h1>🛒 Buscar Produtos da Shopee</h1>
     </div>
 
-    <div class="product-list">
-      {% for produto in produtos %}
-      <div class="product-card">
-        <img src="{{ produto.imagem }}" alt="Imagem do produto" style="width:100%; border-radius:8px; height:180px; object-fit:cover;">
-        <strong>{{ produto.titulo }}</strong><br>
-        <small>💰 R$ {{ produto.preco }}</small><br>
-        <small>📦 {{ produto.estoque }} em estoque</small><br>
-        <small>💵 {{ produto.comissao }}% comissão</small><br>
-        <small>🏪 Loja: {{ produto.loja }}</small><br>
-        <form method="POST" action="/criar-link">
-          <input type="hidden" name="url_destino" value="#">
-          <input type="hidden" name="tipo" value="produto">
-          <input type="text" name="slug" placeholder="slug-personalizado" required style="margin-top: 10px; width: 100%; padding: 8px;">
-          <button type="submit">🔗 Gerar Link</button>
-        </form>
-      </div>
-      {% endfor %}
+    <!-- 🔎 Formulário para buscar por link -->
+    <div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 40px; max-width: 700px;">
+      <h2 style="margin-bottom: 20px; color: #5e3ea1;">🔗 Cole o link de um produto da Shopee</h2>
+      <form method="POST" action="/buscar-produto">
+        <div style="margin-bottom: 20px;">
+          <label style="font-weight: 600;">Link do produto Shopee:</label>
+          <input type="url" name="url" placeholder="https://shopee.com.br/..." required style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
+        </div>
+        <button type="submit" style="background-color: #5e3ea1; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">Buscar Produto</button>
+      </form>
     </div>
+
+    {% if produtos %}
+    <!-- 📦 Lista de produtos encontrados -->
+    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-top: 20px;">
+      <h2 style="margin-bottom: 20px;">📦 Resultado da Busca</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+        {% for produto in produtos %}
+        <div class="product-card">
+          <img src="{{ produto.imagem }}" alt="Produto" style="width:100%; height:180px; object-fit:cover; border-radius:8px;">
+          <strong>{{ produto.titulo }}</strong><br>
+          <small>💰 R$ {{ produto.preco }}</small><br>
+          <small>📦 Estoque: {{ produto.estoque }}</small><br>
+          <small>💵 Comissão: {{ produto.comissao }}%</small><br>
+          <small>🏪 Loja: {{ produto.loja }}</small><br><br>
+          <form method="POST" action="/criar-link">
+            <input type="hidden" name="url_destino" value="#">
+            <input type="hidden" name="tipo" value="produto">
+            <input type="text" name="slug" placeholder="slug-personalizado" required style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
+            <button type="submit" class="btn" style="margin-top: 10px; width: 100%;">🔗 Gerar Link</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
   </div>
 </body>
 </html>
