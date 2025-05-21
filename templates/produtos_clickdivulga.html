@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Produtos da Shopee - ClickDivulga</title>
-  <link rel="stylesheet" href="../static/css/grupos.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='grupos.css') }}">
 </head>
 <body>
   <div class="sidebar">
@@ -24,25 +24,23 @@
       <h1>🛍️ Produtos Recentes da Shopee</h1>
     </div>
 
-    <div style="margin-top: 30px;">
-      <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-        {% for produto in produtos %}
-        <div style="background: white; border-radius: 10px; box-shadow: 0 0 8px rgba(0,0,0,0.05); padding: 15px; width: 260px;">
-          <img src="{{ produto.imagem }}" alt="Produto" style="width: 100%; border-radius: 8px; object-fit: cover; height: 180px;">
-          <h3 style="font-size: 1rem; margin: 10px 0;">{{ produto.titulo }}</h3>
-          <p><strong>💰 Preço:</strong> R$ {{ produto.preco }}</p>
-          <p><strong>📦 Estoque:</strong> {{ produto.estoque }}</p>
-          <p><strong>💵 Comissão:</strong> {{ produto.comissao }}%</p>
-          <p><strong>🏪 Loja:</strong> {{ produto.loja }}</p>
-          <form method="POST" action="/criar-link">
-            <input type="hidden" name="url_destino" value="#">
-            <input type="hidden" name="tipo" value="produto">
-            <input type="text" name="slug" placeholder="slug-personalizado" required style="margin-top: 10px; width: 100%; padding: 8px;">
-            <button type="submit" style="margin-top: 10px; width: 100%; background: #5e3ea1; color: white; padding: 10px; border: none; border-radius: 6px; cursor: pointer;">🔗 Gerar Link</button>
-          </form>
-        </div>
-        {% endfor %}
+    <div class="product-list">
+      {% for produto in produtos %}
+      <div class="product-card">
+        <img src="{{ produto.imagem }}" alt="Imagem do produto" style="width:100%; border-radius:8px; height:180px; object-fit:cover;">
+        <strong>{{ produto.titulo }}</strong><br>
+        <small>💰 R$ {{ produto.preco }}</small><br>
+        <small>📦 {{ produto.estoque }} em estoque</small><br>
+        <small>💵 {{ produto.comissao }}% comissão</small><br>
+        <small>🏪 Loja: {{ produto.loja }}</small><br>
+        <form method="POST" action="/criar-link">
+          <input type="hidden" name="url_destino" value="#">
+          <input type="hidden" name="tipo" value="produto">
+          <input type="text" name="slug" placeholder="slug-personalizado" required style="margin-top: 10px; width: 100%; padding: 8px;">
+          <button type="submit">🔗 Gerar Link</button>
+        </form>
       </div>
+      {% endfor %}
     </div>
   </div>
 </body>
