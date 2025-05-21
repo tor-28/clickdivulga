@@ -525,8 +525,13 @@ def buscar_produto():
         return redirect("/minha-api")
 
     cred = doc.to_dict()
-    app_id = cred.get("app_id")
-    app_secret = cred.get("app_secret")
+    app_id = cred.get("app_id") or cred.get("client_id")
+    app_secret = cred.get("app_secret") or cred.get("client_secret")
+
+    if not app_id or not app_secret:
+        flash("App ID ou App Secret não encontrados. Verifique sua API cadastrada.", "error")
+        return redirect("/minha-api")
+
     timestamp = str(int(time.time() * 1000))
     base_string = app_id + timestamp
     sign = hmac.new(app_secret.encode(), base_string.encode(), hashlib.sha256).hexdigest()
