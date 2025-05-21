@@ -7,6 +7,9 @@ import tempfile
 from functools import wraps
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
+from apscheduler.schedulers.background import BackgroundScheduler
+import requests
+
 
 load_dotenv()
 
@@ -471,3 +474,65 @@ def atualizar_categorias_links():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+@app.route("/minha-api", methods=["GET", "POST"])
+@verificar_login
+def minha_api():
+    uid = session["usuario"]["uid"]
+    doc_ref = db.collection("api_shopee").document(uid)
+    doc = doc_ref.get()
+
+    if request.method == "POST":
+        data = {
+            "client_id": request.form.get("client_id"),
+            "client_secret": request.form.get("client_secret"),
+            "access_token": request.form.get("access_token"),
+            "refresh_token": request.form.get("refresh_token"),
+            "atualizado_em": datetime.now().isoformat()
+        }
+        doc_ref.set(data)
+        flash("Credenciais da API atualizadas com sucesso!", "success")
+        return redirect("/minha-api")
+
+    dados = doc.to_dict() if doc.exists else {}
+    return render_template("minha_api.html", dados=dados)
+
+def buscar_produtos_agendado():
+    termos = ["ring light", "bermuda", "cama pet"]
+    print("🔁 Buscando produtos da Shopee com credenciais dos afiliados...")
+
+    usuarios_api = db.collection("api_shopee").stream()
+    usuarios = [u for u in usuarios_api]
+
+    for i, termo in enumerate(termos):
+        try:
+            if not usuarios:
+                print("⚠️ Nenhum afiliado com API cadastrada.")
+                break
+            user = usuarios[i % len(usuarios)]
+            cred = user.to_dict()
+            headers = {"Authorization": f"Bearer {cred['access_token']}"}
+            response = requests.get(f"https://api.shopee.com.br/search?query={termo}", headers=headers)
+
+            if response.status_code == 200:
+                produtos = response.json().get("items", [])[:50]
+                for produto in produtos:
+                    db.collection("produtos_sugestoes").add({
+                        "titulo": produto.get("name"),
+                        "imagem": produto.get("image_url"),
+                        "preco": produto.get("price"),
+                        "estoque": produto.get("stock"),
+                        "comissao": produto.get("commission", 0),
+                        "loja": produto.get("shop_name", ""),
+                        "uid_api": user.id,
+                        "buscado_em": datetime.now().isoformat()
+                    })
+        except Exception as e:
+            print(f"Erro ao consultar para termo '{termo}': {e}")
+
+scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
+scheduler.add_job(buscar_produtos_agendado, 'cron', hour=0, minute=1)
+scheduler.add_job(buscar_produtos_agendado, 'cron', hour=8, minute=1)
+scheduler.add_job(buscar_produtos_agendado, 'cron', hour=12, minute=1)
+scheduler.add_job(buscar_produtos_agendado, 'cron', hour=20, minute=1)
+scheduler.start()
