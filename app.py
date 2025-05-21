@@ -580,14 +580,12 @@ def minha_api():
 
     if request.method == "POST":
         data = {
-            "client_id": request.form.get("client_id"),
-            "client_secret": request.form.get("client_secret"),
-            "access_token": request.form.get("access_token"),
-            "refresh_token": request.form.get("refresh_token"),
+            "app_id": request.form.get("app_id"),
+            "app_secret": request.form.get("app_secret"),
             "atualizado_em": datetime.now().isoformat()
         }
         doc_ref.set(data)
-        flash("Credenciais da API atualizadas com sucesso!", "success")
+        flash("Credenciais da API Shopee atualizadas com sucesso!", "success")
         return redirect("/minha-api")
 
     dados = doc.to_dict() if doc.exists else {}
