@@ -472,6 +472,30 @@ def atualizar_categorias_links():
     except Exception as e:
         return f"❌ Erro ao atualizar categorias: {e}"
 
+
+
+@app.route("/produtos")
+@verificar_login
+def produtos():
+    uid = session["usuario"]["uid"]
+    produtos_ref = db.collection("produtos_sugestoes").order_by("buscado_em", direction=firestore.Query.DESCENDING).limit(50).stream()
+
+    produtos = []
+    for doc in produtos_ref:
+        dados = doc.to_dict()
+        produtos.append({
+            "titulo": dados.get("titulo"),
+            "imagem": dados.get("imagem"),
+            "preco": dados.get("preco"),
+            "estoque": dados.get("estoque"),
+            "comissao": dados.get("comissao"),
+            "loja": dados.get("loja"),
+            "buscado_em": dados.get("buscado_em")
+        })
+
+    return render_template("produtos_clickdivulga.html", produtos=produtos)
+
+
 if __name__ == "__main__":
     app.run(debug=True)
 
