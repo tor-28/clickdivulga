@@ -766,11 +766,11 @@ def atualizar_buscas():
     import requests
     import json
     from datetime import datetime
-    import re  # necessário para tratar shop_id
+    import re  # importante
 
     print("🔄 Iniciando atualização de buscas salvas...")
-    db_firestore = db  # ✅ usa a instância já conectada
 
+    db_firestore = db  # Usa a instância já conectada
     colecao_buscas = db_firestore.collection("buscas").stream()
     total_atualizadas = 0
 
@@ -795,7 +795,6 @@ def atualizar_buscas():
             termo_id = termo.lower().replace(" ", "-").replace(".", "").replace("/", "")
             print(f"🔍 Atualizando busca: {tipo} → {termo}")
 
-            # Monta query
             if tipo == "produto":
                 query_dict = {
                     "query": f"""
@@ -838,7 +837,7 @@ def atualizar_buscas():
                     """
                 }
             else:
-                continue  # Tipo desconhecido
+                continue
 
             payload_str = json.dumps(query_dict, separators=(',', ':'))
             timestamp = str(int(time.time()) + 20)
@@ -872,12 +871,14 @@ def atualizar_buscas():
                             "link": p.get("offerLink") or p.get("productLink")
                         })
 
+                    # 🔐 Salva produtos atualizados em resultados_busca
                     db_firestore.collection("resultados_busca").document(uid).collection("termos").document(termo_id).set({
                         "tipo": tipo,
                         "termo": termo,
                         "atualizado_em": datetime.now().isoformat(),
                         "produtos": produtos
                     })
+                    print(f"✅ Salvo: {termo} com {len(produtos)} produto(s)")
                     total_atualizadas += 1
                 else:
                     print(f"⚠️ Erro {response.status_code} ao buscar termo: {termo}")
