@@ -82,30 +82,6 @@
       </div>
     </div>
 
-    <!-- 🔎 Resultado da Busca Atual -->
-    {% if produtos %}
-    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom: 40px;">
-      <h2 style="margin-bottom:20px;">🧾 Produtos Encontrados</h2>
-      <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-        {% for produto in produtos %}
-        <div style="background: #f8f8fc; padding: 20px; border-radius: 12px; width: 240px; border: 1px solid #e3dfff;">
-          <img src="{{ produto.imagem }}" alt="Produto" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom: 10px;">
-          <strong style="font-size: 0.95rem;">{{ produto.titulo }}</strong><br>
-          <small style="color:#666;">💰 R$ {{ produto.preco }}</small><br>
-          <small style="color:#666;">🏪 {{ produto.loja }}</small><br>
-          {% if produto.comissao > 0 %}
-          <small style="color:#666;">🎯 Comissão da Loja: {{ produto.comissao | round(1) }}%</small><br>
-          {% endif %}
-          <small style="color:#666;">🎥 Live: {{ produto.comissao_live | round(2) }} ({{ (produto.comissao + 10) | round(1) }}%)</small><br>
-          <small style="color:#666;">📱 Redes Sociais: {{ produto.comissao_redes | round(2) }} ({{ (produto.comissao + 3) | round(1) }}%)</small><br><br>
-          <input type="text" value="{{ produto.link }}" readonly style="width:100%; padding:8px; font-size:0.9rem; margin-bottom:6px; border-radius: 6px; border: 1px solid #ccc;">
-          <button onclick="navigator.clipboard.writeText('{{ produto.link }}'); this.textContent='✅ Copiado!';" style="width: 100%; background-color: #5e3ea1; color: white; border: none; padding: 8px; border-radius: 6px;">📋 Copiar Link</button>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
     <!-- 🧠 Resultados das Buscas Salvas -->
     {% if resultados %}
     <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
@@ -113,7 +89,9 @@
       {% for item in resultados %}
       <div style="margin-bottom: 40px;">
         <h3 style="color:#5e3ea1;">🔎 {{ item.termo }} <small style="color:#888;">({{ item.tipo }})</small></h3>
-        <p style="margin-bottom: 10px;">⏱ Atualizado em: {{ item.atualizado_em }}</p>
+        {% if item.atualizado_em %}
+        <p style="margin-bottom: 10px;">⏱ Atualizado em: {{ item.atualizado_em[:10] | replace('-', '/') }} às {{ item.atualizado_em[11:16] }}</p>
+        {% endif %}
         <div style="display: flex; flex-wrap: wrap; gap: 20px;">
           {% for p in item.produtos %}
           <div style="background: #f8f8fc; padding: 20px; border-radius: 12px; width: 240px; border: 1px solid #e3dfff;">
@@ -121,7 +99,7 @@
             <strong style="font-size: 0.95rem;">{{ p.titulo }}</strong><br>
             <small style="color:#666;">💰 R$ {{ p.preco }}</small><br>
             <small style="color:#666;">🏪 {{ p.loja }}</small><br>
-            <small style="color:#666;">🎯 Comissão da Loja: {{ p.comissao }}%</small><br>
+            <small style="color:#666;">🌟 Comissão da Loja: {{ p.comissao }}%</small><br>
             <small style="color:#666;">🎥 Live: R$ {{ p.comissao_live }} | 📱 Redes: R$ {{ p.comissao_redes }}</small><br><br>
             <input type="text" value="{{ p.link }}" readonly style="width:100%; padding:8px; font-size:0.9rem; margin-bottom:6px; border-radius: 6px; border: 1px solid #ccc;">
             <button onclick="navigator.clipboard.writeText('{{ p.link }}'); this.textContent='✅ Copiado!';" style="width: 100%; background-color: #5e3ea1; color: white; border: none; padding: 8px; border-radius: 6px;">📋 Copiar Link</button>
@@ -132,7 +110,6 @@
       {% endfor %}
     </div>
     {% endif %}
-
   </div>
 
   <script>
