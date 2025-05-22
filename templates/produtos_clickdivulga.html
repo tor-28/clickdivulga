@@ -100,9 +100,8 @@
             <small style="color:#666;">💰 R$ {{ p.preco }}</small><br>
             <small style="color:#666;">🏪 {{ p.loja }}</small><br>
             <small style="color:#666;">🌟 Comissão da Loja: {{ p.comissao }}%</small><br>
-            <small style="color:#666;">🎥 Live: R$ {{ p.comissao_live }} | 📱 Redes: R$ {{ p.comissao_redes }}</small><br><br>
-            <input type="text" value="{{ p.link }}" readonly style="width:100%; padding:8px; font-size:0.9rem; margin-bottom:6px; border-radius: 6px; border: 1px solid #ccc;">
-            <button onclick="navigator.clipboard.writeText('{{ p.link }}'); this.textContent='✅ Copiado!';" style="width: 100%; background-color: #5e3ea1; color: white; border: none; padding: 8px; border-radius: 6px;">📋 Copiar Link</button>
+            <small style="color:#666;">🎥 Live: R$ {{ p.comissao_live }} | 📱 Redes: R$ {{ p.comissao_redes }}</small><br>
+            <small style="color:#888;">🔗 Origem: Shopee</small><br><br>
           </div>
           {% endfor %}
         </div>
