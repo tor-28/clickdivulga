@@ -682,10 +682,10 @@ def buscar_loja():
 
     payload_str = json.dumps(query_dict, separators=(',', ':'))
 
-    # Assinatura
     timestamp = str(int(time.time()) + 20)
     base_string = app_id + timestamp + payload_str + app_secret
     signature = hashlib.sha256(base_string.encode()).hexdigest()
+
     headers = {
         "Authorization": f"SHA256 Credential={app_id}, Signature={signature}, Timestamp={timestamp}",
         "Content-Type": "application/json"
@@ -696,32 +696,35 @@ def buscar_loja():
         print(f"🔁 Status: {response.status_code}")
         print(f"📨 Resposta: {response.text}")
 
-    if response.status_code == 200:
-        nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
-        produtos = []
-        for p in nodes:
-            preco = float(p.get("priceMin", 0))
-    
-            # Remove os 3% fixos da Shopee (redes sociais), restando apenas a comissão da loja
-            taxa_total = float(p.get("commissionRate") or 0) * 100
-            taxa_loja = max(taxa_total - 3, 0)
-    
-            comissao_live = round(preco * ((10 + taxa_loja) / 100), 2)
-            comissao_redes = round(preco * ((3 + taxa_loja) / 100), 2)
-    
-            produtos.append({
-                "titulo": p.get("productName"),
-                "imagem": p.get("imageUrl"),
-                "preco": preco,
-                "comissao": taxa_loja,
-                "comissao_live": comissao_live,
-                "comissao_redes": comissao_redes,
-                "loja": p.get("shopName"),
-                "link": p.get("offerLink") or p.get("productLink")
-            })
-    
-        print(f"✅ {len(produtos)} produto(s) processado(s).")
-        return render_template("produtos_clickdivulga.html", produtos=produtos)
+        if response.status_code == 200:
+            nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
+            produtos = []
+
+            min_val = float(preco_min.replace(",", ".")) if preco_min else 0
+            max_val = float(preco_max.replace(",", ".")) if preco_max else float("inf")
+
+            for p in nodes:
+                preco = float(p.get("priceMin", 0))
+                if min_val <= preco <= max_val:
+                    taxa_total = float(p.get("commissionRate") or 0) * 100
+                    taxa_loja = max(taxa_total - 3, 0)
+
+                    comissao_live = round(preco * ((10 + taxa_loja) / 100), 2)
+                    comissao_redes = round(preco * ((3 + taxa_loja) / 100), 2)
+
+                    produtos.append({
+                        "titulo": p.get("productName"),
+                        "imagem": p.get("imageUrl"),
+                        "preco": preco,
+                        "comissao": taxa_loja,
+                        "comissao_live": comissao_live,
+                        "comissao_redes": comissao_redes,
+                        "loja": p.get("shopName"),
+                        "link": p.get("offerLink") or p.get("productLink")
+                    })
+
+            print(f"✅ {len(produtos)} produto(s) da loja filtrado(s) por faixa de preço.")
+            return render_template("produtos_clickdivulga.html", produtos=produtos)
 
         flash("❌ Erro ao buscar produtos da loja.", "error")
         return redirect("/produtos")
@@ -730,7 +733,7 @@ def buscar_loja():
         print("❌ Exceção ao buscar loja:", e)
         flash(f"Erro ao buscar loja: {e}", "error")
         return redirect("/produtos")
-        
+
 @app.route("/minha-api", methods=["GET", "POST"])
 @verificar_login
 def minha_api():
