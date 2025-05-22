@@ -23,9 +23,9 @@
       <h1>🛍️ Buscar Produtos com Comissão</h1>
     </div>
 
-    <!-- 🔍 Seções lado a lado -->
+    <!-- 🔍 Buscas lado a lado -->
     <div style="display: flex; gap: 30px; flex-wrap: wrap; margin-bottom: 40px;">
-      <!-- Seção: Palavra-chave ou Link -->
+      <!-- Palavra-chave ou Link -->
       <div style="flex: 1; background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); min-width: 300px;">
         <h2 style="margin-bottom:20px; color:#5e3ea1;">🔎 Palavra-chave ou Link</h2>
         <form method="POST" action="/buscar-produto" onsubmit="return validarCampos();">
@@ -61,7 +61,7 @@
         </form>
       </div>
 
-      <!-- Seção: Loja -->
+      <!-- Buscar por Loja -->
       <div style="flex: 1; background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); min-width: 300px;">
         <h2 style="margin-bottom:20px; color:#5e3ea1;">🏪 Produtos por Loja</h2>
         <form method="POST" action="/buscar-loja">
@@ -82,7 +82,7 @@
       </div>
     </div>
 
-    <!-- 🧾 Resultado -->
+    <!-- Resultados -->
     {% if produtos %}
     <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
       <h2 style="margin-bottom:20px;">🧾 Produtos Encontrados</h2>
@@ -92,7 +92,9 @@
           <img src="{{ produto.imagem }}" alt="Produto" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom: 10px;">
           <strong style="font-size: 0.95rem;">{{ produto.titulo }}</strong><br>
           <small style="color:#666;">💰 R$ {{ produto.preco }}</small><br>
-          <small style="color:#666;">📦 Vendas: {{ produto.vendas }}</small><br>
+          {% if produto.vendidos is defined %}
+            <small style="color:#666;">📦 Vendas: {{ produto.vendidos }}</small><br>
+          {% endif %}
           <small style="color:#666;">🏪 {{ produto.loja }}</small><br>
           <small style="color:#666;">🎯 Comissão Loja: {{ produto.comissao | round(1) }}%</small><br>
           <small style="color:#666;">🎥 Live: {{ (produto.comissao + 10) | round(1) }}% (~R$ {{ ((produto.comissao + 10) * produto.preco / 100) | round(2) }})</small><br>
