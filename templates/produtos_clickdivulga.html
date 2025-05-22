@@ -62,49 +62,25 @@
     {% if resultados %}
     <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
       <h2 style="margin-bottom:20px;">🧠 Minhas Buscas Salvas (Atualizadas)</h2>
-
-      <form method="GET" style="margin-bottom:20px; display:flex; gap:20px; flex-wrap:wrap;">
-        <select name="filtro_loja" style="padding:10px; border-radius:8px;">
-          <option value="">🏪 Todas as lojas</option>
-          {% for loja in lojas_disponiveis %}
-            <option value="{{ loja }}" {% if request.args.get('filtro_loja') == loja %}selected{% endif %}>{{ loja }}</option>
-          {% endfor %}
-        </select>
-
-        <input type="text" name="filtro_termo" placeholder="🔍 Palavra-chave"
-          value="{{ request.args.get('filtro_termo', '') }}"
-          style="padding:10px; border-radius:8px; flex:1;">
-
-        <button type="submit" style="background-color:#5e3ea1; color:white; padding:10px 20px; border:none; border-radius:8px;">Filtrar</button>
-      </form>
-
       {% set pagina = request.args.get('pagina', default=1) | int %}
       {% set inicio = (pagina - 1) * 20 %}
       {% set fim = inicio + 20 %}
       {% set todos_produtos = [] %}
       {% for item in resultados %}
         {% for p in item.produtos %}
-          {% set _ = todos_produtos.append(p.update({'atualizado_em': item.atualizado_em})) %}
+          {% if item.atualizado_em %}
+            {% set _ = p.update({'atualizado_em': item.atualizado_em}) %}
+            {% set _ = todos_produtos.append(p) %}
+          {% endif %}
         {% endfor %}
       {% endfor %}
-
-      {% set filtrados = todos_produtos %}
-      {% if request.args.get('filtro_loja') %}
-        {% set filtrados = filtrados | selectattr('loja', 'equalto', request.args.get('filtro_loja')) | list %}
-      {% endif %}
-      {% if request.args.get('filtro_termo') %}
-        {% set termo_filtro = request.args.get('filtro_termo').lower() %}
-        {% set filtrados = filtrados | selectattr('titulo', 'search', termo_filtro) | list %}
-      {% endif %}
-
-      {% set produtos_ordenados = filtrados | sort(attribute='atualizado_em', reverse=True) %}
-
+      {% set produtos_ordenados = todos_produtos | sort(attribute='atualizado_em', reverse=True) %}
       <div style="display: flex; flex-wrap: wrap; gap: 20px;">
         {% for p in produtos_ordenados[inicio:fim] %}
         <div style="background: #f8f8fc; padding: 20px; border-radius: 12px; width: 240px; border: 1px solid #e3dfff;">
           <img src="{{ p.imagem }}" alt="Produto" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom: 10px;">
           <strong style="font-size: 0.95rem;">{{ p.titulo }}</strong><br>
-          <small style="color:#888;">⏱ Atualizado em: {{ p.atualizado_em[:10] | replace('-', '/') }} às {{ p.atualizado_em[11:16] }}</small><br>
+          {% if p.atualizado_em %}<small style="color:#888;">⏱ Atualizado em: {{ p.atualizado_em[:10] | replace('-', '/') }} às {{ p.atualizado_em[11:16] }}</small><br>{% endif %}
           <small style="color:#666;">💰 R$ {{ p.preco }}</small><br>
           <small style="color:#666;">🏪 {{ p.loja }}</small><br>
           <small style="color:#666;">🌟 Comissão da Loja: {{ p.comissao }}%</small><br>
@@ -112,14 +88,10 @@
         </div>
         {% endfor %}
       </div>
-
       <div style="margin-top:30px; text-align:center;">
         {% set total_paginas = (produtos_ordenados|length // 20) + (1 if produtos_ordenados|length % 20 > 0 else 0) %}
         {% for p in range(1, total_paginas + 1) %}
-          <a href="?pagina={{ p }}{% if request.args.get('filtro_loja') %}&filtro_loja={{ request.args.get('filtro_loja') }}{% endif %}{% if request.args.get('filtro_termo') %}&filtro_termo={{ request.args.get('filtro_termo') }}{% endif %}"
-             style="margin:0 5px; padding:8px 12px; border-radius:6px; background-color:{% if p == pagina %}#5e3ea1{% else %}#eee{% endif %}; color:{% if p == pagina %}white{% else %}black{% endif %}; text-decoration:none;">
-             {{ p }}
-          </a>
+          <a href="?pagina={{ p }}" style="margin:0 5px; padding:8px 12px; border-radius:6px; background-color:{% if p == pagina %}#5e3ea1{% else %}#eee{% endif %}; color:{% if p == pagina %}white{% else %}black{% endif %}; text-decoration:none;">{{ p }}</a>
         {% endfor %}
       </div>
     </div>
