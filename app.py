@@ -476,7 +476,12 @@ def atualizar_categorias_links():
 @verificar_login
 def produtos():
     uid = session["usuario"]["uid"]
-    produtos_ref = db.collection("produtos_sugestoes").order_by("buscado_em", direction=firestore.Query.DESCENDING).limit(50).stream()
+    firestore_client = firestore.client()
+
+    # Busca padrão (exibe sugestões, se ainda não fez busca)
+    produtos_ref = db.collection("produtos_sugestoes") \
+        .order_by("buscado_em", direction=firestore.Query.DESCENDING) \
+        .limit(50).stream()
 
     produtos = []
     for doc in produtos_ref:
@@ -492,7 +497,22 @@ def produtos():
             "buscado_em": dados.get("buscado_em")
         })
 
-    return render_template("produtos_clickdivulga.html", produtos=produtos)
+    # 🧠 Busca resultados salvos por UID
+    resultados = []
+    try:
+        termos_ref = firestore_client.collection("resultados_busca").document(uid).collection("termos").stream()
+        for doc in termos_ref:
+            dados = doc.to_dict()
+            resultados.append({
+                "termo": dados.get("termo"),
+                "tipo": dados.get("tipo"),
+                "atualizado_em": dados.get("atualizado_em"),
+                "produtos": dados.get("produtos", [])
+            })
+    except Exception as e:
+        print(f"Erro ao carregar resultados salvos: {e}")
+
+    return render_template("produtos_clickdivulga.html", produtos=produtos, resultados=resultados)
 
 @app.route("/buscar-produto", methods=["POST"])
 @verificar_login
