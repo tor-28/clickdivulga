@@ -88,7 +88,8 @@
       <h2 style="margin-bottom:20px;">🧠 Minhas Buscas Salvas (Atualizadas)</h2>
       {% for item in resultados %}
       <div style="margin-bottom: 40px;">
-        <h3 style="color:#5e3ea1;">🔎 {{ item.termo }} <small style="color:#888;">({{ item.tipo }})</small></h3>
+        {% set termo_visivel = item.termo if item.termo|length < 40 else 'Link salvo' %}
+<h3 style="color:#5e3ea1;">🔎 {{ termo_visivel }} <small style="color:#888;">({{ item.tipo }})</small></h3>
         {% if item.atualizado_em %}
         <p style="margin-bottom: 10px;">⏱ Atualizado em: {{ item.atualizado_em[:10] | replace('-', '/') }} às {{ item.atualizado_em[11:16] }}</p>
         {% endif %}
