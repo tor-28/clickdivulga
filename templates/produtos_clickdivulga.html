@@ -23,9 +23,7 @@
       <h1>🛍️ Buscar Produtos com Comissão</h1>
     </div>
 
-    <!-- 🔍 Buscas lado a lado -->
     <div style="display: flex; gap: 30px; flex-wrap: wrap; margin-bottom: 40px;">
-      <!-- Palavra-chave ou Link -->
       <div style="flex: 1; background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); min-width: 300px;">
         <h2 style="margin-bottom:20px; color:#5e3ea1;">🔎 Palavra-chave ou Link</h2>
         <form method="POST" action="/buscar-produto" onsubmit="return validarCampos();">
@@ -61,7 +59,6 @@
         </form>
       </div>
 
-      <!-- Buscar por Loja -->
       <div style="flex: 1; background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); min-width: 300px;">
         <h2 style="margin-bottom:20px; color:#5e3ea1;">🏪 Produtos por Loja</h2>
         <form method="POST" action="/buscar-loja">
@@ -82,47 +79,38 @@
       </div>
     </div>
 
-    {% if produtos %}
-    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom: 40px;">
-      <h2 style="margin-bottom:20px;">🧾 Produtos encontrados</h2>
+    {% if resultados %}
+    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+      <h2 style="margin-bottom:20px;">🧠 Minhas Buscas Salvas (Atualizadas)</h2>
+      {% set pagina = request.args.get('pagina', default=1) | int %}
+      {% set inicio = (pagina - 1) * 20 %}
+      {% set fim = inicio + 20 %}
+      {% set todos_produtos = [] %}
+      {% for item in resultados %}
+        {% for p in item.produtos %}
+          {% set _ = todos_produtos.append(p.update({'atualizado_em': item.atualizado_em})) %}
+        {% endfor %}
+      {% endfor %}
+      {% set produtos_ordenados = todos_produtos | sort(attribute='atualizado_em', reverse=True) %}
       <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-        {% for p in produtos %}
+        {% for p in produtos_ordenados[inicio:fim] %}
         <div style="background: #f8f8fc; padding: 20px; border-radius: 12px; width: 240px; border: 1px solid #e3dfff;">
           <img src="{{ p.imagem }}" alt="Produto" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom: 10px;">
           <strong style="font-size: 0.95rem;">{{ p.titulo }}</strong><br>
+          <small style="color:#888;">⏱ Atualizado em: {{ p.atualizado_em[:10] | replace('-', '/') }} às {{ p.atualizado_em[11:16] }}</small><br>
           <small style="color:#666;">💰 R$ {{ p.preco }}</small><br>
           <small style="color:#666;">🏪 {{ p.loja }}</small><br>
           <small style="color:#666;">🌟 Comissão da Loja: {{ p.comissao }}%</small><br>
           <small style="color:#666;">🎥 Live: R$ {{ p.comissao_live }} | 📱 Redes: R$ {{ p.comissao_redes }}</small><br>
-          <small style="color:#888;">⏱ Atualizado: {{ p.atualizado_em or "agora" }}</small><br>
         </div>
         {% endfor %}
       </div>
-    </div>
-    {% endif %}
-
-    <!-- 🧠 Resultados das Buscas Salvas -->
-    {% if resultados %}
-    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
-      <h2 style="margin-bottom:20px;">🧠 Minhas Buscas Salvas (Atualizadas)</h2>
-      {% for item in resultados|sort(attribute='atualizado_em', reverse=True) %}
-      <div style="margin-bottom: 40px;">
-        <h3 style="color:#5e3ea1;">🔎 Produto encontrado</h3>
-        <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-          {% for p in item.produtos[:20] %}
-          <div style="background: #f8f8fc; padding: 20px; border-radius: 12px; width: 240px; border: 1px solid #e3dfff;">
-            <img src="{{ p.imagem }}" alt="Produto" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom: 10px;">
-            <strong style="font-size: 0.95rem;">{{ p.titulo }}</strong><br>
-            <small style="color:#888;">⏱ Atualizado em: {{ item.atualizado_em[:10] | replace('-', '/') }} às {{ item.atualizado_em[11:16] }}</small><br>
-            <small style="color:#666;">💰 R$ {{ p.preco }}</small><br>
-            <small style="color:#666;">🏪 {{ p.loja }}</small><br>
-            <small style="color:#666;">🌟 Comissão da Loja: {{ p.comissao }}%</small><br>
-            <small style="color:#666;">🎥 Live: R$ {{ p.comissao_live }} | 📱 Redes: R$ {{ p.comissao_redes }}</small><br>
-          </div>
-          {% endfor %}
-        </div>
+      <div style="margin-top:30px; text-align:center;">
+        {% set total_paginas = (produtos_ordenados|length // 20) + (1 if produtos_ordenados|length % 20 > 0 else 0) %}
+        {% for p in range(1, total_paginas + 1) %}
+          <a href="?pagina={{ p }}" style="margin:0 5px; padding:8px 12px; border-radius:6px; background-color:{% if p == pagina %}#5e3ea1{% else %}#eee{% endif %}; color:{% if p == pagina %}white{% else %}black{% endif %}; text-decoration:none;">{{ p }}</a>
+        {% endfor %}
       </div>
-      {% endfor %}
     </div>
     {% endif %}
   </div>
