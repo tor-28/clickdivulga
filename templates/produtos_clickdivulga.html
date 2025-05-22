@@ -94,7 +94,7 @@
       <small style="color:#666;">💰 R$ {{ produto.preco }}</small><br>
       <small style="color:#666;">🏪 {{ produto.loja }}</small><br>
 
-      <small style="color:#666;">🎯 Comissão Shopee: {{ produto.comissao | round(1) }}%</small><br>
+      <small style="color:#666;">🎯 Comissão da Loja: {{ produto.comissao | round(1) }}%</small><br>
       <small style="color:#666;">
         🎥 Live: {{ (produto.comissao + 10) | round(1) }}%
         (~R$ {{ ((produto.comissao + 10) * produto.preco / 100) | round(2) }})
