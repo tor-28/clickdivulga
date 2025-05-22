@@ -529,16 +529,14 @@ def buscar_produto():
 
     timestamp = str(int(time.time() * 1000))
     base_string = app_id + timestamp
-    sign = hmac.new(app_secret.encode(), base_string.encode(), hashlib.sha256).hexdigest()
+    signature = hmac.new(app_secret.encode(), base_string.encode(), hashlib.sha256).hexdigest()
 
     headers = {
-        "AppId": app_id,
-        "Timestamp": timestamp,
-        "Authorization": sign,
+        "Authorization": f"SHA256 Credential={app_id}, Signature={signature}, Timestamp={timestamp}",
         "Content-Type": "application/json"
     }
 
-    query = {
+    graphql_query = {
         "query": f"""
         query {{
           productOfferV2(shopId: {shop_id}, itemId: {item_id}, page: 1, limit: 1) {{
@@ -557,7 +555,7 @@ def buscar_produto():
     }
 
     try:
-        response = requests.post("https://affiliate.shopee.com.br/graphql", headers=headers, json=query)
+        response = requests.post("https://open-api.affiliate.shopee.com.br/graphql", headers=headers, json=graphql_query)
 
         print("🔁 Resposta da Shopee GraphQL:")
         print(response.status_code)
