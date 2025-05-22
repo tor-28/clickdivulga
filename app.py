@@ -508,7 +508,18 @@ def buscar_produto():
     entrada = request.form.get("url", "").strip()
     print(f"🔎 Entrada recebida: {entrada}")
 
-    # Buscar credenciais do afiliado
+    # Verifica se é um link com shop_id e item_id
+    match = re.search(r"-i\.(\d+)\.(\d+)", entrada)
+    usar_palavra_chave = not match
+
+    if usar_palavra_chave:
+        keyword = entrada
+        print(f"🔠 Detectada palavra-chave: {keyword}")
+    else:
+        shop_id, item_id = match.groups()
+        print(f"✅ Shop ID: {shop_id}, Item ID: {item_id}")
+
+    # Buscar App ID e Secret do afiliado
     doc = db.collection("api_shopee").document(uid).get()
     if not doc.exists:
         flash("⚠️ Cadastre sua API Shopee antes de buscar produtos.", "error")
@@ -522,13 +533,26 @@ def buscar_produto():
         flash("❌ App ID ou Secret não encontrados. Verifique sua API cadastrada.", "error")
         return redirect("/minha-api")
 
-    graphql_query = {}
-    match = re.search(r"-i\.(\d+)\.(\d+)", entrada)
-
-    if match:
-        # Busca por link
-        shop_id, item_id = match.groups()
-        print(f"✅ Detectado link. Shop ID: {shop_id}, Item ID: {item_id}")
+    # Montar payload da query
+    if usar_palavra_chave:
+        graphql_query = {
+            "query": f"""
+                query {{
+                  productOfferV2(keyword: "{keyword}", sortType: 2, page: 1, limit: 5) {{
+                    nodes {{
+                      productName
+                      imageUrl
+                      priceMin
+                      commissionRate
+                      shopName
+                      productLink
+                      offerLink
+                    }}
+                  }}
+                }}
+            """
+        }
+    else:
         graphql_query = {
             "query": f"""
                 query {{
@@ -546,29 +570,10 @@ def buscar_produto():
                 }}
             """
         }
-    else:
-        # Busca por palavra-chave
-        palavra = entrada
-        print(f"🔠 Detectada palavra-chave: {palavra}")
-        graphql_query = {
-            "query": f"""
-                query {{
-                  productOfferV2(keyword: "{palavra}", sortType: 2, page: 1, limit: 5) {{
-                    nodes {{
-                      productName
-                      imageUrl
-                      priceMin
-                      commissionRate
-                      shopName
-                      productLink
-                      offerLink
-                    }}
-                  }}
-                }}
-            """
-        }
 
     payload_str = json.dumps(graphql_query, separators=(',', ':'))
+
+    # Gerar assinatura
     timestamp = str(int(time.time()) + 20)
     base_string = app_id + timestamp + payload_str + app_secret
     signature = hashlib.sha256(base_string.encode()).hexdigest()
@@ -578,7 +583,7 @@ def buscar_produto():
         "Content-Type": "application/json"
     }
 
-    # Logs para depuração
+    # Logs detalhados para debug
     print(f"🕒 UTC: {datetime.utcnow()}")
     print(f"⏱️ Timestamp: {timestamp}")
     print(f"🔐 Signature: {signature}")
@@ -612,10 +617,9 @@ def buscar_produto():
         return redirect("/produtos")
 
     except Exception as e:
-        print(f"❌ Exceção: {e}")
-        flash("Erro ao consultar produto.", "error")
+        print(f"❌ Exceção na requisição: {e}")
+        flash(f"Erro ao consultar produto: {str(e)}", "error")
         return redirect("/produtos")
-
 
 @app.route("/minha-api", methods=["GET", "POST"])
 @verificar_login
