@@ -538,30 +538,42 @@ def buscar_produto():
         "Content-Type": "application/json"
     }
 
-    body = {
-        "products": [
-            {"shop_id": int(shop_id), "item_id": int(item_id)}
-        ]
+    query = {
+        "query": f"""
+        query {{
+          productOfferV2(shopId: {shop_id}, itemId: {item_id}, page: 1, limit: 1) {{
+            nodes {{
+              productName
+              imageUrl
+              priceMin
+              commissionRate
+              shopName
+              productLink
+              offerLink
+            }}
+          }}
+        }}
+        """
     }
 
     try:
-        response = requests.post("https://affiliate.shopee.com.br/api/v1/product/info", headers=headers, json=body)
+        response = requests.post("https://affiliate.shopee.com.br/graphql", headers=headers, json=query)
 
-        print("🔁 Resposta da Shopee:")
+        print("🔁 Resposta da Shopee GraphQL:")
         print(response.status_code)
         print(response.text)
 
         if response.status_code == 200:
-            result = response.json().get("data", [])
+            nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
             produtos = []
-            for produto in result:
+            for p in nodes:
                 produtos.append({
-                    "titulo": produto.get("name"),
-                    "imagem": produto.get("image"),
-                    "preco": produto.get("price"),
-                    "estoque": produto.get("stock"),
-                    "comissao": produto.get("commission", 0),
-                    "loja": produto.get("shop_name", "")
+                    "titulo": p.get("productName"),
+                    "imagem": p.get("imageUrl"),
+                    "preco": p.get("priceMin"),
+                    "comissao": float(p.get("commissionRate", 0)) * 100,
+                    "loja": p.get("shopName"),
+                    "link": p.get("offerLink") or p.get("productLink")
                 })
             return render_template("produtos_clickdivulga.html", produtos=produtos)
         else:
