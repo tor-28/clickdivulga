@@ -543,7 +543,7 @@ def buscar_produto():
 
     if usar_palavra_chave:
         if not keyword:
-            flash("❌ Digite uma palavra-chave ou cole um link válido.", "error")
+            flash("❌ Digite uma palavra-chave ou link válido.", "error")
             return redirect("/produtos")
         category_param = f'productCatId: {category_id},' if category_id else ''
         query_dict = {
@@ -617,14 +617,12 @@ def buscar_produto():
             termo_final = keyword if usar_palavra_chave else entrada
             termo_id = termo_final.lower().replace(" ", "-").replace(".", "").replace("/", "")
 
-            # Salva a busca
+            # 🔐 Salva a busca e produtos
             db.collection("buscas").document(uid).collection("registros").add({
                 "tipo": "produto",
                 "termo": termo_final,
                 "data": datetime.now().isoformat()
             })
-
-            # Salva os produtos atualizados
             db.collection("resultados_busca").document(uid).collection("termos").document(termo_id).set({
                 "tipo": "produto",
                 "termo": termo_final,
@@ -632,7 +630,11 @@ def buscar_produto():
                 "produtos": produtos
             })
 
-            return render_template("produtos_clickdivulga.html", produtos=produtos)
+            # 🔁 Carrega todos os resultados salvos
+            resultados_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
+            resultados = [doc.to_dict() for doc in resultados_ref]
+
+            return render_template("produtos_clickdivulga.html", produtos=produtos, resultados=resultados)
 
         flash("❌ Erro ao buscar produto na Shopee", "error")
         return redirect("/produtos")
@@ -727,14 +729,12 @@ def buscar_loja():
 
             termo_id = loja_input.lower().replace(" ", "-").replace(".", "").replace("/", "")
 
-            # Salva a busca
+            # 🔐 Salva a busca e produtos
             db.collection("buscas").document(uid).collection("registros").add({
                 "tipo": "loja",
                 "termo": loja_input,
                 "data": datetime.now().isoformat()
             })
-
-            # Salva os produtos atualizados
             db.collection("resultados_busca").document(uid).collection("termos").document(termo_id).set({
                 "tipo": "loja",
                 "termo": loja_input,
@@ -742,7 +742,11 @@ def buscar_loja():
                 "produtos": produtos
             })
 
-            return render_template("produtos_clickdivulga.html", produtos=produtos)
+            # 🔁 Carrega todos os resultados salvos
+            resultados_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
+            resultados = [doc.to_dict() for doc in resultados_ref]
+
+            return render_template("produtos_clickdivulga.html", produtos=produtos, resultados=resultados)
 
         flash("❌ Erro ao buscar loja.", "error")
         return redirect("/produtos")
