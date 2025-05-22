@@ -27,8 +27,8 @@
       <div style="flex: 1; background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); min-width: 300px;">
         <h2 style="margin-bottom:20px; color:#5e3ea1;">🔎 Palavra-chave ou Link</h2>
         <form method="POST" action="/buscar-produto" onsubmit="return validarCampos();">
-          <label>Categoria (obrigatória):</label>
-          <select name="categoria" id="campoCategoria" required style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
+          <label>Categoria (opcional):</label>
+          <select name="categoria" id="campoCategoria" style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
             <option value="" disabled selected>-- Selecione uma categoria --</option>
             <option value="100001">Moda Masculina</option>
             <option value="100002">Moda Feminina</option>
@@ -49,7 +49,7 @@
 
           <label>Palavra-chave:</label>
           <input type="text" name="keyword" id="campoKeyword" placeholder="Ex: whey, ring light"
-            style="width: 70%; margin: 10px 0; padding: 10px; border-radius: 8px;">
+            style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
 
           <label>Link direto:</label>
           <input type="url" name="url" id="campoUrl" placeholder="https://shopee.com.br/..."
@@ -78,13 +78,6 @@
         </form>
       </div>
     </div>
-
-    {% if resultados %}
-    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
-      <h2 style="margin-bottom:20px;">🧠 Minhas Buscas Salvas (Atualizadas)</h2>
-      <p style="color:red;">⚠️ Falta implementar aqui os filtros e os produtos salvos</p>
-    </div>
-    {% endif %}
   </div>
 
   <script>
