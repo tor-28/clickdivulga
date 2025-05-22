@@ -27,29 +27,14 @@
       <div style="flex: 1; background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); min-width: 300px;">
         <h2 style="margin-bottom:20px; color:#5e3ea1;">🔎 Palavra-chave ou Link</h2>
         <form method="POST" action="/buscar-produto" onsubmit="return validarCampos();">
-          <label>Categoria:</label>
-          <select name="categoria" id="campoCategoria" required style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
-            <option value="" disabled selected>-- Selecione uma categoria --</option>
-            <option value="100001">Moda Masculina</option>
-            <option value="100002">Moda Feminina</option>
-            <option value="100003">Acessórios de Moda</option>
-            <option value="100004">Celulares e Gadgets</option>
-            <option value="100005">Casa e Decoração</option>
-            <option value="100006">Eletrônicos</option>
-            <option value="100007">Computadores e Acessórios</option>
-            <option value="100008">Eletrodomésticos</option>
-            <option value="100009">Brinquedos</option>
-            <option value="100010">Esporte e Lazer</option>
-            <option value="100011">Automotivo</option>
-            <option value="100012">Livros e Papelaria</option>
-            <option value="100013">Beleza e Cuidados</option>
-            <option value="100014">Mercado</option>
-            <option value="100016">Pet Shop</option>
-          </select>
           <label>Palavra-chave:</label>
-          <input type="text" name="keyword" id="campoKeyword" placeholder="Ex: whey, ring light" style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
+          <input type="text" name="keyword" id="campoKeyword" placeholder="Ex: whey, ring light"
+            style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
+
           <label>Link direto:</label>
-          <input type="url" name="url" id="campoUrl" placeholder="https://shopee.com.br/..." style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
+          <input type="url" name="url" id="campoUrl" placeholder="https://shopee.com.br/..."
+            style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
+
           <button type="submit" style="width: 100%; background-color: #5e3ea1; color: white; padding: 12px; border-radius: 8px;">🔍 Buscar Produto</button>
         </form>
       </div>
@@ -58,52 +43,38 @@
         <h2 style="margin-bottom:20px; color:#5e3ea1;">🏪 Produtos por Loja</h2>
         <form method="POST" action="/buscar-loja">
           <label>Nome ou link da loja:</label>
-          <input type="text" name="loja" placeholder="Ex: niveaoficial ou link da loja" style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;" required>
+          <input type="text" name="loja" placeholder="Ex: niveaoficial ou link da loja"
+            style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;" required>
+
           <label>Preço mínimo:</label>
-          <input type="number" name="preco_min" step="0.01" placeholder="Ex: 50.00" style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
+          <input type="number" name="preco_min" step="0.01" placeholder="Ex: 50.00"
+            style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
+
           <label>Preço máximo:</label>
-          <input type="number" name="preco_max" step="0.01" placeholder="Ex: 200.00" style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
+          <input type="number" name="preco_max" step="0.01" placeholder="Ex: 200.00"
+            style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
+
           <button type="submit" style="width: 100%; background-color: #5e3ea1; color: white; padding: 12px; border-radius: 8px;">🔍 Buscar Loja</button>
         </form>
       </div>
     </div>
 
-    {% if produtos %}
-    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom: 40px;">
-      <h2 style="margin-bottom:20px;">🧾 Produtos encontrados</h2>
-      <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-        {% for p in produtos %}
-        <div style="background: #f8f8fc; padding: 20px; border-radius: 12px; width: 240px; border: 1px solid #e3dfff;">
-          <img src="{{ p.imagem }}" alt="Produto" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom: 10px;">
-          <strong style="font-size: 0.95rem;">{{ p.titulo }}</strong><br>
-          <small style="color:#666;">💰 R$ {{ p.preco }}</small><br>
-          <small style="color:#666;">🏪 {{ p.loja }}</small><br>
-          <small style="color:#666;">🌟 Comissão da Loja: {{ p.comissao }}%</small><br>
-          <small style="color:#666;">🎥 Live: R$ {{ p.comissao_live }} | 📱 Redes: R$ {{ p.comissao_redes }}</small><br>
-          <small style="color:#888;">⏱ Atualizado: {{ p.atualizado_em or "agora" }}</small><br>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
     {% if resultados %}
     <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
       <h2 style="margin-bottom:20px;">🧠 Minhas Buscas Salvas (Atualizadas)</h2>
+
       <form method="GET" style="margin-bottom:20px; display:flex; gap:20px; flex-wrap:wrap;">
         <select name="filtro_loja" style="padding:10px; border-radius:8px;">
-          <option value="">🏪 Todas as Lojas</option>
+          <option value="">🏪 Todas as lojas</option>
           {% for loja in lojas_disponiveis %}
             <option value="{{ loja }}" {% if request.args.get('filtro_loja') == loja %}selected{% endif %}>{{ loja }}</option>
           {% endfor %}
         </select>
-        <select name="filtro_categoria" style="padding:10px; border-radius:8px;">
-          <option value="">📂 Todas as Categorias</option>
-          {% for cat in categorias_disponiveis %}
-            <option value="{{ cat }}" {% if request.args.get('filtro_categoria') == cat %}selected{% endif %}>{{ cat }}</option>
-          {% endfor %}
-        </select>
-        <input type="text" name="filtro_termo" placeholder="🔍 Palavra-chave" value="{{ request.args.get('filtro_termo','') }}" style="padding:10px; border-radius:8px; flex:1;">
+
+        <input type="text" name="filtro_termo" placeholder="🔍 Palavra-chave"
+          value="{{ request.args.get('filtro_termo', '') }}"
+          style="padding:10px; border-radius:8px; flex:1;">
+
         <button type="submit" style="background-color:#5e3ea1; color:white; padding:10px 20px; border:none; border-radius:8px;">Filtrar</button>
       </form>
 
@@ -113,23 +84,21 @@
       {% set todos_produtos = [] %}
       {% for item in resultados %}
         {% for p in item.produtos %}
-          {% set _ = p.update({'atualizado_em': item.atualizado_em}) %}
-          {% set _ = todos_produtos.append(p) %}
+          {% set _ = todos_produtos.append(p.update({'atualizado_em': item.atualizado_em})) %}
         {% endfor %}
       {% endfor %}
 
+      {% set filtrados = todos_produtos %}
       {% if request.args.get('filtro_loja') %}
-        {% set todos_produtos = todos_produtos | selectattr('loja', 'equalto', request.args.get('filtro_loja')) | list %}
-      {% endif %}
-      {% if request.args.get('filtro_categoria') %}
-        {% set todos_produtos = todos_produtos | selectattr('categoria', 'equalto', request.args.get('filtro_categoria')) | list %}
+        {% set filtrados = filtrados | selectattr('loja', 'equalto', request.args.get('filtro_loja')) | list %}
       {% endif %}
       {% if request.args.get('filtro_termo') %}
         {% set termo_filtro = request.args.get('filtro_termo').lower() %}
-        {% set todos_produtos = todos_produtos | selectattr('titulo', 'search', termo_filtro) | list %}
+        {% set filtrados = filtrados | selectattr('titulo', 'search', termo_filtro) | list %}
       {% endif %}
 
-      {% set produtos_ordenados = todos_produtos | sort(attribute='atualizado_em', reverse=True) %}
+      {% set produtos_ordenados = filtrados | sort(attribute='atualizado_em', reverse=True) %}
+
       <div style="display: flex; flex-wrap: wrap; gap: 20px;">
         {% for p in produtos_ordenados[inicio:fim] %}
         <div style="background: #f8f8fc; padding: 20px; border-radius: 12px; width: 240px; border: 1px solid #e3dfff;">
@@ -143,10 +112,14 @@
         </div>
         {% endfor %}
       </div>
+
       <div style="margin-top:30px; text-align:center;">
         {% set total_paginas = (produtos_ordenados|length // 20) + (1 if produtos_ordenados|length % 20 > 0 else 0) %}
         {% for p in range(1, total_paginas + 1) %}
-          <a href="?pagina={{ p }}{% if request.args.get('filtro_loja') %}&filtro_loja={{ request.args.get('filtro_loja') }}{% endif %}{% if request.args.get('filtro_categoria') %}&filtro_categoria={{ request.args.get('filtro_categoria') }}{% endif %}{% if request.args.get('filtro_termo') %}&filtro_termo={{ request.args.get('filtro_termo') }}{% endif %}" style="margin:0 5px; padding:8px 12px; border-radius:6px; background-color:{% if p == pagina %}#5e3ea1{% else %}#eee{% endif %}; color:{% if p == pagina %}white{% else %}black{% endif %}; text-decoration:none;">{{ p }}</a>
+          <a href="?pagina={{ p }}{% if request.args.get('filtro_loja') %}&filtro_loja={{ request.args.get('filtro_loja') }}{% endif %}{% if request.args.get('filtro_termo') %}&filtro_termo={{ request.args.get('filtro_termo') }}{% endif %}"
+             style="margin:0 5px; padding:8px 12px; border-radius:6px; background-color:{% if p == pagina %}#5e3ea1{% else %}#eee{% endif %}; color:{% if p == pagina %}white{% else %}black{% endif %}; text-decoration:none;">
+             {{ p }}
+          </a>
         {% endfor %}
       </div>
     </div>
@@ -157,13 +130,8 @@
     function validarCampos() {
       const keyword = document.getElementById("campoKeyword").value.trim();
       const url = document.getElementById("campoUrl").value.trim();
-      const categoria = document.getElementById("campoCategoria").value;
       if (!keyword && !url) {
         alert("Preencha pelo menos a palavra-chave ou o link da Shopee.");
-        return false;
-      }
-      if (!categoria) {
-        alert("Selecione uma categoria antes de continuar.");
         return false;
       }
       return true;
