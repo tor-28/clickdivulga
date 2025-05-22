@@ -94,25 +94,14 @@
       <small style="color:#666;">💰 R$ {{ produto.preco }}</small><br>
       <small style="color:#666;">🏪 {{ produto.loja }}</small><br>
 
+      <small style="color:#666;">🎯 Comissão Shopee: {{ produto.comissao | round(1) }}%</small><br>
       <small style="color:#666;">
-        🎯 Comissão Loja:
-        {% if produto.comissao > 0 %}
-          {{ produto.comissao | round(1) }}%
-        {% else %}
-          0%
-        {% endif %}
+        🎥 Live: {{ (produto.comissao + 10) | round(1) }}%
+        (~R$ {{ ((produto.comissao + 10) * produto.preco / 100) | round(2) }})
       </small><br>
-
       <small style="color:#666;">
-        🎥 Live:
-        {% set total_live = (produto.comissao + 10) %}
-        {{ total_live | round(1) }}% (~R$ {{ ((total_live * produto.preco) / 100) | round(2) }})
-      </small><br>
-
-      <small style="color:#666;">
-        📱 Redes Sociais:
-        {% set total_redes = (produto.comissao + 3) %}
-        {{ total_redes | round(1) }}% (~R$ {{ ((total_redes * produto.preco) / 100) | round(2) }})
+        📱 Redes Sociais: {{ (produto.comissao + 3) | round(1) }}%
+        (~R$ {{ ((produto.comissao + 3) * produto.preco / 100) | round(2) }})
       </small><br><br>
 
       <input type="text" value="{{ produto.link }}" readonly style="width:100%; padding:8px; font-size:0.9rem; margin-bottom:6px; border-radius: 6px; border: 1px solid #ccc;">
