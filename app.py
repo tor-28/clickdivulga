@@ -766,12 +766,12 @@ def atualizar_buscas():
     import requests
     import json
     from datetime import datetime
-    from google.cloud import firestore
+    import re  # necessário para tratar shop_id
 
     print("🔄 Iniciando atualização de buscas salvas...")
-    db_firestore = firestore.client()
-    colecao_buscas = db_firestore.collection("buscas").stream()
+    db_firestore = db  # ✅ usa a instância já conectada
 
+    colecao_buscas = db_firestore.collection("buscas").stream()
     total_atualizadas = 0
 
     for doc_uid in colecao_buscas:
