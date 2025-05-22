@@ -499,15 +499,15 @@ def produtos():
 def buscar_produto():
     import re
     import time
-    import hmac
     import hashlib
     import requests
+    import json
     from datetime import datetime
 
     uid = session["usuario"]["uid"]
     url = request.form.get("url", "").strip()
-
     print(f"🔎 URL recebida: {url}")
+
     match = re.search(r"-i\.(\d+)\.(\d+)", url)
     if not match:
         flash("❌ URL inválida. Não foi possível extrair shop_id e item_id.", "error")
@@ -516,7 +516,7 @@ def buscar_produto():
     shop_id, item_id = match.groups()
     print(f"✅ Shop ID: {shop_id}, Item ID: {item_id}")
 
-    # 🔐 Buscar credenciais do afiliado
+    # Buscar App ID e Secret do afiliado
     doc = db.collection("api_shopee").document(uid).get()
     if not doc.exists:
         flash("⚠️ Cadastre sua API Shopee antes de buscar produtos.", "error")
@@ -527,20 +527,10 @@ def buscar_produto():
     app_secret = cred.get("app_secret") or cred.get("client_secret")
 
     if not app_id or not app_secret:
-        flash("❌ App ID ou App Secret não encontrados.", "error")
+        flash("❌ App ID ou Secret não encontrados. Verifique sua API cadastrada.", "error")
         return redirect("/minha-api")
 
-    # ⏱️ Gerar timestamp com margem de segurança (+20s)
-    tolerancia_segundos = 20
-    timestamp = int(time.time()) + tolerancia_segundos
-    base_string = f"{app_id}{timestamp}"
-    signature = hmac.new(app_secret.encode(), base_string.encode(), hashlib.sha256).hexdigest()
-
-    headers = {
-        "Authorization": f"SHA256 Credential={app_id}, Signature={signature}, Timestamp={timestamp}",
-        "Content-Type": "application/json"
-    }
-
+    # Query GraphQL
     graphql_query = {
         "query": f"""
         query {{
@@ -558,45 +548,55 @@ def buscar_produto():
         }}
         """
     }
+    payload_str = json.dumps(graphql_query, separators=(',', ':'))
 
-    # 🧪 LOG de Debug
-    print("🕒 UTC:", datetime.utcnow())
-    print("⏱️ Timestamp:", timestamp)
-    print("🔐 Signature:", signature)
-    print("🧩 Base string:", base_string)
-    print("📡 Headers:", headers)
-    print("📨 Payload:", graphql_query)
+    # Timestamp com tolerância de 20 segundos
+    timestamp = str(int(time.time()) + 20)
+    base_string = app_id + timestamp + payload_str + app_secret
+    signature = hashlib.sha256(base_string.encode()).hexdigest()
+
+    headers = {
+        "Authorization": f"SHA256 Credential={app_id}, Signature={signature}, Timestamp={timestamp}",
+        "Content-Type": "application/json"
+    }
+
+    # Logs detalhados para debug
+    print(f"🕒 UTC do servidor: {datetime.utcnow()}")
+    print(f"⏱️ Timestamp usado: {timestamp}")
+    print(f"🔐 Signature: {signature}")
+    print(f"🧩 Base string: {base_string}")
+    print(f"📡 Enviando requisição para Shopee...")
+    print(f"🧾 Headers: {headers}")
+    print(f"🧪 Payload: {payload_str}")
 
     try:
-        response = requests.post("https://open-api.affiliate.shopee.com.br/graphql", headers=headers, json=graphql_query)
-        print(f"🔁 Status: {response.status_code}")
-        print("📨 Resposta:")
+        response = requests.post("https://open-api.affiliate.shopee.com.br/graphql", headers=headers, data=payload_str)
+        print("🔁 Status:", response.status_code)
+        print("📨 Corpo da resposta:")
         print(response.text)
 
         if response.status_code == 200:
-            data = response.json()
-            nodes = data.get("data", {}).get("productOfferV2", {}).get("nodes", [])
+            nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
             produtos = []
-
             for p in nodes:
                 produtos.append({
                     "titulo": p.get("productName"),
                     "imagem": p.get("imageUrl"),
                     "preco": p.get("priceMin"),
-                    "comissao": round(float(p.get("commissionRate", 0)) * 100, 2),
+                    "comissao": float(p.get("commissionRate", 0)) * 100,
                     "loja": p.get("shopName"),
                     "link": p.get("offerLink") or p.get("productLink")
                 })
 
-            print(f"✅ {len(produtos)} produto(s) processado(s).")
+            print(f"✅ {len(produtos)} produto(s) processado(s) com sucesso.")
             return render_template("produtos_clickdivulga.html", produtos=produtos)
 
-        flash(f"❌ Erro {response.status_code}: {response.text}", "error")
+        flash("❌ Erro na requisição à Shopee", "error")
         return redirect("/produtos")
 
     except Exception as e:
-        print("❌ Erro na requisição:", e)
-        flash(f"Erro inesperado: {str(e)}", "error")
+        print(f"❌ Exceção na requisição: {e}")
+        flash(f"Erro ao consultar produto: {str(e)}", "error")
         return redirect("/produtos")
 
 @app.route("/minha-api", methods=["GET", "POST"])
