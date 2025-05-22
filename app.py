@@ -517,11 +517,7 @@ def produtos():
 @app.route("/buscar-produto", methods=["POST"])
 @verificar_login
 def buscar_produto():
-    import re
-    import time
-    import hashlib
-    import requests
-    import json
+    import re, time, hashlib, requests, json
     from datetime import datetime
 
     uid = session["usuario"]["uid"]
@@ -530,9 +526,6 @@ def buscar_produto():
     category_id = request.form.get("categoria") or ""
 
     entrada = url if url else keyword
-    print(f"🔎 Entrada recebida: {entrada}")
-    print(f"🔢 Categoria ID selecionada: {category_id}")
-
     match = re.search(r"-i\.(\d+)\.(\d+)", entrada)
     usar_palavra_chave = not match
 
@@ -545,13 +538,12 @@ def buscar_produto():
     app_id = cred.get("app_id") or cred.get("client_id")
     app_secret = cred.get("app_secret") or cred.get("client_secret")
     if not app_id or not app_secret:
-        flash("❌ App ID ou Secret não encontrados. Verifique sua API cadastrada.", "error")
+        flash("❌ App ID ou Secret não encontrados.", "error")
         return redirect("/minha-api")
 
-    # 🔎 Monta query
     if usar_palavra_chave:
         if not keyword:
-            flash("❌ Digite uma palavra-chave válida ou cole um link da Shopee.", "error")
+            flash("❌ Digite uma palavra-chave ou cole um link válido.", "error")
             return redirect("/produtos")
         category_param = f'productCatId: {category_id},' if category_id else ''
         query_dict = {
@@ -573,7 +565,6 @@ def buscar_produto():
         }
     else:
         shop_id, item_id = match.groups()
-        print(f"✅ Shop ID: {shop_id}, Item ID: {item_id}")
         query_dict = {
             "query": f"""
             query {{
@@ -596,7 +587,6 @@ def buscar_produto():
     timestamp = str(int(time.time()) + 20)
     base_string = app_id + timestamp + payload_str + app_secret
     signature = hashlib.sha256(base_string.encode()).hexdigest()
-
     headers = {
         "Authorization": f"SHA256 Credential={app_id}, Signature={signature}, Timestamp={timestamp}",
         "Content-Type": "application/json"
@@ -604,9 +594,6 @@ def buscar_produto():
 
     try:
         response = requests.post("https://open-api.affiliate.shopee.com.br/graphql", headers=headers, data=payload_str)
-        print("🔁 Status:", response.status_code)
-        print("📨 Resposta:", response.text)
-
         if response.status_code == 200:
             nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
             produtos = []
@@ -616,7 +603,6 @@ def buscar_produto():
                 taxa_loja = max(taxa_total - 3, 0)
                 comissao_live = round(preco * ((10 + taxa_loja) / 100), 2)
                 comissao_redes = round(preco * ((3 + taxa_loja) / 100), 2)
-
                 produtos.append({
                     "titulo": p.get("productName"),
                     "imagem": p.get("imageUrl"),
@@ -628,32 +614,38 @@ def buscar_produto():
                     "link": p.get("offerLink") or p.get("productLink")
                 })
 
-            # 🔐 Salva a busca no Firestore
-            firestore.client().collection("buscas").document(uid).collection("registros").add({
+            termo_final = keyword if usar_palavra_chave else entrada
+            termo_id = termo_final.lower().replace(" ", "-").replace(".", "").replace("/", "")
+
+            # Salva a busca
+            db.collection("buscas").document(uid).collection("registros").add({
                 "tipo": "produto",
-                "termo": keyword if usar_palavra_chave else entrada,
+                "termo": termo_final,
                 "data": datetime.now().isoformat()
             })
 
-            print(f"✅ {len(produtos)} produto(s) processado(s).")
+            # Salva os produtos atualizados
+            db.collection("resultados_busca").document(uid).collection("termos").document(termo_id).set({
+                "tipo": "produto",
+                "termo": termo_final,
+                "atualizado_em": datetime.now().isoformat(),
+                "produtos": produtos
+            })
+
             return render_template("produtos_clickdivulga.html", produtos=produtos)
 
         flash("❌ Erro ao buscar produto na Shopee", "error")
         return redirect("/produtos")
 
     except Exception as e:
-        print("❌ Exceção:", e)
+        print("❌ Erro:", e)
         flash(f"Erro inesperado: {e}", "error")
         return redirect("/produtos")
 
 @app.route("/buscar-loja", methods=["POST"])
 @verificar_login
 def buscar_loja():
-    import re
-    import time
-    import hashlib
-    import requests
-    import json
+    import re, time, hashlib, requests, json
     from datetime import datetime
 
     uid = session["usuario"]["uid"]
@@ -661,27 +653,24 @@ def buscar_loja():
     preco_min = request.form.get("preco_min", "").strip()
     preco_max = request.form.get("preco_max", "").strip()
 
-    print(f"🔍 Entrada loja: {loja_input} | Faixa: R${preco_min} - R${preco_max}")
-
     if not loja_input:
-        flash("❌ Você precisa digitar o nome ou colar o link da loja.", "error")
+        flash("❌ Digite o nome ou link da loja.", "error")
         return redirect("/produtos")
 
     match = re.search(r'/shop/(\d+)', loja_input) or re.search(r'i\.(\d+)\.', loja_input)
     shop_id = match.group(1) if match else None
+    if not shop_id:
+        flash("⚠️ Link da loja inválido.", "error")
+        return redirect("/produtos")
 
     doc = db.collection("api_shopee").document(uid).get()
     if not doc.exists:
-        flash("⚠️ Cadastre sua API Shopee antes de buscar lojas.", "error")
+        flash("⚠️ Cadastre sua API Shopee antes de buscar.", "error")
         return redirect("/minha-api")
 
     cred = doc.to_dict()
     app_id = cred.get("app_id")
     app_secret = cred.get("app_secret")
-
-    if not shop_id:
-        flash("⚠️ No momento, só é possível buscar por link da loja com ID válido.", "error")
-        return redirect("/produtos")
 
     query_dict = {
         "query": f"""
@@ -705,7 +694,6 @@ def buscar_loja():
     timestamp = str(int(time.time()) + 20)
     base_string = app_id + timestamp + payload_str + app_secret
     signature = hashlib.sha256(base_string.encode()).hexdigest()
-
     headers = {
         "Authorization": f"SHA256 Credential={app_id}, Signature={signature}, Timestamp={timestamp}",
         "Content-Type": "application/json"
@@ -713,9 +701,6 @@ def buscar_loja():
 
     try:
         response = requests.post("https://open-api.affiliate.shopee.com.br/graphql", headers=headers, data=payload_str)
-        print(f"🔁 Status: {response.status_code}")
-        print(f"📨 Resposta: {response.text}")
-
         if response.status_code == 200:
             nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
             produtos = []
@@ -729,7 +714,6 @@ def buscar_loja():
                     taxa_loja = max(taxa_total - 3, 0)
                     comissao_live = round(preco * ((10 + taxa_loja) / 100), 2)
                     comissao_redes = round(preco * ((3 + taxa_loja) / 100), 2)
-
                     produtos.append({
                         "titulo": p.get("productName"),
                         "imagem": p.get("imageUrl"),
@@ -741,21 +725,30 @@ def buscar_loja():
                         "link": p.get("offerLink") or p.get("productLink")
                     })
 
-            # 🔐 Salva a busca no Firestore
-            firestore.client().collection("buscas").document(uid).collection("registros").add({
+            termo_id = loja_input.lower().replace(" ", "-").replace(".", "").replace("/", "")
+
+            # Salva a busca
+            db.collection("buscas").document(uid).collection("registros").add({
                 "tipo": "loja",
                 "termo": loja_input,
                 "data": datetime.now().isoformat()
             })
 
-            print(f"✅ {len(produtos)} produto(s) da loja filtrado(s) por faixa de preço.")
+            # Salva os produtos atualizados
+            db.collection("resultados_busca").document(uid).collection("termos").document(termo_id).set({
+                "tipo": "loja",
+                "termo": loja_input,
+                "atualizado_em": datetime.now().isoformat(),
+                "produtos": produtos
+            })
+
             return render_template("produtos_clickdivulga.html", produtos=produtos)
 
-        flash("❌ Erro ao buscar produtos da loja.", "error")
+        flash("❌ Erro ao buscar loja.", "error")
         return redirect("/produtos")
 
     except Exception as e:
-        print("❌ Exceção ao buscar loja:", e)
+        print("❌ Erro:", e)
         flash(f"Erro ao buscar loja: {e}", "error")
         return redirect("/produtos")
 
