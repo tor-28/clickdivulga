@@ -23,49 +23,63 @@
       <h1>🛍️ Buscar Produtos com Comissão</h1>
     </div>
 
-    <!-- 🔍 Formulário de busca -->
-    <div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 40px; max-width: 700px;">
-      <h2 style="margin-bottom: 20px; color: #5e3ea1;">🔎 Pesquisar Produto da Shopee</h2>
-
+    <!-- 🔍 Buscar por palavra-chave ou link -->
+    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom:40px; max-width:700px;">
+      <h2 style="margin-bottom:20px; color:#5e3ea1;">🔎 Buscar por palavra-chave ou link</h2>
       <form method="POST" action="/buscar-produto" onsubmit="return validarCampos();">
-        <div style="margin-bottom: 20px;">
-          <label style="font-weight: 600;">Categoria (opcional):</label>
-          <select name="categoria" id="campoCategoria" style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
-            <option value="">-- Nenhuma selecionada --</option>
-            <option value="100001">Moda Masculina</option>
-            <option value="100002">Moda Feminina</option>
-            <option value="100003">Acessórios de Moda</option>
-            <option value="100004">Celulares e Gadgets</option>
-            <option value="100005">Casa e Decoração</option>
-            <option value="100006">Eletrônicos</option>
-            <option value="100007">Computadores e Acessórios</option>
-            <option value="100008">Eletrodomésticos</option>
-            <option value="100009">Brinquedos</option>
-            <option value="100010">Esporte e Lazer</option>
-            <option value="100011">Automotivo</option>
-            <option value="100012">Livros e Papelaria</option>
-            <option value="100013">Beleza e Cuidados</option>
-            <option value="100014">Mercado</option>
-            <option value="100016">Pet Shop</option>
-          </select>
-        </div>
+        <label style="font-weight: 600;">Categoria (opcional):</label>
+        <select name="categoria" id="campoCategoria" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px;">
+          <option value="">-- Nenhuma selecionada --</option>
+          <option value="100001">Moda Masculina</option>
+          <option value="100002">Moda Feminina</option>
+          <option value="100003">Acessórios de Moda</option>
+          <option value="100004">Celulares e Gadgets</option>
+          <option value="100005">Casa e Decoração</option>
+          <option value="100006">Eletrônicos</option>
+          <option value="100007">Computadores e Acessórios</option>
+          <option value="100008">Eletrodomésticos</option>
+          <option value="100009">Brinquedos</option>
+          <option value="100010">Esporte e Lazer</option>
+          <option value="100011">Automotivo</option>
+          <option value="100012">Livros e Papelaria</option>
+          <option value="100013">Beleza e Cuidados</option>
+          <option value="100014">Mercado</option>
+          <option value="100016">Pet Shop</option>
+        </select>
 
-        <div style="margin-bottom: 20px;">
-          <label style="font-weight: 600;">Buscar por palavra-chave:</label>
-          <input type="text" name="keyword" id="campoKeyword" placeholder="ex: ring light, whey, bermuda" style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
-        </div>
+        <label style="font-weight: 600;">Palavra-chave:</label>
+        <input type="text" name="keyword" id="campoKeyword" placeholder="Ex: ring light, whey, bermuda"
+          style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px;">
 
-        <div style="margin-bottom: 20px;">
-          <label style="font-weight: 600;">Ou cole um link direto da Shopee:</label>
-          <input type="url" name="url" id="campoUrl" placeholder="https://shopee.com.br/..." style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
-        </div>
+        <label style="font-weight: 600;">Ou link direto do produto:</label>
+        <input type="url" name="url" id="campoUrl" placeholder="https://shopee.com.br/..."
+          style="width: 100%; padding: 10px; margin: 10px 0 20px; border: 1px solid #ccc; border-radius: 8px;">
 
         <button type="submit" style="background-color: #5e3ea1; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">🔍 Buscar Produto</button>
       </form>
     </div>
 
+    <!-- 🏪 Buscar por Loja -->
+    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom:40px; max-width:700px;">
+      <h2 style="margin-bottom:20px; color:#5e3ea1;">🏪 Buscar Produtos de uma Loja</h2>
+      <form method="POST" action="/buscar-loja">
+        <label style="font-weight: 600;">Nome ou link da loja:</label>
+        <input type="text" name="loja" placeholder="Ex: lojaoficialnivea ou https://shopee.com.br/lojaoficialnivea"
+          style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px;" required>
+
+        <label style="font-weight: 600;">Preço mínimo (opcional):</label>
+        <input type="number" name="preco_min" step="0.01" placeholder="Ex: 50.00"
+          style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px;">
+
+        <label style="font-weight: 600;">Preço máximo (opcional):</label>
+        <input type="number" name="preco_max" step="0.01" placeholder="Ex: 200.00"
+          style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 8px;">
+
+        <button type="submit" style="background-color: #5e3ea1; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">🔍 Buscar Loja</button>
+      </form>
+    </div>
+
     {% if produtos %}
-    <!-- 🧾 Lista de Produtos -->
     <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-top: 40px;">
       <h2 style="margin-bottom:20px;">🧾 Produtos Encontrados</h2>
       <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: flex-start;">
@@ -89,7 +103,6 @@
     function validarCampos() {
       const keyword = document.getElementById("campoKeyword").value.trim();
       const url = document.getElementById("campoUrl").value.trim();
-
       if (!keyword && !url) {
         alert("Preencha pelo menos a palavra-chave ou o link da Shopee.");
         return false;
