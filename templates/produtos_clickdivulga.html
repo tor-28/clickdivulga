@@ -82,7 +82,7 @@
       </div>
     </div>
 
-   <!-- Resultados -->
+  <!-- Resultados -->
 {% if produtos %}
 <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
   <h2 style="margin-bottom:20px;">🧾 Produtos Encontrados</h2>
@@ -94,7 +94,10 @@
       <small style="color:#666;">💰 R$ {{ produto.preco }}</small><br>
       <small style="color:#666;">🏪 {{ produto.loja }}</small><br>
 
-      <small style="color:#666;">🎯 Comissão da Loja: {{ produto.comissao | round(1) }}%</small><br>
+      {% if produto.comissao > 0 %}
+        <small style="color:#666;">🎯 Comissão da Loja: {{ produto.comissao | round(1) }}%</small><br>
+      {% endif %}
+
       <small style="color:#666;">
         🎥 Live: {{ produto.comissao_live | round(2) }} ({{ (produto.comissao + 10) | round(1) }}%)
       </small><br>
