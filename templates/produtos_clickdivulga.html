@@ -96,18 +96,45 @@
           <small style="color:#666;">🎥 Live: R$ {{ p.comissao_live }} | 📱 Redes: R$ {{ p.comissao_redes }}</small><br>
           <small style="color:#888;">⏱ Atualizado: {{ p.atualizado_em or "agora" }}</small><br>
         </div>
-        {% endfor %}
-      </div>
+{% endfor %}
+<div style="margin-top:30px; text-align:center;">
+  {% set total_paginas = (resultados_filtrados|length // 20) + (1 if resultados_filtrados|length % 20 > 0 else 0) %}
+  {% for p in range(1, total_paginas + 1) %}
+    <a href="?pagina={{ p }}{% if request.args.get('filtro_termo') %}&filtro_termo={{ request.args.get('filtro_termo') }}{% endif %}{% if request.args.get('filtro_tipo') %}&filtro_tipo={{ request.args.get('filtro_tipo') }}{% endif %}" style="margin:0 5px; padding:8px 12px; border-radius:6px; background-color:{% if p == pagina %}#5e3ea1{% else %}#eee{% endif %}; color:{% if p == pagina %}white{% else %}black{% endif %}; text-decoration:none;">{{ p }}</a>
+  {% endfor %}
+</div>
+</div>
     </div>
     {% endif %}
 
     <!-- 🧠 Resultados das Buscas Salvas -->
     {% if resultados %}
     <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+<form method="GET" style="margin-bottom:20px; display:flex; gap:20px; flex-wrap:wrap;">
+  <input type="text" name="filtro_termo" placeholder="🔍 Buscar por palavra-chave" style="padding:10px; border-radius:8px; flex:1;">
+  <select name="filtro_tipo" style="padding:10px; border-radius:8px;">
+    <option value="">📂 Todas as categorias</option>
+    <option value="produto">Produtos</option>
+    <option value="loja">Lojas</option>
+  </select>
+  <button type="submit" style="background-color:#5e3ea1; color:white; padding:10px 20px; border:none; border-radius:8px;">Filtrar</button>
+</form>
       <h2 style="margin-bottom:20px;">🧠 Minhas Buscas Salvas (Atualizadas)</h2>
-      {% for item in resultados|sort(attribute='atualizado_em', reverse=True) %}
+      {% set pagina = request.args.get('pagina', 1, type=int) %}
+{% set inicio = (pagina - 1) * 20 %}
+{% set fim = inicio + 20 %}
+{% set resultados_filtrados = resultados %}
+{% if request.args.get('filtro_termo') %}
+  {% set termo_filtro = request.args.get('filtro_termo').lower() %}
+  {% set resultados_filtrados = resultados_filtrados | selectattr('termo', 'search', termo_filtro) | list %}
+{% endif %}
+{% if request.args.get('filtro_tipo') %}
+  {% set tipo_filtro = request.args.get('filtro_tipo') %}
+  {% set resultados_filtrados = resultados_filtrados | selectattr('tipo', 'equalto', tipo_filtro) | list %}
+{% endif %}
+{% for item in resultados_filtrados|sort(attribute='atualizado_em', reverse=True)[inicio:fim] %}
       <div style="margin-bottom: 40px;">
-        <h3 style="color:#5e3ea1;">🔎 Produto encontrado</h3>
+        
         <div style="display: flex; flex-wrap: wrap; gap: 20px;">
           {% for p in item.produtos[:20] %}
           <div style="background: #f8f8fc; padding: 20px; border-radius: 12px; width: 240px; border: 1px solid #e3dfff;">
