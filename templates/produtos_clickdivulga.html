@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
   <title>Produtos - ClickDivulga</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/grupos.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/grupos.css') }}">
 </head>
 <body>
   <div class="sidebar">
@@ -28,15 +27,15 @@
     <div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 40px; max-width: 700px;">
       <h2 style="margin-bottom: 20px; color: #5e3ea1;">🔎 Pesquisar Produto da Shopee</h2>
 
-      <form method="POST" action="/buscar-produto">
+      <form method="POST" action="/buscar-produto" onsubmit="return validarCampos();">
         <div style="margin-bottom: 20px;">
           <label style="font-weight: 600;">Buscar por palavra-chave:</label>
-          <input type="text" name="keyword" placeholder="ex: ring light, whey, bermuda" style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
+          <input type="text" name="keyword" id="campoKeyword" placeholder="ex: ring light, whey, bermuda" style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
         </div>
 
         <div style="margin-bottom: 20px;">
           <label style="font-weight: 600;">Ou cole um link direto da Shopee:</label>
-          <input type="url" name="url" placeholder="https://shopee.com.br/..." style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
+          <input type="url" name="url" id="campoUrl" placeholder="https://shopee.com.br/..." style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
         </div>
 
         <button type="submit" style="background-color: #5e3ea1; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">🔍 Buscar Produto</button>
@@ -63,5 +62,19 @@
     </div>
     {% endif %}
   </div>
+
+  <!-- Validação para garantir que pelo menos um campo esteja preenchido -->
+  <script>
+    function validarCampos() {
+      const keyword = document.getElementById("campoKeyword").value.trim();
+      const url = document.getElementById("campoUrl").value.trim();
+
+      if (!keyword && !url) {
+        alert("Preencha pelo menos a palavra-chave ou o link da Shopee.");
+        return false;
+      }
+      return true;
+    }
+  </script>
 </body>
 </html>
