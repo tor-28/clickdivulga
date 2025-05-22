@@ -513,7 +513,6 @@ def buscar_produto():
     match = re.search(r"-i\.(\d+)\.(\d+)", url)
     if not match:
         flash("URL inválida. Não foi possível extrair shop_id e item_id.", "error")
-        print("❌ Erro: padrão '-i.shopid.itemid' não encontrado.")
         return redirect("/produtos")
 
     shop_id, item_id = match.groups()
@@ -531,20 +530,15 @@ def buscar_produto():
 
     if not app_id or not app_secret:
         flash("App ID ou App Secret não encontrados. Verifique sua API cadastrada.", "error")
-        print("❌ App ID ou Secret ausentes.")
         return redirect("/minha-api")
 
-    utc_now = datetime.datetime.utcnow()
-    timestamp = str(calendar.timegm(utc_now.timetuple()) * 1000)
-    base_string = app_id + timestamp
+    # timestamp em segundos, não milissegundos
+    now = int(time.time())
+    base_string = app_id + str(now)
     signature = hmac.new(app_secret.encode(), base_string.encode(), hashlib.sha256).hexdigest()
 
-    print("🕒 UTC do servidor:", utc_now)
-    print("⏱️ Timestamp usado:", timestamp)
-    print("🔐 Signature:", signature)
-
     headers = {
-        "Authorization": f"SHA256 Credential={app_id}, Signature={signature}, Timestamp={timestamp}",
+        "Authorization": f"SHA256 Credential={app_id}, Signature={signature}, Timestamp={now}",
         "Content-Type": "application/json"
     }
 
@@ -566,12 +560,17 @@ def buscar_produto():
         """
     }
 
+    print("🧪 Enviando para Shopee:")
+    print("⏱️ Timestamp:", now)
+    print("🔐 Signature:", signature)
+    print("📡 Headers:", headers)
+    print("🧾 Query:", graphql_query)
+
     try:
-        print("📡 Enviando requisição para Shopee...")
         response = requests.post("https://open-api.affiliate.shopee.com.br/graphql", headers=headers, json=graphql_query)
 
-        print("🔁 Status:", response.status_code)
-        print("📨 Corpo da resposta:")
+        print("🔁 Resposta da Shopee GraphQL:")
+        print(response.status_code)
         print(response.text)
 
         if response.status_code == 200:
