@@ -494,6 +494,131 @@ def produtos():
 
     return render_template("produtos_clickdivulga.html", produtos=produtos)
 
+@app.route("/buscar-produto", methods=["POST"])
+@verificar_login
+def buscar_produto():
+    import re
+    import time
+    import hashlib
+    import requests
+    import json
+    from datetime import datetime
+
+    uid = session["usuario"]["uid"]
+    keyword = request.form.get("keyword", "").strip()
+    url = request.form.get("url", "").strip()
+    category_id = request.form.get("categoria") or ""
+
+    entrada = url if url else keyword
+    print(f"🔎 Entrada recebida: {entrada}")
+    print(f"🔢 Categoria ID selecionada: {category_id}")
+
+    match = re.search(r"-i\.(\d+)\.(\d+)", entrada)
+    usar_palavra_chave = not match
+
+    doc = db.collection("api_shopee").document(uid).get()
+    if not doc.exists:
+        flash("⚠️ Cadastre sua API Shopee antes de buscar produtos.", "error")
+        return redirect("/minha-api")
+
+    cred = doc.to_dict()
+    app_id = cred.get("app_id") or cred.get("client_id")
+    app_secret = cred.get("app_secret") or cred.get("client_secret")
+    if not app_id or not app_secret:
+        flash("❌ App ID ou Secret não encontrados. Verifique sua API cadastrada.", "error")
+        return redirect("/minha-api")
+
+    # 🔎 Monta query
+    if usar_palavra_chave:
+        if not keyword:
+            flash("❌ Digite uma palavra-chave válida ou cole um link da Shopee.", "error")
+            return redirect("/produtos")
+        category_param = f'productCatId: {category_id},' if category_id else ''
+        query_dict = {
+            "query": f"""
+            query {{
+              productOfferV2(keyword: "{keyword}", {category_param} sortType: 2, page: 1, limit: 10) {{
+                nodes {{
+                  productName
+                  imageUrl
+                  priceMin
+                  commissionRate
+                  shopName
+                  productLink
+                  offerLink
+                }}
+              }}
+            }}
+            """
+        }
+    else:
+        shop_id, item_id = match.groups()
+        print(f"✅ Shop ID: {shop_id}, Item ID: {item_id}")
+        query_dict = {
+            "query": f"""
+            query {{
+              productOfferV2(shopId: {shop_id}, itemId: {item_id}, page: 1, limit: 1) {{
+                nodes {{
+                  productName
+                  imageUrl
+                  priceMin
+                  commissionRate
+                  shopName
+                  productLink
+                  offerLink
+                }}
+              }}
+            }}
+            """
+        }
+
+    payload_str = json.dumps(query_dict, separators=(',', ':'))
+    timestamp = str(int(time.time()) + 20)
+    base_string = app_id + timestamp + payload_str + app_secret
+    signature = hashlib.sha256(base_string.encode()).hexdigest()
+
+    headers = {
+        "Authorization": f"SHA256 Credential={app_id}, Signature={signature}, Timestamp={timestamp}",
+        "Content-Type": "application/json"
+    }
+
+    print(f"📡 Enviando requisição para Shopee...")
+    try:
+        response = requests.post("https://open-api.affiliate.shopee.com.br/graphql", headers=headers, data=payload_str)
+        print("🔁 Status:", response.status_code)
+        print("📨 Resposta:", response.text)
+
+        if response.status_code == 200:
+            nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
+            produtos = []
+            for p in nodes:
+                preco = float(p.get("priceMin", 0))
+                taxa_loja = float(p.get("commissionRate", 0)) * 100
+                comissao_live = round(preco * ((10 + taxa_loja) / 100), 2)
+                comissao_redes = round(preco * ((3 + taxa_loja) / 100), 2)
+
+                produtos.append({
+                    "titulo": p.get("productName"),
+                    "imagem": p.get("imageUrl"),
+                    "preco": preco,
+                    "comissao": taxa_loja,
+                    "loja": p.get("shopName"),
+                    "comissao_live": comissao_live,
+                    "comissao_redes": comissao_redes,
+                    "link": p.get("offerLink") or p.get("productLink")
+                })
+
+            print(f"✅ {len(produtos)} produto(s) processado(s).")
+            return render_template("produtos_clickdivulga.html", produtos=produtos)
+
+        flash("❌ Erro ao buscar produto na Shopee", "error")
+        return redirect("/produtos")
+
+    except Exception as e:
+        print("❌ Exceção:", e)
+        flash(f"Erro inesperado: {e}", "error")
+        return redirect("/produtos")
+
 @app.route("/buscar-loja", methods=["POST"])
 @verificar_login
 def buscar_loja():
