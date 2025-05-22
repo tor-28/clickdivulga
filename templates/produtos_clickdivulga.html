@@ -29,6 +29,20 @@
 
       <form method="POST" action="/buscar-produto" onsubmit="return validarCampos();">
         <div style="margin-bottom: 20px;">
+          <label style="font-weight: 600;">Categoria (opcional):</label>
+          <select name="categoria" id="campoCategoria" style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
+            <option value="">-- Nenhuma selecionada --</option>
+            <option value="100001">Moda Masculina</option>
+            <option value="100002">Moda Feminina</option>
+            <option value="100004">Celulares e Gadgets</option>
+            <option value="100005">Casa e Decoração</option>
+            <option value="100010">Esporte e Lazer</option>
+            <option value="100013">Beleza e Cuidados</option>
+            <option value="100014">Mercado</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 20px;">
           <label style="font-weight: 600;">Buscar por palavra-chave:</label>
           <input type="text" name="keyword" id="campoKeyword" placeholder="ex: ring light, whey, bermuda" style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
         </div>
@@ -63,7 +77,6 @@
     {% endif %}
   </div>
 
-  <!-- Validação para garantir que pelo menos um campo esteja preenchido -->
   <script>
     function validarCampos() {
       const keyword = document.getElementById("campoKeyword").value.trim();
