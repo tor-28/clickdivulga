@@ -12,7 +12,7 @@
       <a href="/painel"><i>🏠</i> Dashboard</a>
       <a href="/criar-link"><i>➕</i> Criar Link</a>
       <a href="/grupos"><i>📊</i> Desempenho de Grupos</a>
-      <a href="/produtos" class="active"><i>🛍️</i> Produtos</a>
+      <a href="/produtos"><i>🛍️</i> Produtos</a>
       <a href="/minha-api"><i>🔐</i> API Shopee</a>
       <a href="/logout"><i>🚪</i> Sair</a>
     </div>
@@ -27,8 +27,8 @@
       <div style="flex: 1; background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); min-width: 300px;">
         <h2 style="margin-bottom:20px; color:#5e3ea1;">🔎 Palavra-chave ou Link</h2>
         <form method="POST" action="/buscar-produto" onsubmit="return validarCampos();">
-          <label>Categoria (opcional):</label>
-          <select name="categoria" id="campoCategoria" style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
+          <label>Categoria:</label>
+          <select name="categoria" id="campoCategoria" required style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
             <option value="" disabled selected>-- Selecione uma categoria --</option>
             <option value="100001">Moda Masculina</option>
             <option value="100002">Moda Feminina</option>
@@ -46,14 +46,11 @@
             <option value="100014">Mercado</option>
             <option value="100016">Pet Shop</option>
           </select>
-
           <label>Palavra-chave:</label>
-          <input type="text" name="keyword" id="campoKeyword" placeholder="Ex: whey, ring light"
-            style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
+          <input type="text" name="keyword" id="campoKeyword" placeholder="Ex: whey, ring light" style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
 
           <label>Link direto:</label>
-          <input type="url" name="url" id="campoUrl" placeholder="https://shopee.com.br/..."
-            style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
+          <input type="url" name="url" id="campoUrl" placeholder="https://shopee.com.br/..." style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
 
           <button type="submit" style="width: 100%; background-color: #5e3ea1; color: white; padding: 12px; border-radius: 8px;">🔍 Buscar Produto</button>
         </form>
@@ -63,16 +60,13 @@
         <h2 style="margin-bottom:20px; color:#5e3ea1;">🏪 Produtos por Loja</h2>
         <form method="POST" action="/buscar-loja">
           <label>Nome ou link da loja:</label>
-          <input type="text" name="loja" placeholder="Ex: niveaoficial ou link da loja"
-            style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;" required>
+          <input type="text" name="loja" placeholder="Ex: niveaoficial ou link da loja" style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;" required>
 
           <label>Preço mínimo:</label>
-          <input type="number" name="preco_min" step="0.01" placeholder="Ex: 50.00"
-            style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
+          <input type="number" name="preco_min" step="0.01" placeholder="Ex: 50.00" style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
 
           <label>Preço máximo:</label>
-          <input type="number" name="preco_max" step="0.01" placeholder="Ex: 200.00"
-            style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
+          <input type="number" name="preco_max" step="0.01" placeholder="Ex: 200.00" style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
 
           <button type="submit" style="width: 100%; background-color: #5e3ea1; color: white; padding: 12px; border-radius: 8px;">🔍 Buscar Loja</button>
         </form>
@@ -88,7 +82,8 @@
       {% set todos_produtos = [] %}
       {% for item in resultados %}
         {% for p in item.produtos %}
-          {% set _ = todos_produtos.append(p.update({'atualizado_em': item.atualizado_em})) %}
+          {% set _ = p.update({'atualizado_em': item.atualizado_em}) %}
+          {% set _ = todos_produtos.append(p) %}
         {% endfor %}
       {% endfor %}
       {% set produtos_ordenados = todos_produtos | sort(attribute='atualizado_em', reverse=True) %}
@@ -97,7 +92,11 @@
         <div style="background: #f8f8fc; padding: 20px; border-radius: 12px; width: 240px; border: 1px solid #e3dfff;">
           <img src="{{ p.imagem }}" alt="Produto" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom: 10px;">
           <strong style="font-size: 0.95rem;">{{ p.titulo }}</strong><br>
+          {% if p.atualizado_em %}
           <small style="color:#888;">⏱ Atualizado em: {{ p.atualizado_em[:10] | replace('-', '/') }} às {{ p.atualizado_em[11:16] }}</small><br>
+          {% else %}
+          <small style="color:#888;">⏱ Atualizado: agora</small><br>
+          {% endif %}
           <small style="color:#666;">💰 R$ {{ p.preco }}</small><br>
           <small style="color:#666;">🏪 {{ p.loja }}</small><br>
           <small style="color:#666;">🌟 Comissão da Loja: {{ p.comissao }}%</small><br>
