@@ -508,18 +508,11 @@ def buscar_produto():
     entrada = request.form.get("url", "").strip()
     print(f"🔎 Entrada recebida: {entrada}")
 
-    # Verifica se é um link com shop_id e item_id
+    # Verifica se é link com shop_id e item_id
     match = re.search(r"-i\.(\d+)\.(\d+)", entrada)
     usar_palavra_chave = not match
 
-    if usar_palavra_chave:
-        keyword = entrada
-        print(f"🔠 Detectada palavra-chave: {keyword}")
-    else:
-        shop_id, item_id = match.groups()
-        print(f"✅ Shop ID: {shop_id}, Item ID: {item_id}")
-
-    # Buscar App ID e Secret do afiliado
+    # Obter credenciais da Shopee
     doc = db.collection("api_shopee").document(uid).get()
     if not doc.exists:
         flash("⚠️ Cadastre sua API Shopee antes de buscar produtos.", "error")
@@ -533,47 +526,53 @@ def buscar_produto():
         flash("❌ App ID ou Secret não encontrados. Verifique sua API cadastrada.", "error")
         return redirect("/minha-api")
 
-    # Montar payload da query
+    # Montar a query GraphQL
     if usar_palavra_chave:
-        graphql_query = {
+        keyword = entrada
+        if not keyword:
+            flash("❌ Você precisa digitar uma palavra-chave válida.", "error")
+            return redirect("/produtos")
+        query_dict = {
             "query": f"""
-                query {{
-                  productOfferV2(keyword: "{keyword}", sortType: 2, page: 1, limit: 5) {{
-                    nodes {{
-                      productName
-                      imageUrl
-                      priceMin
-                      commissionRate
-                      shopName
-                      productLink
-                      offerLink
-                    }}
-                  }}
+            query {{
+              productOfferV2(keyword: "{keyword}", sortType: 2, page: 1, limit: 5) {{
+                nodes {{
+                  productName
+                  imageUrl
+                  priceMin
+                  commissionRate
+                  shopName
+                  productLink
+                  offerLink
                 }}
+              }}
+            }}
             """
         }
     else:
-        graphql_query = {
+        shop_id, item_id = match.groups()
+        print(f"✅ Shop ID: {shop_id}, Item ID: {item_id}")
+        query_dict = {
             "query": f"""
-                query {{
-                  productOfferV2(shopId: {shop_id}, itemId: {item_id}, page: 1, limit: 1) {{
-                    nodes {{
-                      productName
-                      imageUrl
-                      priceMin
-                      commissionRate
-                      shopName
-                      productLink
-                      offerLink
-                    }}
-                  }}
+            query {{
+              productOfferV2(shopId: {shop_id}, itemId: {item_id}, page: 1, limit: 1) {{
+                nodes {{
+                  productName
+                  imageUrl
+                  priceMin
+                  commissionRate
+                  shopName
+                  productLink
+                  offerLink
                 }}
+              }}
+            }}
             """
         }
 
-    payload_str = json.dumps(graphql_query, separators=(',', ':'))
+    payload_str = json.dumps(query_dict, separators=(',', ':'))
 
-    # Gerar assinatura
+    # Criar assinatura
     timestamp = str(int(time.time()) + 20)
     base_string = app_id + timestamp + payload_str + app_secret
     signature = hashlib.sha256(base_string.encode()).hexdigest()
@@ -583,7 +582,8 @@ def buscar_produto():
         "Content-Type": "application/json"
     }
 
-    # Logs detalhados para debug
+    # Debug
+    print(f"🔠 Detectada palavra-chave: {entrada if usar_palavra_chave else '[via link]'}")
     print(f"🕒 UTC: {datetime.utcnow()}")
     print(f"⏱️ Timestamp: {timestamp}")
     print(f"🔐 Signature: {signature}")
@@ -613,13 +613,14 @@ def buscar_produto():
             print(f"✅ {len(produtos)} produto(s) processado(s).")
             return render_template("produtos_clickdivulga.html", produtos=produtos)
 
-        flash("❌ Erro na requisição à Shopee", "error")
+        flash("❌ Erro ao buscar produto na Shopee", "error")
         return redirect("/produtos")
 
     except Exception as e:
-        print(f"❌ Exceção na requisição: {e}")
-        flash(f"Erro ao consultar produto: {str(e)}", "error")
+        print("❌ Exceção:", e)
+        flash(f"Erro inesperado: {e}", "error")
         return redirect("/produtos")
+
 
 @app.route("/minha-api", methods=["GET", "POST"])
 @verificar_login
