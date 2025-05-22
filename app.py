@@ -589,25 +589,29 @@ def buscar_produto():
         print("📨 Resposta:", response.text)
 
         if response.status_code == 200:
-            nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
-            produtos = []
-            for p in nodes:
-                preco = float(p.get("priceMin", 0))
-                # Aqui garantimos que a comissão da loja seja zero se for None ou não fornecida
-                taxa_shopee = float(p.get("commissionRate") or 0) * 100
-                comissao_live = round(preco * ((10 + taxa_shopee) / 100), 2)
-                comissao_redes = round(preco * ((3 + taxa_shopee) / 100), 2)
+    nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
+    produtos = []
+    for p in nodes:
+        preco = float(p.get("priceMin", 0))
 
-                produtos.append({
-                    "titulo": p.get("productName"),
-                    "imagem": p.get("imageUrl"),
-                    "preco": preco,
-                    "comissao": taxa_shopee,
-                    "loja": p.get("shopName"),
-                    "comissao_live": comissao_live,
-                    "comissao_redes": comissao_redes,
-                    "link": p.get("offerLink") or p.get("productLink")
-                })
+        # A comissão retornada pela Shopee inclui 3% fixos para redes sociais
+        # Subtraímos 3 para isolar a comissão oferecida pela loja
+        taxa_total = float(p.get("commissionRate") or 0) * 100
+        taxa_loja = max(taxa_total - 3, 0)  # nunca negativa
+
+        comissao_live = round(preco * ((10 + taxa_loja) / 100), 2)
+        comissao_redes = round(preco * ((3 + taxa_loja) / 100), 2)
+
+        produtos.append({
+            "titulo": p.get("productName"),
+            "imagem": p.get("imageUrl"),
+            "preco": preco,
+            "comissao": taxa_loja,
+            "comissao_live": comissao_live,
+            "comissao_redes": comissao_redes,
+            "loja": p.get("shopName"),
+            "link": p.get("offerLink") or p.get("productLink")
+        })
 
             print(f"✅ {len(produtos)} produto(s) processado(s).")
             return render_template("produtos_clickdivulga.html", produtos=produtos)
@@ -694,29 +698,32 @@ def buscar_loja():
         print(f"📨 Resposta: {response.text}")
 
         if response.status_code == 200:
-            nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
-            produtos = []
+    nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
+    produtos = []
 
-            min_val = float(preco_min.replace(",", ".")) if preco_min else 0
-            max_val = float(preco_max.replace(",", ".")) if preco_max else float("inf")
+    min_val = float(preco_min.replace(",", ".")) if preco_min else 0
+    max_val = float(preco_max.replace(",", ".")) if preco_max else float("inf")
 
-            for p in nodes:
-                preco = float(p.get("priceMin", 0))
-                if min_val <= preco <= max_val:
-                    taxa_loja = float(p.get("commissionRate") or 0) * 100
-                    comissao_live = round(preco * ((10 + taxa_loja) / 100), 2)
-                    comissao_redes = round(preco * ((3 + taxa_loja) / 100), 2)
+    for p in nodes:
+        preco = float(p.get("priceMin", 0))
+        if min_val <= preco <= max_val:
+            # Corrigindo: removemos os 3% fixos da Shopee
+            taxa_total = float(p.get("commissionRate") or 0) * 100
+            taxa_loja = max(taxa_total - 3, 0)
 
-                    produtos.append({
-                        "titulo": p.get("productName"),
-                        "imagem": p.get("imageUrl"),
-                        "preco": preco,
-                        "comissao": taxa_loja,
-                        "comissao_live": comissao_live,
-                        "comissao_redes": comissao_redes,
-                        "loja": p.get("shopName"),
-                        "link": p.get("offerLink") or p.get("productLink")
-                    })
+            comissao_live = round(preco * ((10 + taxa_loja) / 100), 2)
+            comissao_redes = round(preco * ((3 + taxa_loja) / 100), 2)
+
+            produtos.append({
+                "titulo": p.get("productName"),
+                "imagem": p.get("imageUrl"),
+                "preco": preco,
+                "comissao": taxa_loja,
+                "comissao_live": comissao_live,
+                "comissao_redes": comissao_redes,
+                "loja": p.get("shopName"),
+                "link": p.get("offerLink") or p.get("productLink")
+            })
 
             print(f"✅ {len(produtos)} produto(s) da loja filtrado(s) por faixa de preço.")
             return render_template("produtos_clickdivulga.html", produtos=produtos)
