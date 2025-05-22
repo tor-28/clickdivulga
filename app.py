@@ -582,7 +582,6 @@ def buscar_produto():
         "Content-Type": "application/json"
     }
 
-    print(f"📡 Enviando requisição para Shopee...")
     try:
         response = requests.post("https://open-api.affiliate.shopee.com.br/graphql", headers=headers, data=payload_str)
         print("🔁 Status:", response.status_code)
@@ -593,11 +592,8 @@ def buscar_produto():
             produtos = []
             for p in nodes:
                 preco = float(p.get("priceMin", 0))
-
-                # Remove os 3% fixos (para redes sociais) da comissão total retornada
                 taxa_total = float(p.get("commissionRate") or 0) * 100
                 taxa_loja = max(taxa_total - 3, 0)
-
                 comissao_live = round(preco * ((10 + taxa_loja) / 100), 2)
                 comissao_redes = round(preco * ((3 + taxa_loja) / 100), 2)
 
@@ -611,6 +607,13 @@ def buscar_produto():
                     "loja": p.get("shopName"),
                     "link": p.get("offerLink") or p.get("productLink")
                 })
+
+            # 🔐 Salva a busca no Firestore
+            firestore.client().collection("buscas").document(uid).collection("registros").add({
+                "tipo": "produto",
+                "termo": keyword if usar_palavra_chave else entrada,
+                "data": datetime.now().isoformat()
+            })
 
             print(f"✅ {len(produtos)} produto(s) processado(s).")
             return render_template("produtos_clickdivulga.html", produtos=produtos)
@@ -644,7 +647,6 @@ def buscar_loja():
         flash("❌ Você precisa digitar o nome ou colar o link da loja.", "error")
         return redirect("/produtos")
 
-    # Detecta shop_id do link
     match = re.search(r'/shop/(\d+)', loja_input) or re.search(r'i\.(\d+)\.', loja_input)
     shop_id = match.group(1) if match else None
 
@@ -661,7 +663,6 @@ def buscar_loja():
         flash("⚠️ No momento, só é possível buscar por link da loja com ID válido.", "error")
         return redirect("/produtos")
 
-    # Monta query
     query_dict = {
         "query": f"""
         query {{
@@ -681,7 +682,6 @@ def buscar_loja():
     }
 
     payload_str = json.dumps(query_dict, separators=(',', ':'))
-
     timestamp = str(int(time.time()) + 20)
     base_string = app_id + timestamp + payload_str + app_secret
     signature = hashlib.sha256(base_string.encode()).hexdigest()
@@ -699,7 +699,6 @@ def buscar_loja():
         if response.status_code == 200:
             nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
             produtos = []
-
             min_val = float(preco_min.replace(",", ".")) if preco_min else 0
             max_val = float(preco_max.replace(",", ".")) if preco_max else float("inf")
 
@@ -708,7 +707,6 @@ def buscar_loja():
                 if min_val <= preco <= max_val:
                     taxa_total = float(p.get("commissionRate") or 0) * 100
                     taxa_loja = max(taxa_total - 3, 0)
-
                     comissao_live = round(preco * ((10 + taxa_loja) / 100), 2)
                     comissao_redes = round(preco * ((3 + taxa_loja) / 100), 2)
 
@@ -723,6 +721,13 @@ def buscar_loja():
                         "link": p.get("offerLink") or p.get("productLink")
                     })
 
+            # 🔐 Salva a busca no Firestore
+            firestore.client().collection("buscas").document(uid).collection("registros").add({
+                "tipo": "loja",
+                "termo": loja_input,
+                "data": datetime.now().isoformat()
+            })
+
             print(f"✅ {len(produtos)} produto(s) da loja filtrado(s) por faixa de preço.")
             return render_template("produtos_clickdivulga.html", produtos=produtos)
 
@@ -733,6 +738,136 @@ def buscar_loja():
         print("❌ Exceção ao buscar loja:", e)
         flash(f"Erro ao buscar loja: {e}", "error")
         return redirect("/produtos")
+
+@app.route("/atualizar-buscas")
+def atualizar_buscas():
+    import time
+    import hashlib
+    import requests
+    import json
+    from datetime import datetime
+    from google.cloud import firestore
+
+    print("🔄 Iniciando atualização de buscas salvas...")
+    db_firestore = firestore.client()
+    colecao_buscas = db_firestore.collection("buscas").stream()
+
+    total_atualizadas = 0
+
+    for doc_uid in colecao_buscas:
+        uid = doc_uid.id
+        print(f"👤 Atualizando buscas de: {uid}")
+
+        registros_ref = db_firestore.collection("buscas").document(uid).collection("registros").stream()
+        doc_api = db.collection("api_shopee").document(uid).get()
+        if not doc_api.exists:
+            print(f"⚠️ API não cadastrada para UID: {uid}")
+            continue
+
+        cred = doc_api.to_dict()
+        app_id = cred.get("app_id") or cred.get("client_id")
+        app_secret = cred.get("app_secret") or cred.get("client_secret")
+
+        for r in registros_ref:
+            dados = r.to_dict()
+            tipo = dados.get("tipo")
+            termo = dados.get("termo", "")
+            termo_id = termo.lower().replace(" ", "-").replace(".", "").replace("/", "")
+            print(f"🔍 Atualizando busca: {tipo} → {termo}")
+
+            # Monta query
+            if tipo == "produto":
+                query_dict = {
+                    "query": f"""
+                    query {{
+                      productOfferV2(keyword: "{termo}", sortType: 2, page: 1, limit: 10) {{
+                        nodes {{
+                          productName
+                          imageUrl
+                          priceMin
+                          commissionRate
+                          shopName
+                          productLink
+                          offerLink
+                        }}
+                      }}
+                    }}
+                    """
+                }
+            elif tipo == "loja":
+                shop_id_match = re.search(r'/shop/(\d+)', termo) or re.search(r'i\.(\d+)\.', termo)
+                if not shop_id_match:
+                    print(f"⚠️ Termo inválido para loja: {termo}")
+                    continue
+                shop_id = shop_id_match.group(1)
+                query_dict = {
+                    "query": f"""
+                    query {{
+                      productOfferV2(shopId: {shop_id}, sortType: 2, page: 1, limit: 10) {{
+                        nodes {{
+                          productName
+                          imageUrl
+                          priceMin
+                          commissionRate
+                          shopName
+                          productLink
+                          offerLink
+                        }}
+                      }}
+                    }}
+                    """
+                }
+            else:
+                continue  # Tipo desconhecido
+
+            payload_str = json.dumps(query_dict, separators=(',', ':'))
+            timestamp = str(int(time.time()) + 20)
+            base_string = app_id + timestamp + payload_str + app_secret
+            signature = hashlib.sha256(base_string.encode()).hexdigest()
+            headers = {
+                "Authorization": f"SHA256 Credential={app_id}, Signature={signature}, Timestamp={timestamp}",
+                "Content-Type": "application/json"
+            }
+
+            try:
+                response = requests.post("https://open-api.affiliate.shopee.com.br/graphql", headers=headers, data=payload_str)
+                if response.status_code == 200:
+                    nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
+                    produtos = []
+                    for p in nodes:
+                        preco = float(p.get("priceMin", 0))
+                        taxa_total = float(p.get("commissionRate") or 0) * 100
+                        taxa_loja = max(taxa_total - 3, 0)
+                        comissao_live = round(preco * ((10 + taxa_loja) / 100), 2)
+                        comissao_redes = round(preco * ((3 + taxa_loja) / 100), 2)
+
+                        produtos.append({
+                            "titulo": p.get("productName"),
+                            "imagem": p.get("imageUrl"),
+                            "preco": preco,
+                            "comissao": taxa_loja,
+                            "comissao_live": comissao_live,
+                            "comissao_redes": comissao_redes,
+                            "loja": p.get("shopName"),
+                            "link": p.get("offerLink") or p.get("productLink")
+                        })
+
+                    db_firestore.collection("resultados_busca").document(uid).collection("termos").document(termo_id).set({
+                        "tipo": tipo,
+                        "termo": termo,
+                        "atualizado_em": datetime.now().isoformat(),
+                        "produtos": produtos
+                    })
+                    total_atualizadas += 1
+                else:
+                    print(f"⚠️ Erro {response.status_code} ao buscar termo: {termo}")
+
+            except Exception as e:
+                print(f"❌ Erro ao atualizar termo {termo}: {e}")
+
+    print(f"✅ Atualização concluída. Total de buscas atualizadas: {total_atualizadas}")
+    return f"✅ Atualização concluída. Total: {total_atualizadas}", 200
+
 
 @app.route("/minha-api", methods=["GET", "POST"])
 @verificar_login
