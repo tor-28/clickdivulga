@@ -478,57 +478,35 @@ def produtos():
     uid = session["usuario"]["uid"]
     firestore_client = firestore.client()
 
-    # Busca padrão (exibe sugestões, se ainda não fez busca)
-    produtos_ref = db.collection("produtos_sugestoes") \
-        .order_by("buscado_em", direction=firestore.Query.DESCENDING) \
-        .limit(50).stream()
-
-    produtos = []
-    for doc in produtos_ref:
-        dados = doc.to_dict()
-        produtos.append({
-            "titulo": dados.get("titulo"),
-            "imagem": dados.get("imagem"),
-            "preco": dados.get("preco"),
-            "estoque": dados.get("estoque"),
-            "comissao": dados.get("comissao"),
-            "loja": dados.get("loja"),
-            "link": dados.get("link") or dados.get("offerLink") or "",
-            "buscado_em": dados.get("buscado_em")
-        })
-
-    # 🧠 Busca resultados salvos por UID
+    produtos = []  # Mantém compatibilidade com produtos encontrados
     resultados = []
     lojas_disponiveis = set()
-    categorias_disponiveis = set()
+    palavras_disponiveis = set()
 
     try:
         termos_ref = firestore_client.collection("resultados_busca").document(uid).collection("termos").stream()
         for doc in termos_ref:
             dados = doc.to_dict()
-            produtos_termo = dados.get("produtos", [])
-            for p in produtos_termo:
-                if p.get("loja"): lojas_disponiveis.add(p["loja"])
-                if dados.get("tipo"): categorias_disponiveis.add(dados["tipo"])
-
+            for p in dados.get("produtos", []):
+                if p.get("loja"):
+                    lojas_disponiveis.add(p.get("loja"))
+                if dados.get("termo"):
+                    palavras_disponiveis.add(dados.get("termo").lower())
             resultados.append({
                 "termo": dados.get("termo"),
                 "tipo": dados.get("tipo"),
                 "atualizado_em": dados.get("atualizado_em"),
-                "produtos": produtos_termo
+                "produtos": dados.get("produtos", [])
             })
-
     except Exception as e:
         print(f"Erro ao carregar resultados salvos: {e}")
 
-    return render_template(
-        "produtos_clickdivulga.html",
+    return render_template("produtos_clickdivulga.html",
         produtos=produtos,
         resultados=resultados,
         lojas_disponiveis=sorted(lojas_disponiveis),
-        categorias_disponiveis=sorted(categorias_disponiveis)
+        palavras_disponiveis=sorted(palavras_disponiveis)
     )
-
 
 @app.route("/buscar-produto", methods=["POST"])
 @verificar_login
