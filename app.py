@@ -528,17 +528,16 @@ def buscar_produto():
         flash("❌ App ID ou Secret não encontrados. Verifique sua API cadastrada.", "error")
         return redirect("/minha-api")
 
-    # Montar query GraphQL
+    # 🔎 Monta query
     if usar_palavra_chave:
         if not keyword:
             flash("❌ Digite uma palavra-chave válida ou cole um link da Shopee.", "error")
             return redirect("/produtos")
-
         category_param = f'productCatId: {category_id},' if category_id else ''
         query_dict = {
             "query": f"""
             query {{
-              productOfferV2(keyword: "{keyword}", {category_param} sortType: 2, page: 1, limit: 5) {{
+              productOfferV2(keyword: "{keyword}", {category_param} sortType: 2, page: 1, limit: 10) {{
                 nodes {{
                   productName
                   imageUrl
@@ -547,6 +546,7 @@ def buscar_produto():
                   shopName
                   productLink
                   offerLink
+                  historicalSold
                 }}
               }}
             }}
@@ -567,6 +567,7 @@ def buscar_produto():
                   shopName
                   productLink
                   offerLink
+                  historicalSold
                 }}
               }}
             }}
@@ -583,15 +584,7 @@ def buscar_produto():
         "Content-Type": "application/json"
     }
 
-    print(f"🔠 Tipo: {'Palavra-chave' if usar_palavra_chave else 'Link direto'}")
-    print(f"🕒 UTC: {datetime.utcnow()}")
-    print(f"⏱️ Timestamp: {timestamp}")
-    print(f"🔐 Signature: {signature}")
-    print(f"🧩 Base string: {base_string}")
-    print(f"📡 Enviando requisição...")
-    print(f"🧾 Headers: {headers}")
-    print(f"🧪 Payload: {payload_str}")
-
+    print(f"📡 Enviando requisição para Shopee...")
     try:
         response = requests.post("https://open-api.affiliate.shopee.com.br/graphql", headers=headers, data=payload_str)
         print("🔁 Status:", response.status_code)
@@ -601,12 +594,20 @@ def buscar_produto():
             nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
             produtos = []
             for p in nodes:
+                preco = float(p.get("priceMin", 0))
+                taxa_loja = float(p.get("commissionRate", 0)) * 100
+                comissao_live = round(preco * ((10 + taxa_loja) / 100), 2)
+                comissao_redes = round(preco * ((3 + taxa_loja) / 100), 2)
+
                 produtos.append({
                     "titulo": p.get("productName"),
                     "imagem": p.get("imageUrl"),
-                    "preco": p.get("priceMin"),
-                    "comissao": float(p.get("commissionRate", 0)) * 100,
+                    "preco": preco,
+                    "comissao": taxa_loja,
                     "loja": p.get("shopName"),
+                    "vendidos": p.get("historicalSold", 0),
+                    "comissao_live": comissao_live,
+                    "comissao_redes": comissao_redes,
                     "link": p.get("offerLink") or p.get("productLink")
                 })
 
@@ -620,6 +621,7 @@ def buscar_produto():
         print("❌ Exceção:", e)
         flash(f"Erro inesperado: {e}", "error")
         return redirect("/produtos")
+
 
 @app.route("/buscar-loja", methods=["POST"])
 @verificar_login
@@ -655,12 +657,11 @@ def buscar_loja():
     app_id = cred.get("app_id")
     app_secret = cred.get("app_secret")
 
-    # Se não tiver shop_id, usa nome para buscar
     if not shop_id:
         flash("⚠️ No momento, só é possível buscar por link da loja com ID válido.", "error")
         return redirect("/produtos")
 
-    # Monta payload para buscar produtos da loja
+    # Monta payload
     query_dict = {
         "query": f"""
         query {{
@@ -673,6 +674,7 @@ def buscar_loja():
               shopName
               productLink
               offerLink
+              historicalSold
             }}
           }}
         }}
@@ -689,7 +691,6 @@ def buscar_loja():
         "Content-Type": "application/json"
     }
 
-    # Envia requisição
     try:
         response = requests.post("https://open-api.affiliate.shopee.com.br/graphql", headers=headers, data=payload_str)
         print(f"🔁 Status: {response.status_code}")
@@ -705,11 +706,18 @@ def buscar_loja():
             for p in nodes:
                 preco = float(p.get("priceMin", 0))
                 if min_val <= preco <= max_val:
+                    taxa_loja = float(p.get("commissionRate", 0)) * 100
+                    comissao_live = round(preco * ((10 + taxa_loja) / 100), 2)
+                    comissao_redes = round(preco * ((3 + taxa_loja) / 100), 2)
+
                     produtos.append({
                         "titulo": p.get("productName"),
                         "imagem": p.get("imageUrl"),
                         "preco": preco,
-                        "comissao": float(p.get("commissionRate", 0)) * 100,
+                        "vendidos": p.get("historicalSold", 0),
+                        "comissao": taxa_loja,
+                        "comissao_live": comissao_live,
+                        "comissao_redes": comissao_redes,
                         "loja": p.get("shopName"),
                         "link": p.get("offerLink") or p.get("productLink")
                     })
