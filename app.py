@@ -763,11 +763,11 @@ def atualizar_buscas():
     import requests
     import json
     from datetime import datetime
-    import re  # importante
+    import re
 
     print("🔄 Iniciando atualização de buscas salvas...")
 
-    db_firestore = db  # Usa a instância já conectada
+    db_firestore = db  # Usa instância já conectada
     colecao_buscas = db_firestore.collection("buscas").stream()
     total_atualizadas = 0
 
@@ -792,6 +792,7 @@ def atualizar_buscas():
             termo_id = termo.lower().replace(" ", "-").replace(".", "").replace("/", "")
             print(f"🔍 Atualizando busca: {tipo} → {termo}")
 
+            # Monta a query
             if tipo == "produto":
                 query_dict = {
                     "query": f"""
@@ -836,6 +837,7 @@ def atualizar_buscas():
             else:
                 continue
 
+            # Gera assinatura da API
             payload_str = json.dumps(query_dict, separators=(',', ':'))
             timestamp = str(int(time.time()) + 20)
             base_string = app_id + timestamp + payload_str + app_secret
@@ -868,13 +870,22 @@ def atualizar_buscas():
                             "link": p.get("offerLink") or p.get("productLink")
                         })
 
-                    # 🔐 Salva produtos atualizados em resultados_busca
+                    # 🔐 Salva produtos atualizados
                     db_firestore.collection("resultados_busca").document(uid).collection("termos").document(termo_id).set({
                         "tipo": tipo,
                         "termo": termo,
                         "atualizado_em": datetime.now().isoformat(),
                         "produtos": produtos
                     })
+
+                    # 📝 Loga atualização
+                    db_firestore.collection("logs_atualizacao").document(uid).collection("execucoes").add({
+                        "termo": termo,
+                        "tipo": tipo,
+                        "qtd_produtos": len(produtos),
+                        "atualizado_em": datetime.now().isoformat()
+                    })
+
                     print(f"✅ Salvo: {termo} com {len(produtos)} produto(s)")
                     total_atualizadas += 1
                 else:
@@ -885,7 +896,6 @@ def atualizar_buscas():
 
     print(f"✅ Atualização concluída. Total de buscas atualizadas: {total_atualizadas}")
     return f"✅ Atualização concluída. Total: {total_atualizadas}", 200
-
 
 @app.route("/minha-api", methods=["GET", "POST"])
 @verificar_login
