@@ -502,6 +502,7 @@ def buscar_produto():
     import hmac
     import hashlib
     import requests
+    import datetime
 
     uid = session["usuario"]["uid"]
     url = request.form.get("url")
@@ -527,9 +528,16 @@ def buscar_produto():
         flash("App ID ou App Secret não encontrados. Verifique sua API cadastrada.", "error")
         return redirect("/minha-api")
 
+    # Gerar timestamp e assinatura
     timestamp = str(int(time.time() * 1000))
     base_string = app_id + timestamp
     signature = hmac.new(app_secret.encode(), base_string.encode(), hashlib.sha256).hexdigest()
+
+    # Log de horário e assinatura
+    utc_now = datetime.datetime.utcnow()
+    print("🕒 Horário UTC do servidor:", utc_now)
+    print("⏱️ Timestamp (ms):", timestamp)
+    print("🔐 Assinatura:", signature)
 
     headers = {
         "Authorization": f"SHA256 Credential={app_id}, Signature={signature}, Timestamp={timestamp}",
