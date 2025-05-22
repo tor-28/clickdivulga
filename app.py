@@ -499,20 +499,36 @@ def produtos():
 
     # 🧠 Busca resultados salvos por UID
     resultados = []
+    lojas_disponiveis = set()
+    categorias_disponiveis = set()
+
     try:
         termos_ref = firestore_client.collection("resultados_busca").document(uid).collection("termos").stream()
         for doc in termos_ref:
             dados = doc.to_dict()
+            produtos_termo = dados.get("produtos", [])
+            for p in produtos_termo:
+                if p.get("loja"): lojas_disponiveis.add(p["loja"])
+                if dados.get("tipo"): categorias_disponiveis.add(dados["tipo"])
+
             resultados.append({
                 "termo": dados.get("termo"),
                 "tipo": dados.get("tipo"),
                 "atualizado_em": dados.get("atualizado_em"),
-                "produtos": dados.get("produtos", [])
+                "produtos": produtos_termo
             })
+
     except Exception as e:
         print(f"Erro ao carregar resultados salvos: {e}")
 
-    return render_template("produtos_clickdivulga.html", produtos=produtos, resultados=resultados)
+    return render_template(
+        "produtos_clickdivulga.html",
+        produtos=produtos,
+        resultados=resultados,
+        lojas_disponiveis=sorted(lojas_disponiveis),
+        categorias_disponiveis=sorted(categorias_disponiveis)
+    )
+
 
 @app.route("/buscar-produto", methods=["POST"])
 @verificar_login
