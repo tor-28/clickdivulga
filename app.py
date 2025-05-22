@@ -589,29 +589,28 @@ def buscar_produto():
         print("📨 Resposta:", response.text)
 
         if response.status_code == 200:
-    nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
-    produtos = []
-    for p in nodes:
-        preco = float(p.get("priceMin", 0))
+            nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
+            produtos = []
+            for p in nodes:
+                preco = float(p.get("priceMin", 0))
 
-        # A comissão retornada pela Shopee inclui 3% fixos para redes sociais
-        # Subtraímos 3 para isolar a comissão oferecida pela loja
-        taxa_total = float(p.get("commissionRate") or 0) * 100
-        taxa_loja = max(taxa_total - 3, 0)  # nunca negativa
+                # Remove os 3% fixos (para redes sociais) da comissão total retornada
+                taxa_total = float(p.get("commissionRate") or 0) * 100
+                taxa_loja = max(taxa_total - 3, 0)
 
-        comissao_live = round(preco * ((10 + taxa_loja) / 100), 2)
-        comissao_redes = round(preco * ((3 + taxa_loja) / 100), 2)
+                comissao_live = round(preco * ((10 + taxa_loja) / 100), 2)
+                comissao_redes = round(preco * ((3 + taxa_loja) / 100), 2)
 
-        produtos.append({
-            "titulo": p.get("productName"),
-            "imagem": p.get("imageUrl"),
-            "preco": preco,
-            "comissao": taxa_loja,
-            "comissao_live": comissao_live,
-            "comissao_redes": comissao_redes,
-            "loja": p.get("shopName"),
-            "link": p.get("offerLink") or p.get("productLink")
-        })
+                produtos.append({
+                    "titulo": p.get("productName"),
+                    "imagem": p.get("imageUrl"),
+                    "preco": preco,
+                    "comissao": taxa_loja,
+                    "comissao_live": comissao_live,
+                    "comissao_redes": comissao_redes,
+                    "loja": p.get("shopName"),
+                    "link": p.get("offerLink") or p.get("productLink")
+                })
 
             print(f"✅ {len(produtos)} produto(s) processado(s).")
             return render_template("produtos_clickdivulga.html", produtos=produtos)
