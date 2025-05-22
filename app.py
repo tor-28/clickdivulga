@@ -505,15 +505,15 @@ def buscar_produto():
     from datetime import datetime
 
     uid = session["usuario"]["uid"]
-    url = request.form.get("url", "").strip()
     keyword = request.form.get("keyword", "").strip()
-    category_id = request.form.get("categoria")  # novo campo
+    url = request.form.get("url", "").strip()
+    category_id = request.form.get("categoria") or ""
 
-    print(f"🔎 URL recebida: {url}")
-    print(f"🔤 Palavra-chave: {keyword}")
-    print(f"📂 Categoria selecionada: {category_id}")
+    entrada = url if url else keyword
+    print(f"🔎 Entrada recebida: {entrada}")
+    print(f"🔢 Categoria ID selecionada: {category_id}")
 
-    match = re.search(r"-i\.(\d+)\.(\d+)", url)
+    match = re.search(r"-i\.(\d+)\.(\d+)", entrada)
     usar_palavra_chave = not match
 
     doc = db.collection("api_shopee").document(uid).get()
@@ -524,7 +524,6 @@ def buscar_produto():
     cred = doc.to_dict()
     app_id = cred.get("app_id") or cred.get("client_id")
     app_secret = cred.get("app_secret") or cred.get("client_secret")
-
     if not app_id or not app_secret:
         flash("❌ App ID ou Secret não encontrados. Verifique sua API cadastrada.", "error")
         return redirect("/minha-api")
@@ -575,7 +574,6 @@ def buscar_produto():
         }
 
     payload_str = json.dumps(query_dict, separators=(',', ':'))
-
     timestamp = str(int(time.time()) + 20)
     base_string = app_id + timestamp + payload_str + app_secret
     signature = hashlib.sha256(base_string.encode()).hexdigest()
@@ -585,6 +583,7 @@ def buscar_produto():
         "Content-Type": "application/json"
     }
 
+    print(f"🔠 Tipo: {'Palavra-chave' if usar_palavra_chave else 'Link direto'}")
     print(f"🕒 UTC: {datetime.utcnow()}")
     print(f"⏱️ Timestamp: {timestamp}")
     print(f"🔐 Signature: {signature}")
