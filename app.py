@@ -502,23 +502,24 @@ def buscar_produto():
     import hmac
     import hashlib
     import requests
+    from datetime import datetime
 
     uid = session["usuario"]["uid"]
-    url = request.form.get("url")
+    url = request.form.get("url", "").strip()
 
     print(f"🔎 URL recebida: {url}")
-
     match = re.search(r"-i\.(\d+)\.(\d+)", url)
     if not match:
-        flash("URL inválida. Não foi possível extrair shop_id e item_id.", "error")
+        flash("❌ URL inválida. Não foi possível extrair shop_id e item_id.", "error")
         return redirect("/produtos")
 
     shop_id, item_id = match.groups()
     print(f"✅ Shop ID: {shop_id}, Item ID: {item_id}")
 
+    # Obter App ID e Secret
     doc = db.collection("api_shopee").document(uid).get()
     if not doc.exists:
-        flash("Você precisa cadastrar sua API Shopee antes de buscar produtos.", "error")
+        flash("⚠️ Cadastre sua API Shopee antes de buscar produtos.", "error")
         return redirect("/minha-api")
 
     cred = doc.to_dict()
@@ -526,17 +527,13 @@ def buscar_produto():
     app_secret = cred.get("app_secret") or cred.get("client_secret")
 
     if not app_id or not app_secret:
-        flash("App ID ou App Secret não encontrados. Verifique sua API cadastrada.", "error")
+        flash("❌ App ID ou Secret não encontrados. Verifique sua API cadastrada.", "error")
         return redirect("/minha-api")
 
-    timestamp = int(time.time())
+    # Ajuste de tempo com tolerância (+10s)
+    timestamp = int(time.time()) + 10
     base_string = f"{app_id}{timestamp}"
     signature = hmac.new(app_secret.encode(), base_string.encode(), hashlib.sha256).hexdigest()
-
-    print(f"🕒 UTC do servidor: {datetime.utcnow()}")
-    print(f"⏱️ Timestamp usado: {timestamp}")
-    print(f"🔐 Signature: {signature}")
-    print(f"🧩 Base string: {base_string}")
 
     headers = {
         "Authorization": f"SHA256 Credential={app_id}, Signature={signature}, Timestamp={timestamp}",
@@ -561,7 +558,11 @@ def buscar_produto():
         """
     }
 
-    print("📡 Enviando requisição para Shopee...")
+    print(f"🕒 UTC do servidor: {datetime.utcnow()}")
+    print(f"⏱️ Timestamp usado: {timestamp}")
+    print(f"🔐 Signature: {signature}")
+    print(f"🧩 Base string: {base_string}")
+    print(f"📡 Enviando requisição para Shopee...")
     print(f"🧾 Headers: {headers}")
     print(f"🧪 Query: {graphql_query}")
 
@@ -571,9 +572,9 @@ def buscar_produto():
         print("📨 Corpo da resposta:")
         print(response.text)
 
-        produtos = []
         if response.status_code == 200:
             nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
+            produtos = []
             for p in nodes:
                 produtos.append({
                     "titulo": p.get("productName"),
@@ -584,12 +585,15 @@ def buscar_produto():
                     "link": p.get("offerLink") or p.get("productLink")
                 })
 
-        print(f"✅ {len(produtos)} produto(s) processado(s) com sucesso.")
-        return render_template("produtos_clickdivulga.html", produtos=produtos)
+            print(f"✅ {len(produtos)} produto(s) processado(s) com sucesso.")
+            return render_template("produtos_clickdivulga.html", produtos=produtos)
+
+        flash("❌ Erro na requisição à Shopee", "error")
+        return redirect("/produtos")
 
     except Exception as e:
-        print("❌ Erro na requisição:", str(e))
-        flash(f"Erro na requisição: {str(e)}", "error")
+        print(f"❌ Exceção na requisição: {e}")
+        flash(f"Erro ao consultar produto: {str(e)}", "error")
         return redirect("/produtos")
 
 @app.route("/minha-api", methods=["GET", "POST"])
