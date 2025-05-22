@@ -94,12 +94,12 @@
       <small style="color:#666;">💰 R$ {{ produto.preco }}</small><br>
       <small style="color:#666;">🏪 {{ produto.loja }}</small><br>
 
-      <small style="color:#666;">🎯 Comissão Shopee: {{ produto.comissao | round(1) }}%</small><br>
+      <small style="color:#666;">🎯 Comissão da Loja: {{ produto.comissao | round(1) }}%</small><br>
       <small style="color:#666;">
         🎥 Live: {{ produto.comissao_live | round(2) }} ({{ (produto.comissao + 10) | round(1) }}%)
       </small><br>
       <small style="color:#666;">
-        📱 Redes Sociais: {{ produto.comissao_redes | round(2) }} ({{ (produto.comissao - 3) | round(1) }}%)
+        📱 Redes Sociais: {{ produto.comissao_redes | round(2) }} ({{ (produto.comissao + 3) | round(1) }}%)
       </small><br><br>
 
       <input type="text" value="{{ produto.link }}" readonly style="width:100%; padding:8px; font-size:0.9rem; margin-bottom:6px; border-radius: 6px; border: 1px solid #ccc;">
