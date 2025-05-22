@@ -530,8 +530,8 @@ def buscar_produto():
         flash("❌ App ID ou Secret não encontrados. Verifique sua API cadastrada.", "error")
         return redirect("/minha-api")
 
-    # Ajuste de tempo com tolerância (+10s)
-    timestamp = int(time.time()) + 10
+    # Ajuste de tempo com tolerância (+20s)
+    timestamp = int(time.time()) + 20
     base_string = f"{app_id}{timestamp}"
     signature = hmac.new(app_secret.encode(), base_string.encode(), hashlib.sha256).hexdigest()
 
