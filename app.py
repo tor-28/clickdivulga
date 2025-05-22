@@ -524,11 +524,38 @@ def buscar_produto():
     keyword = request.form.get("keyword", "").strip()
     url = request.form.get("url", "").strip()
     category_id = request.form.get("categoria") or ""
-
     entrada = url if url else keyword
     match = re.search(r"-i\.(\d+)\.(\d+)", entrada)
     usar_palavra_chave = not match
 
+    # 🔒 Termo padronizado
+    termo_final = keyword if usar_palavra_chave else entrada
+    termo_id = termo_final.lower().replace(" ", "-").replace(".", "").replace("/", "")
+
+    # ⛔ Evita buscas duplicadas nas últimas 12h
+    termo_doc = db.collection("resultados_busca").document(uid).collection("termos").document(termo_id).get()
+    if termo_doc.exists:
+        dados = termo_doc.to_dict()
+        atualizado_em = dados.get("atualizado_em")
+        if atualizado_em:
+            dt = datetime.fromisoformat(atualizado_em)
+            if (datetime.now() - dt).total_seconds() < 43200:  # 12h
+                flash("⚠️ Você já buscou esse termo nas últimas 12 horas.", "warning")
+                return redirect("/produtos")
+
+    # 🔄 Limite de uso diário (metade para afiliado)
+    hoje = datetime.now().date().isoformat()
+    contador_ref = db.collection("api_contador").document(uid)
+    contador_doc = contador_ref.get()
+    contador = contador_doc.to_dict() if contador_doc.exists else {}
+
+    if contador.get("data") != hoje:
+        contador = {"data": hoje, "uso_afiliado": 0, "uso_base": 0}
+    if contador["uso_afiliado"] >= 25000:
+        flash("🚫 Limite de uso diário atingido para hoje (25.000 requisições).", "error")
+        return redirect("/produtos")
+
+    # 🔑 Autenticação
     doc = db.collection("api_shopee").document(uid).get()
     if not doc.exists:
         flash("⚠️ Cadastre sua API Shopee antes de buscar produtos.", "error")
@@ -541,6 +568,7 @@ def buscar_produto():
         flash("❌ App ID ou Secret não encontrados.", "error")
         return redirect("/minha-api")
 
+    # 🔍 Monta query
     if usar_palavra_chave:
         if not keyword:
             flash("❌ Digite uma palavra-chave ou link válido.", "error")
@@ -583,6 +611,7 @@ def buscar_produto():
             """
         }
 
+    # 🔐 Assinatura da API
     payload_str = json.dumps(query_dict, separators=(',', ':'))
     timestamp = str(int(time.time()) + 20)
     base_string = app_id + timestamp + payload_str + app_secret
@@ -614,10 +643,7 @@ def buscar_produto():
                     "link": p.get("offerLink") or p.get("productLink")
                 })
 
-            termo_final = keyword if usar_palavra_chave else entrada
-            termo_id = termo_final.lower().replace(" ", "-").replace(".", "").replace("/", "")
-
-            # 🔐 Salva a busca e produtos
+            # 🔐 Salva
             db.collection("buscas").document(uid).collection("registros").add({
                 "tipo": "produto",
                 "termo": termo_final,
@@ -630,10 +656,13 @@ def buscar_produto():
                 "produtos": produtos
             })
 
-            # 🔁 Carrega todos os resultados salvos
+            # 🧮 Atualiza contador
+            contador["uso_afiliado"] += 1
+            db.collection("api_contador").document(uid).set(contador)
+
+            # 🔁 Recarrega
             resultados_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
             resultados = [doc.to_dict() for doc in resultados_ref]
-
             return render_template("produtos_clickdivulga.html", produtos=produtos, resultados=resultados)
 
         flash("❌ Erro ao buscar produto na Shopee", "error")
@@ -665,6 +694,32 @@ def buscar_loja():
         flash("⚠️ Link da loja inválido.", "error")
         return redirect("/produtos")
 
+    termo_id = loja_input.lower().replace(" ", "-").replace(".", "").replace("/", "")
+
+    # ⛔ Evita duplicação nas últimas 12h
+    termo_doc = db.collection("resultados_busca").document(uid).collection("termos").document(termo_id).get()
+    if termo_doc.exists:
+        dados = termo_doc.to_dict()
+        atualizado_em = dados.get("atualizado_em")
+        if atualizado_em:
+            dt = datetime.fromisoformat(atualizado_em)
+            if (datetime.now() - dt).total_seconds() < 43200:
+                flash("⚠️ Essa loja já foi buscada nas últimas 12 horas.", "warning")
+                return redirect("/produtos")
+
+    # 🔁 Limite de requisições
+    hoje = datetime.now().date().isoformat()
+    contador_ref = db.collection("api_contador").document(uid)
+    contador_doc = contador_ref.get()
+    contador = contador_doc.to_dict() if contador_doc.exists else {}
+
+    if contador.get("data") != hoje:
+        contador = {"data": hoje, "uso_afiliado": 0, "uso_base": 0}
+    if contador["uso_afiliado"] >= 25000:
+        flash("🚫 Limite de uso diário atingido para hoje (25.000 requisições).", "error")
+        return redirect("/produtos")
+
+    # 🔑 API Shopee
     doc = db.collection("api_shopee").document(uid).get()
     if not doc.exists:
         flash("⚠️ Cadastre sua API Shopee antes de buscar.", "error")
@@ -677,7 +732,7 @@ def buscar_loja():
     query_dict = {
         "query": f"""
         query {{
-          productOfferV2(shopId: {shop_id}, sortType: 2, page: 1, limit: 20) {{
+          productOfferV2(shopId: {shop_id}, sortType: 2, page: 1, limit: 10) {{
             nodes {{
               productName
               imageUrl
@@ -727,9 +782,7 @@ def buscar_loja():
                         "link": p.get("offerLink") or p.get("productLink")
                     })
 
-            termo_id = loja_input.lower().replace(" ", "-").replace(".", "").replace("/", "")
-
-            # 🔐 Salva a busca e produtos
+            # 💾 Salva busca
             db.collection("buscas").document(uid).collection("registros").add({
                 "tipo": "loja",
                 "termo": loja_input,
@@ -742,10 +795,13 @@ def buscar_loja():
                 "produtos": produtos
             })
 
-            # 🔁 Carrega todos os resultados salvos
+            # 🧮 Atualiza contador
+            contador["uso_afiliado"] += 1
+            db.collection("api_contador").document(uid).set(contador)
+
+            # 🔁 Carrega
             resultados_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
             resultados = [doc.to_dict() for doc in resultados_ref]
-
             return render_template("produtos_clickdivulga.html", produtos=produtos, resultados=resultados)
 
         flash("❌ Erro ao buscar loja.", "error")
@@ -758,16 +814,12 @@ def buscar_loja():
 
 @app.route("/atualizar-buscas")
 def atualizar_buscas():
-    import time
-    import hashlib
-    import requests
-    import json
+    import time, hashlib, requests, json, re
     from datetime import datetime
-    import re
 
     print("🔄 Iniciando atualização de buscas salvas...")
 
-    db_firestore = db  # Usa instância já conectada
+    db_firestore = db
     colecao_buscas = db_firestore.collection("buscas").stream()
     total_atualizadas = 0
 
@@ -785,14 +837,26 @@ def atualizar_buscas():
         app_id = cred.get("app_id") or cred.get("client_id")
         app_secret = cred.get("app_secret") or cred.get("client_secret")
 
+        # 🔄 Limite de uso para base
+        hoje = datetime.now().date().isoformat()
+        contador_ref = db.collection("api_contador").document(uid)
+        contador_doc = contador_ref.get()
+        contador = contador_doc.to_dict() if contador_doc.exists else {}
+        if contador.get("data") != hoje:
+            contador = {"data": hoje, "uso_afiliado": 0, "uso_base": 0}
+
+        if contador["uso_base"] >= 25000:
+            print(f"🚫 UID {uid} atingiu limite de uso da base.")
+            continue
+
         for r in registros_ref:
             dados = r.to_dict()
             tipo = dados.get("tipo")
             termo = dados.get("termo", "")
             termo_id = termo.lower().replace(" ", "-").replace(".", "").replace("/", "")
-            print(f"🔍 Atualizando busca: {tipo} → {termo}")
 
-            # Monta a query
+            print(f"🔁 Atualizando: {termo} ({tipo})")
+
             if tipo == "produto":
                 query_dict = {
                     "query": f"""
@@ -837,7 +901,6 @@ def atualizar_buscas():
             else:
                 continue
 
-            # Gera assinatura da API
             payload_str = json.dumps(query_dict, separators=(',', ':'))
             timestamp = str(int(time.time()) + 20)
             base_string = app_id + timestamp + payload_str + app_secret
@@ -870,7 +933,7 @@ def atualizar_buscas():
                             "link": p.get("offerLink") or p.get("productLink")
                         })
 
-                    # 🔐 Salva produtos atualizados
+                    # 🔐 Atualiza resultados
                     db_firestore.collection("resultados_busca").document(uid).collection("termos").document(termo_id).set({
                         "tipo": tipo,
                         "termo": termo,
@@ -878,7 +941,7 @@ def atualizar_buscas():
                         "produtos": produtos
                     })
 
-                    # 📝 Loga atualização
+                    # 📝 Log
                     db_firestore.collection("logs_atualizacao").document(uid).collection("execucoes").add({
                         "termo": termo,
                         "tipo": tipo,
@@ -886,15 +949,20 @@ def atualizar_buscas():
                         "atualizado_em": datetime.now().isoformat()
                     })
 
-                    print(f"✅ Salvo: {termo} com {len(produtos)} produto(s)")
+                    contador["uso_base"] += 1
                     total_atualizadas += 1
+                    if contador["uso_base"] >= 25000:
+                        print(f"⛔ Limite de base atingido para {uid}. Parando...")
+                        break
                 else:
-                    print(f"⚠️ Erro {response.status_code} ao buscar termo: {termo}")
+                    print(f"⚠️ Erro HTTP {response.status_code} ao buscar {termo}")
 
             except Exception as e:
-                print(f"❌ Erro ao atualizar termo {termo}: {e}")
+                print(f"❌ Erro ao atualizar {termo}: {e}")
 
-    print(f"✅ Atualização concluída. Total de buscas atualizadas: {total_atualizadas}")
+        db.collection("api_contador").document(uid).set(contador)
+
+    print(f"✅ Atualização concluída. Total: {total_atualizadas}")
     return f"✅ Atualização concluída. Total: {total_atualizadas}", 200
 
 @app.route("/minha-api", methods=["GET", "POST"])
