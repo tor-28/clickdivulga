@@ -29,8 +29,8 @@
       <div style="flex: 1; background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); min-width: 300px;">
         <h2 style="margin-bottom:20px; color:#5e3ea1;">🔎 Palavra-chave ou Link</h2>
         <form method="POST" action="/buscar-produto" onsubmit="return validarCampos();">
-          <label>Categoria:</label>
-          <select name="categoria" id="campoCategoria" style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;" required>
+          <label>Categoria (obrigatória):</label>
+          <select name="categoria" id="campoCategoria" required style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
             <option value="" disabled selected>-- Selecione uma categoria --</option>
             <option value="100001">Moda Masculina</option>
             <option value="100002">Moda Feminina</option>
@@ -82,92 +82,23 @@
       </div>
     </div>
 
-    {% if produtos %}
-    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom: 40px;">
-      <h2 style="margin-bottom:20px;">🧾 Produtos encontrados</h2>
-      <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-        {% for p in produtos %}
-        <div style="background: #f8f8fc; padding: 20px; border-radius: 12px; width: 240px; border: 1px solid #e3dfff;">
-          <img src="{{ p.imagem }}" alt="Produto" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom: 10px;">
-          <strong style="font-size: 0.95rem;">{{ p.titulo }}</strong><br>
-          <small style="color:#666;">💰 R$ {{ p.preco }}</small><br>
-          <small style="color:#666;">🏪 {{ p.loja }}</small><br>
-          <small style="color:#666;">🌟 Comissão da Loja: {{ p.comissao }}%</small><br>
-          <small style="color:#666;">🎥 Live: R$ {{ p.comissao_live }} | 📱 Redes: R$ {{ p.comissao_redes }}</small><br>
-          <small style="color:#888;">⏱ Atualizado: {{ p.atualizado_em or "agora" }}</small><br>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
+    <!-- Filtros e paginação -->
+    {% set pagina = request.args.get('pagina') %}
+    {% if not pagina or not pagina.isdigit() %}
+      {% set pagina = 1 %}
+    {% else %}
+      {% set pagina = pagina|int %}
     {% endif %}
 
-    <!-- Buscas Salvas com Filtros e Paginação -->
-    {% if resultados %}
-    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
-      <form method="GET" style="margin-bottom:20px; display:flex; gap:20px; flex-wrap:wrap;">
-        <input type="text" name="filtro_termo" placeholder="🔍 Buscar por palavra-chave" style="padding:10px; border-radius:8px; flex:1;">
-        <select name="filtro_tipo" style="padding:10px; border-radius:8px;">
-          <option value="">📂 Todas as categorias</option>
-          <option value="produto">Produtos</option>
-          <option value="loja">Lojas</option>
-        </select>
-        <button type="submit" style="background-color:#5e3ea1; color:white; padding:10px 20px; border:none; border-radius:8px;">Filtrar</button>
-      </form>
-      <h2 style="margin-bottom:20px;">🧠 Minhas Buscas Salvas (Atualizadas)</h2>
-      {% set pagina = request.args.get('pagina', 1, type=int) %}
-      {% set inicio = (pagina - 1) * 20 %}
-      {% set fim = inicio + 20 %}
-      {% set resultados_filtrados = resultados %}
-      {% if request.args.get('filtro_termo') %}
-        {% set termo_filtro = request.args.get('filtro_termo').lower() %}
-        {% set resultados_filtrados = resultados_filtrados | selectattr('termo', 'search', termo_filtro) | list %}
-      {% endif %}
-      {% if request.args.get('filtro_tipo') %}
-        {% set tipo_filtro = request.args.get('filtro_tipo') %}
-        {% set resultados_filtrados = resultados_filtrados | selectattr('tipo', 'equalto', tipo_filtro) | list %}
-      {% endif %}
-      {% set resultados_ordenados = resultados_filtrados|sort(attribute='atualizado_em', reverse=True) %}
-      {% set resultados_paginados = resultados_ordenados[inicio:fim] %}
-      <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-        {% for item in resultados_paginados %}
-          {% for p in item.produtos[:20] %}
-          <div style="background: #f8f8fc; padding: 20px; border-radius: 12px; width: 240px; border: 1px solid #e3dfff;">
-            <img src="{{ p.imagem }}" alt="Produto" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom: 10px;">
-            <strong style="font-size: 0.95rem;">{{ p.titulo }}</strong><br>
-            <small style="color:#888;">⏱ Atualizado em: {{ item.atualizado_em[:10] | replace('-', '/') }} às {{ item.atualizado_em[11:16] }}</small><br>
-            <small style="color:#666;">💰 R$ {{ p.preco }}</small><br>
-            <small style="color:#666;">🏪 {{ p.loja }}</small><br>
-            <small style="color:#666;">🌟 Comissão da Loja: {{ p.comissao }}%</small><br>
-            <small style="color:#666;">🎥 Live: R$ {{ p.comissao_live }} | 📱 Redes: R$ {{ p.comissao_redes }}</small><br>
-          </div>
-          {% endfor %}
-        {% endfor %}
-      </div>
-      <!-- Paginação -->
-      <div style="margin-top:30px; text-align:center;">
-        {% set total_paginas = (resultados_filtrados|length // 20) + (1 if resultados_filtrados|length % 20 > 0 else 0) %}
-        {% for p in range(1, total_paginas + 1) %}
-          <a href="?pagina={{ p }}{% if request.args.get('filtro_termo') %}&filtro_termo={{ request.args.get('filtro_termo') }}{% endif %}{% if request.args.get('filtro_tipo') %}&filtro_tipo={{ request.args.get('filtro_tipo') }}{% endif %}"
-             style="margin:0 5px; padding:8px 12px; border-radius:6px; background-color:{% if p == pagina %}#5e3ea1{% else %}#eee{% endif %}; color:{% if p == pagina %}white{% else %}black{% endif %}; text-decoration:none;">
-            {{ p }}
-          </a>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
+    <!-- TODO: incluir renderização dos produtos encontrados e salvos -->
   </div>
 
   <script>
     function validarCampos() {
       const keyword = document.getElementById("campoKeyword").value.trim();
       const url = document.getElementById("campoUrl").value.trim();
-      const categoria = document.getElementById("campoCategoria").value;
       if (!keyword && !url) {
         alert("Preencha pelo menos a palavra-chave ou o link da Shopee.");
-        return false;
-      }
-      if (!categoria) {
-        alert("Selecione uma categoria para buscar.");
         return false;
       }
       return true;
