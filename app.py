@@ -505,14 +505,17 @@ def buscar_produto():
     from datetime import datetime
 
     uid = session["usuario"]["uid"]
-    entrada = request.form.get("url", "").strip()
-    print(f"🔎 Entrada recebida: {entrada}")
+    url = request.form.get("url", "").strip()
+    keyword = request.form.get("keyword", "").strip()
+    category_id = request.form.get("categoria")  # novo campo
 
-    # Verifica se é link com shop_id e item_id
-    match = re.search(r"-i\.(\d+)\.(\d+)", entrada)
+    print(f"🔎 URL recebida: {url}")
+    print(f"🔤 Palavra-chave: {keyword}")
+    print(f"📂 Categoria selecionada: {category_id}")
+
+    match = re.search(r"-i\.(\d+)\.(\d+)", url)
     usar_palavra_chave = not match
 
-    # Obter credenciais da Shopee
     doc = db.collection("api_shopee").document(uid).get()
     if not doc.exists:
         flash("⚠️ Cadastre sua API Shopee antes de buscar produtos.", "error")
@@ -526,16 +529,17 @@ def buscar_produto():
         flash("❌ App ID ou Secret não encontrados. Verifique sua API cadastrada.", "error")
         return redirect("/minha-api")
 
-    # Montar a query GraphQL
+    # Montar query GraphQL
     if usar_palavra_chave:
-        keyword = entrada
         if not keyword:
-            flash("❌ Você precisa digitar uma palavra-chave válida.", "error")
+            flash("❌ Digite uma palavra-chave válida ou cole um link da Shopee.", "error")
             return redirect("/produtos")
+
+        category_param = f'productCatId: {category_id},' if category_id else ''
         query_dict = {
             "query": f"""
             query {{
-              productOfferV2(keyword: "{keyword}", sortType: 2, page: 1, limit: 5) {{
+              productOfferV2(keyword: "{keyword}", {category_param} sortType: 2, page: 1, limit: 5) {{
                 nodes {{
                   productName
                   imageUrl
@@ -572,7 +576,6 @@ def buscar_produto():
 
     payload_str = json.dumps(query_dict, separators=(',', ':'))
 
-    # Criar assinatura
     timestamp = str(int(time.time()) + 20)
     base_string = app_id + timestamp + payload_str + app_secret
     signature = hashlib.sha256(base_string.encode()).hexdigest()
@@ -582,8 +585,6 @@ def buscar_produto():
         "Content-Type": "application/json"
     }
 
-    # Debug
-    print(f"🔠 Detectada palavra-chave: {entrada if usar_palavra_chave else '[via link]'}")
     print(f"🕒 UTC: {datetime.utcnow()}")
     print(f"⏱️ Timestamp: {timestamp}")
     print(f"🔐 Signature: {signature}")
@@ -620,7 +621,6 @@ def buscar_produto():
         print("❌ Exceção:", e)
         flash(f"Erro inesperado: {e}", "error")
         return redirect("/produtos")
-
 
 @app.route("/minha-api", methods=["GET", "POST"])
 @verificar_login
