@@ -593,15 +593,16 @@ def buscar_produto():
             produtos = []
             for p in nodes:
                 preco = float(p.get("priceMin", 0))
-                taxa_loja = float(p.get("commissionRate", 0)) * 100
-                comissao_live = round(preco * ((10 + taxa_loja) / 100), 2)
-                comissao_redes = round(preco * ((3 + taxa_loja) / 100), 2)
+                # Aqui garantimos que a comissão da loja seja zero se for None ou não fornecida
+                taxa_shopee = float(p.get("commissionRate") or 0) * 100
+                comissao_live = round(preco * ((10 + taxa_shopee) / 100), 2)
+                comissao_redes = round(preco * ((3 + taxa_shopee) / 100), 2)
 
                 produtos.append({
                     "titulo": p.get("productName"),
                     "imagem": p.get("imageUrl"),
                     "preco": preco,
-                    "comissao": taxa_loja,
+                    "comissao": taxa_shopee,
                     "loja": p.get("shopName"),
                     "comissao_live": comissao_live,
                     "comissao_redes": comissao_redes,
@@ -657,7 +658,7 @@ def buscar_loja():
         flash("⚠️ No momento, só é possível buscar por link da loja com ID válido.", "error")
         return redirect("/produtos")
 
-    # Monta query sem historicalSold
+    # Monta query
     query_dict = {
         "query": f"""
         query {{
@@ -702,7 +703,7 @@ def buscar_loja():
             for p in nodes:
                 preco = float(p.get("priceMin", 0))
                 if min_val <= preco <= max_val:
-                    taxa_loja = float(p.get("commissionRate", 0)) * 100
+                    taxa_loja = float(p.get("commissionRate") or 0) * 100
                     comissao_live = round(preco * ((10 + taxa_loja) / 100), 2)
                     comissao_redes = round(preco * ((3 + taxa_loja) / 100), 2)
 
