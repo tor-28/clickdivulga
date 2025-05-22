@@ -621,6 +621,110 @@ def buscar_produto():
         flash(f"Erro inesperado: {e}", "error")
         return redirect("/produtos")
 
+@app.route("/buscar-loja", methods=["POST"])
+@verificar_login
+def buscar_loja():
+    import re
+    import time
+    import hashlib
+    import requests
+    import json
+    from datetime import datetime
+
+    uid = session["usuario"]["uid"]
+    loja_input = request.form.get("loja", "").strip()
+    preco_min = request.form.get("preco_min", "").strip()
+    preco_max = request.form.get("preco_max", "").strip()
+
+    print(f"🔍 Entrada loja: {loja_input} | Faixa: R${preco_min} - R${preco_max}")
+
+    if not loja_input:
+        flash("❌ Você precisa digitar o nome ou colar o link da loja.", "error")
+        return redirect("/produtos")
+
+    # Detecta shop_id do link se for link
+    match = re.search(r'/shop/(\d+)', loja_input) or re.search(r'i\.(\d+)\.', loja_input)
+    shop_id = match.group(1) if match else None
+
+    # Busca credenciais
+    doc = db.collection("api_shopee").document(uid).get()
+    if not doc.exists:
+        flash("⚠️ Cadastre sua API Shopee antes de buscar lojas.", "error")
+        return redirect("/minha-api")
+    cred = doc.to_dict()
+    app_id = cred.get("app_id")
+    app_secret = cred.get("app_secret")
+
+    # Se não tiver shop_id, usa nome para buscar
+    if not shop_id:
+        flash("⚠️ No momento, só é possível buscar por link da loja com ID válido.", "error")
+        return redirect("/produtos")
+
+    # Monta payload para buscar produtos da loja
+    query_dict = {
+        "query": f"""
+        query {{
+          productOfferV2(shopId: {shop_id}, sortType: 2, page: 1, limit: 20) {{
+            nodes {{
+              productName
+              imageUrl
+              priceMin
+              commissionRate
+              shopName
+              productLink
+              offerLink
+            }}
+          }}
+        }}
+        """
+    }
+    payload_str = json.dumps(query_dict, separators=(',', ':'))
+
+    # Assinatura
+    timestamp = str(int(time.time()) + 20)
+    base_string = app_id + timestamp + payload_str + app_secret
+    signature = hashlib.sha256(base_string.encode()).hexdigest()
+    headers = {
+        "Authorization": f"SHA256 Credential={app_id}, Signature={signature}, Timestamp={timestamp}",
+        "Content-Type": "application/json"
+    }
+
+    # Envia requisição
+    try:
+        response = requests.post("https://open-api.affiliate.shopee.com.br/graphql", headers=headers, data=payload_str)
+        print(f"🔁 Status: {response.status_code}")
+        print(f"📨 Resposta: {response.text}")
+
+        if response.status_code == 200:
+            nodes = response.json().get("data", {}).get("productOfferV2", {}).get("nodes", [])
+            produtos = []
+
+            min_val = float(preco_min.replace(",", ".")) if preco_min else 0
+            max_val = float(preco_max.replace(",", ".")) if preco_max else float("inf")
+
+            for p in nodes:
+                preco = float(p.get("priceMin", 0))
+                if min_val <= preco <= max_val:
+                    produtos.append({
+                        "titulo": p.get("productName"),
+                        "imagem": p.get("imageUrl"),
+                        "preco": preco,
+                        "comissao": float(p.get("commissionRate", 0)) * 100,
+                        "loja": p.get("shopName"),
+                        "link": p.get("offerLink") or p.get("productLink")
+                    })
+
+            print(f"✅ {len(produtos)} produto(s) da loja filtrado(s) por faixa de preço.")
+            return render_template("produtos_clickdivulga.html", produtos=produtos)
+
+        flash("❌ Erro ao buscar produtos da loja.", "error")
+        return redirect("/produtos")
+
+    except Exception as e:
+        print("❌ Exceção ao buscar loja:", e)
+        flash(f"Erro ao buscar loja: {e}", "error")
+        return redirect("/produtos")
+
 @app.route("/minha-api", methods=["GET", "POST"])
 @verificar_login
 def minha_api():
