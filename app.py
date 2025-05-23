@@ -1146,25 +1146,37 @@ def config_telegram():
     flash("🤖 Bots do Telegram salvos com sucesso!", "success")
     return redirect("/minha-api")
 
-@app.route("/config-bot/<bot_id>", methods=["POST"])
+@app.route("/config-bot/<bot_id>", methods=["GET"])
 @verificar_login
-def salvar_config_bot(bot_id):
-    from datetime import datetime
-
+def config_bot(bot_id):
     uid = session["usuario"]["uid"]
-    doc_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
+    doc_ref = db.collection("api_shopee").document(uid)
+    doc = doc_ref.get()
+    dados = doc.to_dict() if doc.exists else {}
 
-    data = {
-        "categorias": request.form.getlist("categorias"),
-        "lojas": request.form.getlist("lojas"),
-        "palavra_chave": request.form.get("palavra_chave", "").strip().lower(),
-        "msg_por_minuto": int(request.form.get("msg_por_minuto", 1)),
-        "intervalo": request.form.get("intervalo"),
-        "hora_inicio": int(request.form.get("hora_inicio")),
-        "hora_fim": int(request.form.get("hora_fim")),
-        "atualizado_em": datetime.now().isoformat()
-    }
+    bot_nome = dados.get(f"bot_nome_{bot_id}", f"Bot {bot_id}")
 
-    doc_ref.set(data)
-    flash("✅ Configuração do bot salva com sucesso!", "success")
-    return redirect(f"/config-bot?bot={bot_id}")
+    # Buscar configuração salva desse bot (se houver)
+    bot_config_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
+    bot_config_doc = bot_config_ref.get()
+    bot_config = bot_config_doc.to_dict() if bot_config_doc.exists else {}
+
+    # Buscar produtos salvos para filtros
+    termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
+    categorias, lojas = set(), set()
+
+    for doc in termos_ref:
+        termo = doc.to_dict()
+        for p in termo.get("produtos", []):
+            if p.get("loja"):
+                lojas.add(p["loja"])
+            if termo.get("tipo") == "produto":
+                categorias.add(termo.get("categoria", "Outros"))
+
+    return render_template("config-telegram.html",
+        bot_id=bot_id,
+        nome_bot=bot_nome,
+        bot_config=bot_config,
+        categorias_disponiveis=sorted(categorias),
+        lojas_disponiveis=sorted(lojas)
+    )
