@@ -678,6 +678,16 @@ def buscar_produto():
                     "link": p.get("offerLink") or p.get("productLink")
                 })
 
+            # 🔁 Verifica e remove excesso
+            termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
+            todos_termos = sorted([d for d in termos_ref], key=lambda x: x.to_dict().get("atualizado_em"))
+            total_produtos = sum(len(d.to_dict().get("produtos", [])) for d in todos_termos)
+            while total_produtos + len(produtos) > 400 and todos_termos:
+                mais_antigo = todos_termos.pop(0)
+                qtd = len(mais_antigo.to_dict().get("produtos", []))
+                mais_antigo.reference.delete()
+                total_produtos -= qtd
+
             db.collection("buscas").document(uid).collection("registros").add({
                 "tipo": "produto",
                 "termo": termo_final,
@@ -726,7 +736,6 @@ def buscar_loja():
 
     termo_id = loja_input.lower().replace(" ", "-").replace(".", "").replace("/", "")
 
-    # ⛔ Evita duplicação nas últimas 12h
     termo_doc = db.collection("resultados_busca").document(uid).collection("termos").document(termo_id).get()
     if termo_doc.exists:
         dados = termo_doc.to_dict()
@@ -737,7 +746,6 @@ def buscar_loja():
                 flash("⚠️ Essa loja já foi buscada nas últimas 12 horas.", "warning")
                 return redirect("/produtos")
 
-    # 🔁 Limite de requisições
     hoje = datetime.now().date().isoformat()
     contador_ref = db.collection("api_contador").document(uid)
     contador_doc = contador_ref.get()
@@ -749,7 +757,6 @@ def buscar_loja():
         flash("🚫 Limite de uso diário atingido para hoje (25.000 requisições).", "error")
         return redirect("/produtos")
 
-    # 🔑 API Shopee
     doc = db.collection("api_shopee").document(uid).get()
     if not doc.exists:
         flash("⚠️ Cadastre sua API Shopee antes de buscar.", "error")
@@ -812,7 +819,18 @@ def buscar_loja():
                         "link": p.get("offerLink") or p.get("productLink")
                     })
 
-            # 💾 Salva busca
+            # 🧹 Limita total de produtos salvos por afiliado (max: 400)
+            termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
+            todos_termos = sorted([
+                (d.id, d.to_dict()) for d in termos_ref if d.to_dict().get("produtos")
+            ], key=lambda x: x[1].get("atualizado_em"))
+
+            total_atual = sum(len(t[1]["produtos"]) for t in todos_termos)
+            while total_atual + len(produtos) > 400 and todos_termos:
+                termo_antigo_id, termo_antigo = todos_termos.pop(0)
+                db.collection("resultados_busca").document(uid).collection("termos").document(termo_antigo_id).delete()
+                total_atual -= len(termo_antigo.get("produtos", []))
+
             db.collection("buscas").document(uid).collection("registros").add({
                 "tipo": "loja",
                 "termo": loja_input,
@@ -825,14 +843,10 @@ def buscar_loja():
                 "produtos": produtos
             })
 
-            # 🧮 Atualiza contador
             contador["uso_afiliado"] += 1
             db.collection("api_contador").document(uid).set(contador)
 
-            # 🔁 Carrega
-            resultados_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
-            resultados = [doc.to_dict() for doc in resultados_ref]
-            return render_template("produtos_clickdivulga.html", produtos=produtos, resultados=resultados)
+            return redirect("/produtos")
 
         flash("❌ Erro ao buscar loja.", "error")
         return redirect("/produtos")
