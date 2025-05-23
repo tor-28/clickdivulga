@@ -1169,15 +1169,19 @@ def config_bot(bot_id):
     bot_config_doc = bot_config_ref.get()
     bot_config = bot_config_doc.to_dict() if bot_config_doc.exists else {}
 
+    # Coleta lojas disponíveis com base em produtos salvos
     termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
     lojas = set()
+    produtos_disponiveis = []
 
     for doc in termos_ref:
         termo = doc.to_dict()
         for p in termo.get("produtos", []):
             if p.get("loja"):
                 lojas.add(p["loja"])
+            produtos_disponiveis.append(p)
 
+    # Logs de envio por bot
     logs_ref = db.collection("telegram_logs").document(uid).collection(bot_id).order_by("enviado_em", direction=firestore.Query.DESCENDING).limit(10)
     logs = [log.to_dict() for log in logs_ref.stream()]
 
@@ -1186,8 +1190,10 @@ def config_bot(bot_id):
         nome_bot=bot_nome,
         bot_config=bot_config,
         lojas_disponiveis=sorted(lojas),
+        produtos_disponiveis=produtos_disponiveis,
         logs=logs
     )
+
 
 @app.route("/config-bot/<bot_id>", methods=["POST"])
 @verificar_login
@@ -1195,32 +1201,24 @@ def salvar_config_bot(bot_id):
     from datetime import datetime
 
     uid = session["usuario"]["uid"]
+    grupo = request.form.get("grupo")  # "2" ou "3"
+
     doc_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
+    bot_config_doc = doc_ref.get()
+    bot_config = bot_config_doc.to_dict() if bot_config_doc.exists else {}
 
-    data = {
-        # Chat IDs dos grupos (salvos no painel de API)
-        "grupo_1": request.form.get("grupo_1_id", "").strip(),
-        "grupo_2": request.form.get("grupo_2_id", "").strip(),
-        "grupo_3": request.form.get("grupo_3_id", "").strip(),
+    # Atualiza apenas o grupo correspondente
+    if grupo in ["2", "3"]:
+        bot_config[f"lojas_grupo_{grupo}"] = request.form.getlist(f"lojas_grupo_{grupo}")
+        bot_config[f"palavra_grupo_{grupo}"] = request.form.get(f"palavra_grupo_{grupo}", "").strip().lower()
+        bot_config[f"msg_grupo_{grupo}"] = int(request.form.get(f"msg_grupo_{grupo}", 1))
+        bot_config[f"intervalo_grupo_{grupo}"] = request.form.get(f"intervalo_grupo_{grupo}", "10 min")
+        bot_config[f"hora_inicio_grupo_{grupo}"] = int(request.form.get(f"hora_inicio_grupo_{grupo}", 0))
+        bot_config[f"hora_fim_grupo_{grupo}"] = int(request.form.get(f"hora_fim_grupo_{grupo}", 23))
+        bot_config[f"produtos_grupo_{grupo}"] = request.form.getlist(f"produtos_grupo_{grupo}")
 
-        # Filtros por grupo
-        "lojas_grupo_2": request.form.getlist("lojas_grupo_2"),
-        "palavra_grupo_2": request.form.get("palavra_grupo_2", "").strip().lower(),
-        "msg_grupo_2": int(request.form.get("msg_grupo_2", 1)),
-        "intervalo_grupo_2": request.form.get("intervalo_grupo_2"),
-        "hora_inicio_grupo_2": int(request.form.get("hora_inicio_grupo_2", 0)),
-        "hora_fim_grupo_2": int(request.form.get("hora_fim_grupo_2", 23)),
+    bot_config["atualizado_em"] = datetime.now().isoformat()
 
-        "lojas_grupo_3": request.form.getlist("lojas_grupo_3"),
-        "palavra_grupo_3": request.form.get("palavra_grupo_3", "").strip().lower(),
-        "msg_grupo_3": int(request.form.get("msg_grupo_3", 1)),
-        "intervalo_grupo_3": request.form.get("intervalo_grupo_3"),
-        "hora_inicio_grupo_3": int(request.form.get("hora_inicio_grupo_3", 0)),
-        "hora_fim_grupo_3": int(request.form.get("hora_fim_grupo_3", 23)),
-
-        "atualizado_em": datetime.now().isoformat()
-    }
-
-    doc_ref.set(data)
-    flash("✅ Configuração do bot salva com sucesso!", "success")
+    doc_ref.set(bot_config)
+    flash(f"✅ Grupo {grupo} salvo com sucesso!", "success")
     return redirect(f"/config-bot/{bot_id}")
