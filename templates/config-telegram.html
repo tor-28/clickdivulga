@@ -44,7 +44,8 @@
             style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
 
           <label><strong>Selecionar Produtos:</strong></label>
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-bottom: 20px;">
+          <button type="button" onclick="selecionarTodos({{ grupo }})" class="btn" style="margin-bottom: 10px;">Selecionar Todos</button>
+          <div id="produtos_grupo_{{ grupo }}" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-bottom: 20px;">
             {% for p in produtos_disponiveis %}
               {% if (not bot_config.get('lojas_grupo_' ~ grupo) or p.loja in bot_config.get('lojas_grupo_' ~ grupo)) and
                      (not bot_config.get('palavra_grupo_' ~ grupo) or bot_config.get('palavra_grupo_' ~ grupo).lower() in p.titulo|lower) %}
@@ -108,5 +109,12 @@
       </div>
     </form>
   </div>
+
+  <script>
+    function selecionarTodos(grupo) {
+      const checkboxes = document.querySelectorAll(`#produtos_grupo_${grupo} input[type='checkbox']`);
+      checkboxes.forEach(cb => cb.checked = true);
+    }
+  </script>
 </body>
 </html>
