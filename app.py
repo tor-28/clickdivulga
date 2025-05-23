@@ -1006,6 +1006,39 @@ def atualizar_buscas():
     print(f"✅ Atualização concluída. Total: {total_atualizadas}")
     return f"✅ Atualização concluída. Total: {total_atualizadas}", 200
 
+@app.route("/excluir-produto", methods=["POST"])
+@verificar_login
+def excluir_produto():
+    from datetime import datetime
+
+    uid = session["usuario"]["uid"]
+    termo_id = request.form.get("termo_id")
+    titulo_produto = request.form.get("titulo")
+
+    if not termo_id or not titulo_produto:
+        flash("❌ Dados insuficientes para excluir o produto.", "error")
+        return redirect("/produtos")
+
+    termo_ref = db.collection("resultados_busca").document(uid).collection("termos").document(termo_id)
+    termo_doc = termo_ref.get()
+
+    if not termo_doc.exists:
+        flash("❌ Termo não encontrado.", "error")
+        return redirect("/produtos")
+
+    dados = termo_doc.to_dict()
+    produtos = dados.get("produtos", [])
+    produtos_filtrados = [p for p in produtos if p.get("titulo") != titulo_produto]
+
+    # Atualiza a lista de produtos no Firestore
+    termo_ref.update({
+        "produtos": produtos_filtrados,
+        "atualizado_em": datetime.now().isoformat()
+    })
+
+    flash("✅ Produto removido com sucesso!", "success")
+    return redirect("/produtos")
+
 @app.route("/minha-api", methods=["GET", "POST"])
 @verificar_login
 def minha_api():
