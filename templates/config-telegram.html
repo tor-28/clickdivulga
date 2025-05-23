@@ -48,6 +48,18 @@
           <input type="text" name="palavra_grupo_{{ grupo }}" value="{{ bot_config.get('palavra_grupo_' ~ grupo, '') }}" placeholder="Ex: whey, fone"
             style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
 
+          <label><strong>Selecionar Produtos:</strong></label>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px;">
+            {% for p in bot_config.get('produtos_disponiveis', []) %}
+              <div style="border: 1px solid #ccc; border-radius: 8px; padding: 10px; text-align: center;">
+                <img src="{{ p.imagem }}" alt="{{ p.titulo }}" style="width: 100%; max-height: 120px; object-fit: cover; border-radius: 6px;">
+                <p style="margin: 10px 0 5px; font-weight: bold; font-size: 0.9rem;">{{ p.titulo }}</p>
+                <p style="font-size: 0.8rem; color: #555;">{{ p.loja }} – R$ {{ p.preco }}</p>
+                <input type="checkbox" name="produtos_grupo_{{ grupo }}" value="{{ p.titulo }}" {% if p.titulo in bot_config.get('produtos_grupo_' ~ grupo, []) %}checked{% endif %}> Enviar
+              </div>
+            {% endfor %}
+          </div>
+
           <label><strong>Mensagens por Minuto:</strong></label>
           <select name="msg_grupo_{{ grupo }}" style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
             {% for i in range(1, 7) %}
