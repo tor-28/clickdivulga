@@ -4,22 +4,31 @@
   <meta charset="UTF-8">
   <title>Login - ClickDivulga</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/grupos.css') }}">
-
-  <!-- Firebase compatível com navegador -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 </head>
-<body>
-  <div class="content" style="max-width: 400px; margin: 80px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center;">
-    <img src="{{ url_for('static', filename='img/clickdivulga-logo.png') }}" alt="ClickDivulga" class="logo" onerror="this.style.display='none';" style="max-width: 160px; margin-bottom: 20px;">
-    <h2 style="color: #5e3ea1;">Entrar na Plataforma</h2>
+<body style="background-color: #f5f5fc;">
+  <div style="max-width: 400px; margin: 80px auto; background: #6c2bd9; padding: 40px 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center;">
+    
+    <!-- Logo -->
+    <img src="{{ url_for('static', filename='img/logo-clickdivulga.png') }}" alt="ClickDivulga" style="max-width: 160px; margin-bottom: 30px;">
+
+    <!-- Título -->
+    <h2 style="color: white; margin-bottom: 25px;">Entrar na Plataforma</h2>
+
+    <!-- Formulário -->
     <form id="loginForm">
-      <input type="email" id="email" placeholder="E-mail" required style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc;">
-      <input type="password" id="senha" placeholder="Senha" required style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #ccc;">
-      <button type="submit" class="btn" style="width: 100%;">Entrar</button>
+      <input type="email" id="email" placeholder="E-mail" required
+             style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: none; font-size: 1rem;">
+      <input type="password" id="senha" placeholder="Senha" required
+             style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: none; font-size: 1rem;">
+      <button type="submit" style="width: 100%; background: white; color: #6c2bd9; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer;">
+        Entrar
+      </button>
     </form>
   </div>
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function () {
       const firebaseConfig = {
@@ -34,7 +43,6 @@
 
       form.addEventListener("submit", async function (e) {
         e.preventDefault();
-
         const email = document.getElementById("email").value;
         const senha = document.getElementById("senha").value;
 
