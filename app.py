@@ -475,37 +475,84 @@ def atualizar_categorias_links():
 @app.route("/produtos")
 @verificar_login
 def produtos():
+    from pytz import timezone
+    from datetime import datetime
+
     uid = session["usuario"]["uid"]
     firestore_client = firestore.client()
 
-    produtos = []  # Mantém compatibilidade com produtos encontrados
+    produtos = []  # Produtos encontrados (não salvos)
     resultados = []
     lojas_disponiveis = set()
     palavras_disponiveis = set()
+    todos_produtos = []
 
     try:
         termos_ref = firestore_client.collection("resultados_busca").document(uid).collection("termos").stream()
         for doc in termos_ref:
             dados = doc.to_dict()
+            atualizado_em = dados.get("atualizado_em")
+
             for p in dados.get("produtos", []):
                 if p.get("loja"):
                     lojas_disponiveis.add(p.get("loja"))
                 if dados.get("termo"):
                     palavras_disponiveis.add(dados.get("termo").lower())
+                
+                # Insere a data de atualização no produto
+                p["atualizado_em"] = atualizado_em
+                todos_produtos.append(p)
+
             resultados.append({
                 "termo": dados.get("termo"),
                 "tipo": dados.get("tipo"),
-                "atualizado_em": dados.get("atualizado_em"),
+                "atualizado_em": atualizado_em,
                 "produtos": dados.get("produtos", [])
             })
     except Exception as e:
         print(f"Erro ao carregar resultados salvos: {e}")
 
+    # Filtros GET
+    filtro_loja = request.args.get("filtro_loja", "").strip()
+    filtro_termo = request.args.get("filtro_termo", "").strip().lower()
+
+    # Aplica filtros nos produtos
+    produtos_filtrados = []
+    for p in todos_produtos:
+        if filtro_loja and p.get("loja") != filtro_loja:
+            continue
+        if filtro_termo and filtro_termo not in p.get("titulo", "").lower():
+            continue
+        produtos_filtrados.append(p)
+
+    # Ordena por atualizado_em (mais recente primeiro)
+    produtos_ordenados = sorted(produtos_filtrados, key=lambda x: x.get("atualizado_em", ""), reverse=True)
+
+    # Paginação
+    pagina = int(request.args.get("pagina", 1))
+    inicio = (pagina - 1) * 20
+    fim = inicio + 20
+    total_paginas = (len(produtos_ordenados) // 20) + (1 if len(produtos_ordenados) % 20 > 0 else 0)
+
+    # Converte horário para Brasília
+    for p in produtos_ordenados:
+        try:
+            if p.get("atualizado_em"):
+                dt = datetime.fromisoformat(p["atualizado_em"].replace("Z", "+00:00"))
+                p["atualizado_em"] = dt.astimezone(timezone("America/Sao_Paulo")).strftime("%Y/%m/%d às %H:%M")
+        except:
+            p["atualizado_em"] = "Data inválida"
+
     return render_template("produtos_clickdivulga.html",
         produtos=produtos,
         resultados=resultados,
-        lojas_disponiveis=sorted(lojas_disponiveis),
-        palavras_disponiveis=sorted(palavras_disponiveis)
+        produtos_ordenados=produtos_ordenados,
+        lojas_unicas=sorted(lojas_disponiveis),
+        palavras_disponiveis=sorted(palavras_disponiveis),
+        pagina=pagina,
+        inicio=inicio,
+        fim=fim,
+        total_paginas=total_paginas
     )
 
 @app.route("/buscar-produto", methods=["POST"])
