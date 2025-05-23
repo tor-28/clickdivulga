@@ -1151,7 +1151,6 @@ def config_telegram():
 def redirecionar_config_bot():
     return redirect("/config-bot/1")
 
-# GET → mostra a página
 @app.route("/config-bot/<bot_id>", methods=["GET"])
 @verificar_login
 def config_bot(bot_id):
@@ -1176,15 +1175,20 @@ def config_bot(bot_id):
             if termo.get("tipo") == "produto":
                 categorias.add(termo.get("categoria", "Outros"))
 
+    # 🔎 Logs de envio (últimos 10)
+    logs_ref = db.collection("telegram_logs").document(uid).collection(bot_id).order_by("enviado_em", direction=firestore.Query.DESCENDING).limit(10)
+    logs = [log.to_dict() for log in logs_ref.stream()]
+
     return render_template("config-telegram.html",
         bot_id=bot_id,
         nome_bot=bot_nome,
         bot_config=bot_config,
         categorias_disponiveis=sorted(categorias),
-        lojas_disponiveis=sorted(lojas)
+        lojas_disponiveis=sorted(lojas),
+        logs=logs
     )
 
-# POST → salva as configurações
+
 @app.route("/config-bot/<bot_id>", methods=["POST"])
 @verificar_login
 def salvar_config_bot(bot_id):
@@ -1201,10 +1205,12 @@ def salvar_config_bot(bot_id):
         "intervalo": request.form.get("intervalo"),
         "hora_inicio": int(request.form.get("hora_inicio")),
         "hora_fim": int(request.form.get("hora_fim")),
+        "grupo_1": request.form.get("grupo_1", "").strip(),
+        "grupo_2": request.form.get("grupo_2", "").strip(),
+        "grupo_3": request.form.get("grupo_3", "").strip(),
         "atualizado_em": datetime.now().isoformat()
     }
 
     doc_ref.set(data)
     flash("✅ Configuração do bot salva com sucesso!", "success")
     return redirect(f"/config-bot/{bot_id}")
-
