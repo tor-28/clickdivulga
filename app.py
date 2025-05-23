@@ -1170,15 +1170,13 @@ def config_bot(bot_id):
     bot_config = bot_config_doc.to_dict() if bot_config_doc.exists else {}
 
     termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
-    categorias, lojas = set(), set()
+    lojas = set()
 
     for doc in termos_ref:
         termo = doc.to_dict()
         for p in termo.get("produtos", []):
             if p.get("loja"):
                 lojas.add(p["loja"])
-            if termo.get("tipo") == "produto":
-                categorias.add(termo.get("categoria", "Outros"))
 
     logs_ref = db.collection("telegram_logs").document(uid).collection(bot_id).order_by("enviado_em", direction=firestore.Query.DESCENDING).limit(10)
     logs = [log.to_dict() for log in logs_ref.stream()]
@@ -1187,11 +1185,9 @@ def config_bot(bot_id):
         bot_id=bot_id,
         nome_bot=bot_nome,
         bot_config=bot_config,
-        categorias_disponiveis=sorted(categorias),
         lojas_disponiveis=sorted(lojas),
         logs=logs
     )
-
 
 @app.route("/config-bot/<bot_id>", methods=["POST"])
 @verificar_login
@@ -1202,29 +1198,26 @@ def salvar_config_bot(bot_id):
     doc_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
 
     data = {
-        # Grupos (chat_id)
+        # Chat IDs dos grupos (salvos no painel de API)
         "grupo_1": request.form.get("grupo_1_id", "").strip(),
         "grupo_2": request.form.get("grupo_2_id", "").strip(),
         "grupo_3": request.form.get("grupo_3_id", "").strip(),
 
         # Filtros por grupo
-        "grupo_1_categorias": request.form.getlist("grupo_1_categorias"),
-        "grupo_1_lojas": request.form.getlist("grupo_1_lojas"),
-        "grupo_1_palavra": request.form.get("grupo_1_palavra", "").strip().lower(),
+        "lojas_grupo_2": request.form.getlist("lojas_grupo_2"),
+        "palavra_grupo_2": request.form.get("palavra_grupo_2", "").strip().lower(),
+        "msg_grupo_2": int(request.form.get("msg_grupo_2", 1)),
+        "intervalo_grupo_2": request.form.get("intervalo_grupo_2"),
+        "hora_inicio_grupo_2": int(request.form.get("hora_inicio_grupo_2", 0)),
+        "hora_fim_grupo_2": int(request.form.get("hora_fim_grupo_2", 23)),
 
-        "grupo_2_categorias": request.form.getlist("grupo_2_categorias"),
-        "grupo_2_lojas": request.form.getlist("grupo_2_lojas"),
-        "grupo_2_palavra": request.form.get("grupo_2_palavra", "").strip().lower(),
+        "lojas_grupo_3": request.form.getlist("lojas_grupo_3"),
+        "palavra_grupo_3": request.form.get("palavra_grupo_3", "").strip().lower(),
+        "msg_grupo_3": int(request.form.get("msg_grupo_3", 1)),
+        "intervalo_grupo_3": request.form.get("intervalo_grupo_3"),
+        "hora_inicio_grupo_3": int(request.form.get("hora_inicio_grupo_3", 0)),
+        "hora_fim_grupo_3": int(request.form.get("hora_fim_grupo_3", 23)),
 
-        "grupo_3_categorias": request.form.getlist("grupo_3_categorias"),
-        "grupo_3_lojas": request.form.getlist("grupo_3_lojas"),
-        "grupo_3_palavra": request.form.get("grupo_3_palavra", "").strip().lower(),
-
-        # Regras gerais
-        "msg_por_minuto": int(request.form.get("msg_por_minuto", 1)),
-        "intervalo": request.form.get("intervalo"),
-        "hora_inicio": int(request.form.get("hora_inicio")),
-        "hora_fim": int(request.form.get("hora_fim")),
         "atualizado_em": datetime.now().isoformat()
     }
 
