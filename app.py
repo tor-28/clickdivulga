@@ -569,22 +569,19 @@ def buscar_produto():
     match = re.search(r"-i\.(\d+)\.(\d+)", entrada)
     usar_palavra_chave = not match
 
-    # 🔒 Termo padronizado
     termo_final = keyword if usar_palavra_chave else entrada
     termo_id = termo_final.lower().replace(" ", "-").replace(".", "").replace("/", "")
 
-    # ⛔ Evita buscas duplicadas nas últimas 12h
     termo_doc = db.collection("resultados_busca").document(uid).collection("termos").document(termo_id).get()
     if termo_doc.exists:
         dados = termo_doc.to_dict()
         atualizado_em = dados.get("atualizado_em")
         if atualizado_em:
             dt = datetime.fromisoformat(atualizado_em)
-            if (datetime.now() - dt).total_seconds() < 43200:  # 12h
+            if (datetime.now() - dt).total_seconds() < 43200:
                 flash("⚠️ Você já buscou esse termo nas últimas 12 horas.", "warning")
                 return redirect("/produtos")
 
-    # 🔄 Limite de uso diário (metade para afiliado)
     hoje = datetime.now().date().isoformat()
     contador_ref = db.collection("api_contador").document(uid)
     contador_doc = contador_ref.get()
@@ -596,7 +593,6 @@ def buscar_produto():
         flash("🚫 Limite de uso diário atingido para hoje (25.000 requisições).", "error")
         return redirect("/produtos")
 
-    # 🔑 Autenticação
     doc = db.collection("api_shopee").document(uid).get()
     if not doc.exists:
         flash("⚠️ Cadastre sua API Shopee antes de buscar produtos.", "error")
@@ -609,7 +605,6 @@ def buscar_produto():
         flash("❌ App ID ou Secret não encontrados.", "error")
         return redirect("/minha-api")
 
-    # 🔍 Monta query
     if usar_palavra_chave:
         if not keyword:
             flash("❌ Digite uma palavra-chave ou link válido.", "error")
@@ -618,7 +613,7 @@ def buscar_produto():
         query_dict = {
             "query": f"""
             query {{
-              productOfferV2(keyword: "{keyword}", {category_param} sortType: 2, page: 1, limit: 10) {{
+              productOfferV2(keyword: \"{keyword}\", {category_param} sortType: 2, page: 1, limit: 10) {{
                 nodes {{
                   productName
                   imageUrl
@@ -652,7 +647,6 @@ def buscar_produto():
             """
         }
 
-    # 🔐 Assinatura da API
     payload_str = json.dumps(query_dict, separators=(',', ':'))
     timestamp = str(int(time.time()) + 20)
     base_string = app_id + timestamp + payload_str + app_secret
@@ -684,7 +678,6 @@ def buscar_produto():
                     "link": p.get("offerLink") or p.get("productLink")
                 })
 
-            # 🔐 Salva
             db.collection("buscas").document(uid).collection("registros").add({
                 "tipo": "produto",
                 "termo": termo_final,
@@ -697,14 +690,10 @@ def buscar_produto():
                 "produtos": produtos
             })
 
-            # 🧮 Atualiza contador
             contador["uso_afiliado"] += 1
             db.collection("api_contador").document(uid).set(contador)
 
-            # 🔁 Recarrega
-            resultados_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
-            resultados = [doc.to_dict() for doc in resultados_ref]
-            return render_template("produtos_clickdivulga.html", produtos=produtos, resultados=resultados)
+            return redirect("/produtos")
 
         flash("❌ Erro ao buscar produto na Shopee", "error")
         return redirect("/produtos")
