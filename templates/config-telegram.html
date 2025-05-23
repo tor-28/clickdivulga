@@ -12,7 +12,7 @@
       <a href="/painel"><i>🏠</i> Dashboard</a>
       <a href="/criar-link"><i>➕</i> Criar Link</a>
       <a href="/grupos"><i>📊</i> Desempenho de Grupos</a>
-      <a href="/produtos"><i>🛍️</i> Produtos</a>
+      <a href="/produtos"><i>💼</i> Produtos</a>
       <a href="/minha-api"><i>🔐</i> Config Afiliado</a>
       <a href="/config-bot/1" class="{% if request.path.startswith('/config-bot') %}active{% endif %}"><i>🤖</i> Telegram</a>
       <a href="/logout"><i>🚪</i> Sair</a>
@@ -24,7 +24,6 @@
       <h1>🤖 Configurar {{ nome_bot }}</h1>
     </div>
 
-    <!-- 🔀 Seleção de Bot -->
     <div style="margin-bottom: 30px;">
       <label for="bot-selector" style="font-weight:bold;">Escolher Bot:</label>
       <select id="bot-selector" onchange="mudarBot()" style="padding:10px; border-radius:8px;">
@@ -34,7 +33,6 @@
       </select>
     </div>
 
-    <!-- 🔧 Formulário de Configuração -->
     <form method="POST" action="/config-bot/{{ bot_id }}" style="max-width: 800px;">
       <div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
 
@@ -87,7 +85,18 @@
           {% endfor %}
         </select>
 
-        <button type="submit" style="margin-top: 30px; background-color: #5e3ea1; color: white; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">💾 Salvar Configuração</button>
+        <h2 style="margin: 40px 0 20px; color: #5e3ea1;">📄 Grupos do Bot</h2>
+
+        <p style="margin-bottom: 10px;"><strong>Grupo 1:</strong> Envio de templates e figurinhas (estático)</p>
+        <p><strong>Grupos 2 e 3:</strong> Envio de promoções (baseado nos filtros)</p>
+
+        <button type="submit" style="margin-top: 30px; background-color: #5e3ea1; color: white; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">📂 Salvar Configuração</button>
+        <button type="button" onclick="enviarAgora()" style="margin-left: 10px; background-color: #27ae60; color: white; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">📤 Enviar Agora</button>
+
+        <div style="margin-top: 30px;">
+          <h3 style="color:#5e3ea1;">🔍 Logs de Envio (últimos)</h3>
+          <p>Em breve: painel de logs mostrando status, horário e mensagens enviadas.</p>
+        </div>
 
       </div>
     </form>
@@ -97,6 +106,10 @@
     function mudarBot() {
       const botId = document.getElementById("bot-selector").value;
       window.location.href = "/config-bot/" + botId;
+    }
+
+    function enviarAgora() {
+      alert("Funcionalidade de envio imediato ainda em desenvolvimento.");
     }
   </script>
 </body>
