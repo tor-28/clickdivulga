@@ -63,7 +63,6 @@
           <label><strong>Intervalo entre envios:</strong></label>
           <select name="intervalo_grupo_{{ grupo }}" style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
             {% for op in ['5 min']()
-
           <h3 style="margin-top: 20px;">Texto promocional</h3>
           <label>
             <input type="radio" name="modo_texto_grupo_{{ grupo }}" value="manual" {% if bot_config.get('modo_texto_grupo_' ~ grupo, 'manual') == 'manual' %}checked{% endif %}>
