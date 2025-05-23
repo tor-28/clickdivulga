@@ -1190,40 +1190,6 @@ def config_bot(bot_id):
         logs=logs
     )
 
-@app.route("/config-bot/<bot_id>", methods=["POST"])
-@verificar_login
-def salvar_config_bot(bot_id):
-    from datetime import datetime
-
-    uid = session["usuario"]["uid"]
-    grupo = request.form.get("grupo")
-    acao = request.form.get("acao", "")
-
-    doc_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
-    bot_config_doc = doc_ref.get()
-    bot_config = bot_config_doc.to_dict() if bot_config_doc.exists else {}
-
-    if grupo in ["2", "3"]:
-        bot_config[f"lojas_grupo_{grupo}"] = request.form.getlist(f"lojas_grupo_{grupo}")
-        bot_config[f"palavra_grupo_{grupo}"] = request.form.get(f"palavra_grupo_{grupo}", "").strip().lower()
-        bot_config[f"msg_grupo_{grupo}"] = int(request.form.get(f"msg_grupo_{grupo}", 1))
-        bot_config[f"intervalo_grupo_{grupo}"] = request.form.get(f"intervalo_grupo_{grupo}", "10 min")
-        bot_config[f"hora_inicio_grupo_{grupo}"] = int(request.form.get(f"hora_inicio_grupo_{grupo}", 0))
-        bot_config[f"hora_fim_grupo_{grupo}"] = int(request.form.get(f"hora_fim_grupo_{grupo}", 23))
-
-        if acao.startswith("salvar"):
-            bot_config[f"produtos_grupo_{grupo}"] = request.form.getlist(f"produtos_grupo_{grupo}")
-
-    bot_config["atualizado_em"] = datetime.now().isoformat()
-    doc_ref.set(bot_config)
-
-    if acao.startswith("filtrar"):
-        flash("🔍 Filtros aplicados. Agora selecione os produtos desejados.", "info")
-    else:
-        flash(f"✅ Grupo {grupo} salvo com sucesso!", "success")
-
-    return redirect(f"/config-bot/{bot_id}")
-
 @app.route("/enviar-bot/<bot_id>")
 @verificar_login
 def enviar_bot(bot_id):
@@ -1237,32 +1203,39 @@ def enviar_bot(bot_id):
         flash("❌ Grupo inválido para envio manual.", "error")
         return redirect(f"/config-bot/{bot_id}")
 
-    # Busca dados do painel do afiliado (minha-api)
+    # Dados da API e grupo
     dados_api = db.collection("api_shopee").document(uid).get().to_dict()
     bot_token = dados_api.get(f"bot_token_{bot_id}")
     grupo_id = dados_api.get(f"grupo_{grupo}_{bot_id}")
-
-    # Busca a configuração do bot
-    bot_config_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
-    bot_config = bot_config_ref.get().to_dict() if bot_config_ref.get().exists else {}
-    produtos = bot_config.get(f"produtos_grupo_{grupo}", [])
 
     if not bot_token or not grupo_id:
         flash("❌ Token do bot ou grupo não configurado.", "error")
         return redirect(f"/config-bot/{bot_id}")
 
+    # Configuração do bot
+    bot_config_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
+    bot_config = bot_config_ref.get().to_dict() if bot_config_ref.get().exists else {}
+
+    produtos = bot_config.get(f"produtos_grupo_{grupo}", [])
+    modo_texto = bot_config.get(f"modo_texto_grupo_{grupo}", "manual")
+    texto_manual = bot_config.get(f"texto_grupo_{grupo}", "").strip()
+
     if not produtos:
         flash("❌ Nenhum produto selecionado para esse grupo.", "error")
         return redirect(f"/config-bot/{bot_id}")
 
-    # Envia os produtos para o grupo via Telegram
     for p in produtos:
         try:
-            msg = f"🔥 *{p}*\nClique aqui para conferir!"
+            # Decide o texto a enviar
+            if modo_texto == "manual" and texto_manual:
+                texto = texto_manual
+            else:
+                texto = f"🔥 Oferta imperdível!\nConfira esse produto: *{p}*\n👉 Aproveite agora!"
+
             send_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
             payload = {
                 "chat_id": grupo_id,
-                "text": msg,
+                "text": texto,
                 "parse_mode": "Markdown"
             }
             requests.post(send_url, data=payload)
