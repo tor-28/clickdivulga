@@ -1012,13 +1012,32 @@ def excluir_produto():
     from datetime import datetime
 
     uid = session["usuario"]["uid"]
-    termo_id = request.form.get("termo_id")
-    titulo_produto = request.form.get("titulo")
+    termo_id = request.form.get("termo_id", "").strip()
+    titulo_produto = request.form.get("titulo", "").strip()
 
-    if not termo_id or not titulo_produto:
-        flash("❌ Dados insuficientes para excluir o produto.", "error")
+    if not titulo_produto:
+        flash("❌ Produto inválido para exclusão.", "error")
         return redirect("/produtos")
 
+    # Se termo_id não for enviado corretamente, tenta identificar o termo correspondente
+    if not termo_id:
+        # Percorre todos os termos do usuário buscando pelo produto
+        termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
+        for doc in termos_ref:
+            dados = doc.to_dict()
+            produtos = dados.get("produtos", [])
+            for p in produtos:
+                if p.get("titulo") == titulo_produto:
+                    termo_id = doc.id
+                    break
+            if termo_id:
+                break
+
+    if not termo_id:
+        flash("❌ Não foi possível localizar o termo do produto.", "error")
+        return redirect("/produtos")
+
+    # Continua com a exclusão
     termo_ref = db.collection("resultados_busca").document(uid).collection("termos").document(termo_id)
     termo_doc = termo_ref.get()
 
@@ -1030,7 +1049,6 @@ def excluir_produto():
     produtos = dados.get("produtos", [])
     produtos_filtrados = [p for p in produtos if p.get("titulo") != titulo_produto]
 
-    # Atualiza a lista de produtos no Firestore
     termo_ref.update({
         "produtos": produtos_filtrados,
         "atualizado_em": datetime.now().isoformat()
