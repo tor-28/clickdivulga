@@ -6,25 +6,36 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/grupos.css') }}">
 </head>
 <body>
-  <<div class="sidebar">
-  <h2>ClickDivulga</h2>
-  <div class="menu">
-    <a href="/painel"><i>🏠</i> Dashboard</a>
-    <a href="/criar-link"><i>➕</i> Criar Link</a>
-    <a href="/grupos"><i>📊</i> Desempenho de Grupos</a>
-    <a href="/produtos"><i>🛍️</i> Produtos</a>
-    <a href="/minha-api"><i>🔐</i> Config Afiliado</a>
-    <a href="/config-bot" class="{% if request.path.startswith('/config-bot') %}active{% endif %}"><i>🤖</i> Telegram</a>
-    <a href="/logout"><i>🚪</i> Sair</a>
+  <div class="sidebar">
+    <h2>ClickDivulga</h2>
+    <div class="menu">
+      <a href="/painel"><i>🏠</i> Dashboard</a>
+      <a href="/criar-link"><i>➕</i> Criar Link</a>
+      <a href="/grupos"><i>📊</i> Desempenho de Grupos</a>
+      <a href="/produtos"><i>🛍️</i> Produtos</a>
+      <a href="/minha-api"><i>🔐</i> Config Afiliado</a>
+      <a href="/config-bot/1" class="{% if request.path.startswith('/config-bot') %}active{% endif %}"><i>🤖</i> Telegram</a>
+      <a href="/logout"><i>🚪</i> Sair</a>
+    </div>
   </div>
-</div>
 
   <div class="content">
     <div class="topbar">
-      <h1>🤖 Configurar Bot {{ nome_bot }}</h1>
+      <h1>🤖 Configurar {{ nome_bot }}</h1>
     </div>
 
-    <form method="POST" action="/config-bot/{{ bot_id }}" style="max-width: 800px; margin-top: 20px;">
+    <!-- 🔀 Seleção de Bot -->
+    <div style="margin-bottom: 30px;">
+      <label for="bot-selector" style="font-weight:bold;">Escolher Bot:</label>
+      <select id="bot-selector" onchange="mudarBot()" style="padding:10px; border-radius:8px;">
+        <option value="1" {% if bot_id == '1' %}selected{% endif %}>Bot 1</option>
+        <option value="2" {% if bot_id == '2' %}selected{% endif %}>Bot 2</option>
+        <option value="3" {% if bot_id == '3' %}selected{% endif %}>Bot 3</option>
+      </select>
+    </div>
+
+    <!-- 🔧 Formulário de Configuração -->
+    <form method="POST" action="/config-bot/{{ bot_id }}" style="max-width: 800px;">
       <div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
 
         <h2 style="margin-bottom: 20px; color: #5e3ea1;">🎯 Filtros de Envio</h2>
@@ -49,7 +60,7 @@
 
         <h2 style="margin: 40px 0 20px; color: #5e3ea1;">⏱️ Regras de Envio</h2>
 
-        <label style="font-weight: bold;">Mensagens por Minuto (mínimo 10s cada):</label>
+        <label style="font-weight: bold;">Mensagens por Minuto:</label>
         <select name="msg_por_minuto" style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
           {% for i in range(1,7) %}
           <option value="{{ i }}" {% if bot_config.get('msg_por_minuto') == i %}selected{% endif %}>{{ i }}</option>
@@ -81,5 +92,12 @@
       </div>
     </form>
   </div>
+
+  <script>
+    function mudarBot() {
+      const botId = document.getElementById("bot-selector").value;
+      window.location.href = "/config-bot/" + botId;
+    }
+  </script>
 </body>
 </html>
