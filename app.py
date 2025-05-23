@@ -1146,23 +1146,27 @@ def config_telegram():
     flash("🤖 Bots do Telegram salvos com sucesso!", "success")
     return redirect("/minha-api")
 
-@app.route("/config-bot")
+@app.route("/config-bot/<bot_id>", methods=["GET", "POST"])
 @verificar_login
-def config_bot():
-    uid = session["usuario"]["uid"]
-    doc_ref = db.collection("api_shopee").document(uid)
-    doc = doc_ref.get()
-    dados = doc.to_dict() if doc.exists else {}
+def config_bot(bot_id):
+    from datetime import datetime
 
-    # Busca produtos salvos para alimentar os filtros
+    uid = session["usuario"]["uid"]
+    bot_path = f"telegram_bots/{uid}/bot_{bot_id}"
+    doc_ref = db.document(bot_path)
+    doc = doc_ref.get()
+    bot_config = doc.to_dict() if doc.exists else {}
+
+    # Nome simbólico para exibição
+    nome_bot = f"Bot {bot_id}"
+
+    # Buscar produtos para filtros
     termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
     categorias, lojas, palavras = set(), set(), set()
-    total_produtos = 0
 
     for doc in termos_ref:
         dados_termo = doc.to_dict()
         for p in dados_termo.get("produtos", []):
-            total_produtos += 1
             if p.get("loja"):
                 lojas.add(p["loja"])
             if dados_termo.get("termo"):
@@ -1171,9 +1175,10 @@ def config_bot():
                 categorias.add(dados_termo.get("categoria", "Outros"))
 
     return render_template("config-telegram.html",
-        dados=dados,
-        categorias=sorted(categorias),
-        lojas=sorted(lojas),
-        palavras=sorted(palavras),
-        total_produtos=total_produtos
+        bot_id=bot_id,
+        nome_bot=nome_bot,
+        bot_config=bot_config,
+        categorias_disponiveis=sorted(categorias),
+        lojas_disponiveis=sorted(lojas),
     )
+                
