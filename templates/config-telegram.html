@@ -85,14 +85,21 @@
           {% endfor %}
         </select>
 
-        <h2 style="margin: 40px 0 20px; color: #5e3ea1;">📄 Grupos do Bot</h2>
+        <h2 style="margin: 40px 0 20px; color: #5e3ea1;">📄 Chat ID dos Grupos</h2>
 
-        <div style="background: #f2f2ff; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
-          <p><strong>Grupo 1:</strong> <span style="color: #3c8dbc;">Envio exclusivo de templates e figurinhas</span></p>
-          <p><strong>Grupo 2 e 3:</strong> <span style="color: #27ae60;">Envio automático de promoções</span></p>
-        </div>
+        <p><strong>Grupo 1:</strong> (Templates e Figurinhas)</p>
+        <input type="text" name="grupo_1_id" value="{{ bot_config.get('grupo_1_id', '') }}" placeholder="Chat ID do Grupo 1"
+          style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
 
-        <button type="submit" style="margin-top: 30px; background-color: #5e3ea1; color: white; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">📂 Salvar Configuração</button>
+        <p><strong>Grupo 2:</strong> (Promoções)</p>
+        <input type="text" name="grupo_2_id" value="{{ bot_config.get('grupo_2_id', '') }}" placeholder="Chat ID do Grupo 2"
+          style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
+
+        <p><strong>Grupo 3:</strong> (Promoções)</p>
+        <input type="text" name="grupo_3_id" value="{{ bot_config.get('grupo_3_id', '') }}" placeholder="Chat ID do Grupo 3"
+          style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
+
+        <button type="submit" style="margin-top: 20px; background-color: #5e3ea1; color: white; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">📂 Salvar Configuração</button>
         <a href="/enviar-bot/{{ bot_id }}" style="margin-left: 10px; background-color: #27ae60; color: white; padding: 12px 20px; border-radius: 8px; font-size: 1rem; text-decoration: none;">📤 Enviar Agora</a>
 
         <div style="margin-top: 30px;">
