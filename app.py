@@ -1135,7 +1135,6 @@ def config_telegram():
     doc = doc_ref.get()
     dados = doc.to_dict() if doc.exists else {}
 
-    # Registra até 3 bots com nome, token e grupos
     for i in range(1, 4):
         dados[f"bot_nome_{i}"] = request.form.get(f"bot_nome_{i}", "").strip()
         dados[f"bot_token_{i}"] = request.form.get(f"bot_token_{i}", "").strip()
@@ -1144,7 +1143,7 @@ def config_telegram():
         dados[f"grupo_3_{i}"] = request.form.get(f"grupo_3_{i}", "").strip()
 
     dados["atualizado_em"] = datetime.now().isoformat()
-    doc_ref.set(dados)
+    doc_ref.set(dados, merge=True)
 
     flash("🤖 Bots e grupos do Telegram salvos com sucesso!", "success")
     return redirect("/minha-api")
@@ -1153,7 +1152,6 @@ def config_telegram():
 @verificar_login
 def redirecionar_config_bot():
     return redirect("/config-bot/1")
-
 
 @app.route("/config-bot/<bot_id>", methods=["GET"])
 @verificar_login
@@ -1191,7 +1189,6 @@ def config_bot(bot_id):
         produtos_disponiveis=produtos_disponiveis,
         logs=logs
     )
-
 
 @app.route("/config-bot/<bot_id>", methods=["POST"])
 @verificar_login
