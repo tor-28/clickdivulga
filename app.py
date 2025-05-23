@@ -498,8 +498,7 @@ def produtos():
                     lojas_disponiveis.add(p.get("loja"))
                 if dados.get("termo"):
                     palavras_disponiveis.add(dados.get("termo").lower())
-                
-                # Insere a data de atualização no produto
+
                 p["atualizado_em"] = atualizado_em
                 todos_produtos.append(p)
 
@@ -512,11 +511,12 @@ def produtos():
     except Exception as e:
         print(f"Erro ao carregar resultados salvos: {e}")
 
-    # Filtros GET
+    # Limita a 400 produtos por afiliado (mantém os mais recentes)
+    todos_produtos = sorted(todos_produtos, key=lambda x: x.get("atualizado_em", ""), reverse=True)[:400]
+
     filtro_loja = request.args.get("filtro_loja", "").strip()
     filtro_termo = request.args.get("filtro_termo", "").strip().lower()
 
-    # Aplica filtros nos produtos
     produtos_filtrados = []
     for p in todos_produtos:
         if filtro_loja and p.get("loja") != filtro_loja:
@@ -525,16 +525,13 @@ def produtos():
             continue
         produtos_filtrados.append(p)
 
-    # Ordena por atualizado_em (mais recente primeiro)
     produtos_ordenados = sorted(produtos_filtrados, key=lambda x: x.get("atualizado_em", ""), reverse=True)
 
-    # Paginação
     pagina = int(request.args.get("pagina", 1))
     inicio = (pagina - 1) * 20
     fim = inicio + 20
     total_paginas = (len(produtos_ordenados) // 20) + (1 if len(produtos_ordenados) % 20 > 0 else 0)
 
-    # Converte horário para Brasília
     for p in produtos_ordenados:
         try:
             if p.get("atualizado_em"):
