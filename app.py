@@ -1146,6 +1146,11 @@ def config_telegram():
     flash("🤖 Bots do Telegram salvos com sucesso!", "success")
     return redirect("/minha-api")
 
+@app.route("/config-bot")
+@verificar_login
+def redirecionar_config_bot():
+    return redirect("/config-bot/1")
+
 # GET → mostra a página
 @app.route("/config-bot/<bot_id>", methods=["GET"])
 @verificar_login
