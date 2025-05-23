@@ -22,6 +22,12 @@
   <div class="content">
     <div class="topbar">
       <h1>🤖 Configurar {{ nome_bot }}</h1>
+      <label for="bot-selector" style="margin-left: 10px; font-weight: normal;">Selecionar Bot:</label>
+      <select id="bot-selector" onchange="mudarBot()" style="padding: 6px 12px; border-radius: 8px;">
+        <option value="1" {% if bot_id == '1' %}selected{% endif %}>Bot 1</option>
+        <option value="2" {% if bot_id == '2' %}selected{% endif %}>Bot 2</option>
+        <option value="3" {% if bot_id == '3' %}selected{% endif %}>Bot 3</option>
+      </select>
     </div>
 
     <form method="POST" action="/config-bot/{{ bot_id }}">
@@ -43,14 +49,19 @@
 
           <label><strong>Selecionar Produtos:</strong></label>
           <div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
-            {% for p in bot_config.get('produtos_disponiveis', []) %}
-            <div style="margin-bottom: 10px; display: flex; align-items: center;">
-              <input type="checkbox" name="produtos_grupo_{{ grupo }}" value="{{ p.titulo }}"
-                     {% if p.titulo in bot_config.get('produtos_grupo_' ~ grupo, []) %}checked{% endif %}>
-              <img src="{{ p.imagem }}" alt="Produto" style="width: 40px; height: 40px; object-fit: cover; margin: 0 10px; border-radius: 4px;">
-              <span style="font-size: 0.9rem;">{{ p.titulo|truncate(40) }}</span>
-            </div>
-            {% endfor %}
+            {% set produtos = produtos_disponiveis or bot_config.get('produtos_disponiveis', []) %}
+            {% if produtos %}
+              {% for p in produtos %}
+              <div style="margin-bottom: 10px; display: flex; align-items: center;">
+                <input type="checkbox" name="produtos_grupo_{{ grupo }}" value="{{ p.titulo }}"
+                       {% if p.titulo in bot_config.get('produtos_grupo_' ~ grupo, []) %}checked{% endif %}>
+                <img src="{{ p.imagem }}" alt="Produto" style="width: 40px; height: 40px; object-fit: cover; margin: 0 10px; border-radius: 4px;">
+                <span style="font-size: 0.9rem;">{{ p.titulo|truncate(40) }}</span>
+              </div>
+              {% endfor %}
+            {% else %}
+              <p style="color: #888;">Nenhum produto disponível no momento.</p>
+            {% endif %}
           </div>
 
           <label><strong>Mensagens por Minuto:</strong></label>
@@ -102,5 +113,12 @@
       </div>
     </form>
   </div>
+
+  <script>
+    function mudarBot() {
+      const botId = document.getElementById("bot-selector").value;
+      window.location.href = "/config-bot/" + botId;
+    }
+  </script>
 </body>
 </html>
