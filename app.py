@@ -1157,6 +1157,8 @@ def redirecionar_config_bot():
 @app.route("/config-bot/<bot_id>", methods=["GET"])
 @verificar_login
 def config_bot(bot_id):
+    from google.cloud import firestore
+
     uid = session["usuario"]["uid"]
     doc_ref = db.collection("api_shopee").document(uid)
     doc = doc_ref.get()
@@ -1178,7 +1180,6 @@ def config_bot(bot_id):
             if termo.get("tipo") == "produto":
                 categorias.add(termo.get("categoria", "Outros"))
 
-    # 🔎 Logs de envio (últimos 10)
     logs_ref = db.collection("telegram_logs").document(uid).collection(bot_id).order_by("enviado_em", direction=firestore.Query.DESCENDING).limit(10)
     logs = [log.to_dict() for log in logs_ref.stream()]
 
@@ -1201,16 +1202,29 @@ def salvar_config_bot(bot_id):
     doc_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
 
     data = {
-        "categorias": request.form.getlist("categorias"),
-        "lojas": request.form.getlist("lojas"),
-        "palavra_chave": request.form.get("palavra_chave", "").strip().lower(),
+        # Grupos (chat_id)
+        "grupo_1": request.form.get("grupo_1_id", "").strip(),
+        "grupo_2": request.form.get("grupo_2_id", "").strip(),
+        "grupo_3": request.form.get("grupo_3_id", "").strip(),
+
+        # Filtros por grupo
+        "grupo_1_categorias": request.form.getlist("grupo_1_categorias"),
+        "grupo_1_lojas": request.form.getlist("grupo_1_lojas"),
+        "grupo_1_palavra": request.form.get("grupo_1_palavra", "").strip().lower(),
+
+        "grupo_2_categorias": request.form.getlist("grupo_2_categorias"),
+        "grupo_2_lojas": request.form.getlist("grupo_2_lojas"),
+        "grupo_2_palavra": request.form.get("grupo_2_palavra", "").strip().lower(),
+
+        "grupo_3_categorias": request.form.getlist("grupo_3_categorias"),
+        "grupo_3_lojas": request.form.getlist("grupo_3_lojas"),
+        "grupo_3_palavra": request.form.get("grupo_3_palavra", "").strip().lower(),
+
+        # Regras gerais
         "msg_por_minuto": int(request.form.get("msg_por_minuto", 1)),
         "intervalo": request.form.get("intervalo"),
         "hora_inicio": int(request.form.get("hora_inicio")),
         "hora_fim": int(request.form.get("hora_fim")),
-        "grupo_1": request.form.get("grupo_1", "").strip(),
-        "grupo_2": request.form.get("grupo_2", "").strip(),
-        "grupo_3": request.form.get("grupo_3", "").strip(),
         "atualizado_em": datetime.now().isoformat()
     }
 
