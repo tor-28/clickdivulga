@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -14,18 +13,19 @@
       <a href="/criar-link"><i>➕</i> Criar Link</a>
       <a href="/grupos"><i>📊</i> Desempenho de Grupos</a>
       <a href="/produtos"><i>🛍️</i> Produtos</a>
-      <a href="/minha-api" class="active"><i>🔐</i> API Shopee</a>
+      <a href="/minha-api" class="active"><i>🔐</i> Config Afiliado</a>
       <a href="/logout"><i>🚪</i> Sair</a>
     </div>
   </div>
 
   <div class="content">
     <div class="topbar">
-      <h1>🔐 Credenciais da API Shopee</h1>
+      <h1>🔐 Configuração do Afiliado</h1>
     </div>
 
+    <!-- 🔐 API SHOPEE -->
     <div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 40px; max-width: 700px;">
-      <h2 style="margin-bottom: 20px; color: #5e3ea1;">📎 Salve suas credenciais para consultar produtos com precisão</h2>
+      <h2 style="margin-bottom: 20px; color: #5e3ea1;">📎 Salve suas credenciais da API Shopee</h2>
 
       <form method="POST">
         <div style="margin-bottom: 20px;">
@@ -39,6 +39,30 @@
         </div>
 
         <button type="submit" style="background-color: #5e3ea1; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">💾 Salvar API</button>
+      </form>
+    </div>
+
+    <!-- 📲 TELEGRAM -->
+    <div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); max-width: 700px;">
+      <h2 style="margin-bottom: 20px; color: #5e3ea1;">📢 Grupos de Telegram para receber promoções</h2>
+
+      <form method="POST" action="/config-telegram">
+        <div style="margin-bottom: 20px;">
+          <label style="font-weight: 600;">Grupo 1 (link):</label>
+          <input type="url" name="grupo_telegram_1" value="{{ dados.get('grupo_telegram_1', '') }}" placeholder="https://t.me/..." style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="font-weight: 600;">Grupo 2 (opcional):</label>
+          <input type="url" name="grupo_telegram_2" value="{{ dados.get('grupo_telegram_2', '') }}" placeholder="https://t.me/..." style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="font-weight: 600;">Grupo 3 (opcional):</label>
+          <input type="url" name="grupo_telegram_3" value="{{ dados.get('grupo_telegram_3', '') }}" placeholder="https://t.me/..." style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
+        </div>
+
+        <button type="submit" style="background-color: #5e3ea1; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">💾 Salvar Grupos do Telegram</button>
       </form>
     </div>
   </div>
