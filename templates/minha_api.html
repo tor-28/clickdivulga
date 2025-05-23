@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>API Shopee - ClickDivulga</title>
+  <title>Config Afiliado - ClickDivulga</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/grupos.css') }}">
 </head>
 <body>
@@ -42,27 +42,24 @@
       </form>
     </div>
 
-    <!-- 📲 TELEGRAM -->
+    <!-- 🤖 TELEGRAM BOTS -->
     <div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); max-width: 700px;">
-      <h2 style="margin-bottom: 20px; color: #5e3ea1;">📢 Grupos de Telegram para receber promoções</h2>
+      <h2 style="margin-bottom: 20px; color: #5e3ea1;">🤖 Bots do Telegram para envio automático</h2>
 
       <form method="POST" action="/config-telegram">
+        {% for i in range(1, 4) %}
         <div style="margin-bottom: 20px;">
-          <label style="font-weight: 600;">Grupo 1 (link):</label>
-          <input type="url" name="grupo_telegram_1" value="{{ dados.get('grupo_telegram_1', '') }}" placeholder="https://t.me/..." style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
+          <label style="font-weight: 600;">Bot {{ i }} – Nome:</label>
+          <input type="text" name="bot_nome_{{ i }}" value="{{ dados.get('bot_nome_' ~ i, '') }}" placeholder="Ex: Promoções Rápidas {{ i }}" style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
         </div>
 
-        <div style="margin-bottom: 20px;">
-          <label style="font-weight: 600;">Grupo 2 (opcional):</label>
-          <input type="url" name="grupo_telegram_2" value="{{ dados.get('grupo_telegram_2', '') }}" placeholder="https://t.me/..." style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
+        <div style="margin-bottom: 30px;">
+          <label style="font-weight: 600;">Bot {{ i }} – Token:</label>
+          <input type="text" name="bot_token_{{ i }}" value="{{ dados.get('bot_token_' ~ i, '') }}" placeholder="123456:ABC-DEFG..." style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
         </div>
+        {% endfor %}
 
-        <div style="margin-bottom: 20px;">
-          <label style="font-weight: 600;">Grupo 3 (opcional):</label>
-          <input type="url" name="grupo_telegram_3" value="{{ dados.get('grupo_telegram_3', '') }}" placeholder="https://t.me/..." style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
-        </div>
-
-        <button type="submit" style="background-color: #5e3ea1; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">💾 Salvar Grupos do Telegram</button>
+        <button type="submit" style="background-color: #5e3ea1; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">💾 Salvar Bots</button>
       </form>
     </div>
   </div>
