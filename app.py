@@ -1154,46 +1154,59 @@ def config_telegram():
 def redirecionar_config_bot():
     return redirect("/config-bot/1")
 
-@app.route("/config-bot/<bot_id>", methods=["GET"])
+@app.route("/enviar-bot/<bot_id>")
 @verificar_login
-def config_bot(bot_id):
-    from google.cloud import firestore
-
+def enviar_bot(bot_id):
+    from datetime import datetime
     uid = session["usuario"]["uid"]
-    doc_ref = db.collection("api_shopee").document(uid)
-    doc = doc_ref.get()
-    dados = doc.to_dict() if doc.exists else {}
+    grupo = request.args.get("grupo")
 
-    bot_nome = dados.get(f"bot_nome_{bot_id}", f"Bot {bot_id}")
+    # Validação básica
+    if grupo not in ["2", "3"]:
+        flash("❌ Grupo inválido para envio manual.", "error")
+        return redirect(f"/config-bot/{bot_id}")
+
+    # Coleta configurações do bot
     bot_config_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
-    bot_config_doc = bot_config_ref.get()
-    bot_config = bot_config_doc.to_dict() if bot_config_doc.exists else {}
+    bot_config = bot_config_ref.get().to_dict() if bot_config_ref.get().exists else {}
 
-    # Coleta lojas disponíveis com base em produtos salvos
-    termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
-    lojas = set()
-    produtos_disponiveis = []
+    # Coleta token e grupo destino
+    dados_api = db.collection("api_shopee").document(uid).get().to_dict()
+    bot_token = dados_api.get(f"bot_token_{bot_id}")
+    grupo_id = dados_api.get(f"grupo_{grupo}_{bot_id}")
+    produtos = bot_config.get(f"produtos_grupo_{grupo}", [])
 
-    for doc in termos_ref:
-        termo = doc.to_dict()
-        for p in termo.get("produtos", []):
-            if p.get("loja"):
-                lojas.add(p["loja"])
-            produtos_disponiveis.append(p)
+    if not bot_token or not grupo_id or not produtos:
+        flash("❌ Bot, grupo ou produtos não configurados corretamente.", "error")
+        return redirect(f"/config-bot/{bot_id}")
 
-    # Logs de envio por bot
-    logs_ref = db.collection("telegram_logs").document(uid).collection(bot_id).order_by("enviado_em", direction=firestore.Query.DESCENDING).limit(10)
-    logs = [log.to_dict() for log in logs_ref.stream()]
+    # Envio de cada produto
+    for p in produtos:
+        try:
+            msg = f"🔥 *{p}*\nClique aqui para conferir!"
+            send_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+            payload = {
+                "chat_id": grupo_id,
+                "text": msg,
+                "parse_mode": "Markdown"
+            }
+            requests.post(send_url, data=payload)
 
-    return render_template("config-telegram.html",
-        bot_id=bot_id,
-        nome_bot=bot_nome,
-        bot_config=bot_config,
-        lojas_disponiveis=sorted(lojas),
-        produtos_disponiveis=produtos_disponiveis,
-        logs=logs
-    )
+            db.collection("telegram_logs").document(uid).collection(bot_id).add({
+                "enviado_em": datetime.now().isoformat(),
+                "grupo": grupo,
+                "status": f"Enviado: {p}"
+            })
 
+        except Exception as e:
+            db.collection("telegram_logs").document(uid).collection(bot_id).add({
+                "enviado_em": datetime.now().isoformat(),
+                "grupo": grupo,
+                "status": f"Erro ao enviar {p}: {e}"
+            })
+
+    flash(f"✅ Mensagens enviadas com sucesso para o Grupo {grupo}!", "success")
+    return redirect(f"/config-bot/{bot_id}")
 
 @app.route("/config-bot/<bot_id>", methods=["POST"])
 @verificar_login
