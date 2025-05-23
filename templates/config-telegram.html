@@ -24,79 +24,73 @@
       <h1>🤖 Configurar {{ nome_bot }}</h1>
     </div>
 
-    <div style="margin-bottom: 30px;">
-      <label for="bot-selector" style="font-weight:bold;">Escolher Bot:</label>
-      <select id="bot-selector" onchange="mudarBot()" style="padding:10px; border-radius:8px;">
-        <option value="1" {% if bot_id == '1' %}selected{% endif %}>Bot 1</option>
-        <option value="2" {% if bot_id == '2' %}selected{% endif %}>Bot 2</option>
-        <option value="3" {% if bot_id == '3' %}selected{% endif %}>Bot 3</option>
-      </select>
-    </div>
+    <form method="POST" action="/config-bot/{{ bot_id }}">
+      <div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); max-width: 1000px;">
 
-    <form method="POST" action="/config-bot/{{ bot_id }}" style="max-width: 800px;">
-      <div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+        <div style="background: #eef6ff; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
+          <h2 style="color:#5e3ea1;">📄 Grupos do Bot</h2>
+          <p><strong>Grupo 1:</strong> <span style="color: #3c8dbc;">Envio exclusivo de templates e figurinhas (sem promoções)</span></p>
+          <p><strong>Grupo 2 e 3:</strong> <span style="color: #27ae60;">Envio automático de promoções</span></p>
+        </div>
 
-        <h2 style="margin-bottom: 20px; color: #5e3ea1;">🎯 Filtros de Envio por Grupo</h2>
+        {% for grupo in [2, 3] %}
+        <div style="border: 1px solid #ddd; border-radius: 12px; padding: 20px; margin-bottom: 30px;">
+          <h3 style="color:#5e3ea1;">🎯 Grupo {{ grupo }} – Configuração de Envio</h3>
 
-        {% for grupo in [1, 2, 3] %}
-        <div style="margin-bottom: 30px; border: 1px solid #e0e0e0; padding: 20px; border-radius: 12px;">
-          <h3 style="color: #5e3ea1;">Grupo {{ grupo }} {% if grupo == 1 %}(Templates e Figurinhas){% else %}(Promoções){% endif %}</h3>
-
-          <label style="font-weight: bold;">Categoria:</label>
-          <select name="categorias_{{ grupo }}" multiple style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
-            {% for cat in categorias_disponiveis %}
-            <option value="{{ cat }}" {% if cat in bot_config.get('categorias_' ~ grupo, []) %}selected{% endif %}>{{ cat }}</option>
-            {% endfor %}
-          </select>
-
-          <label style="font-weight: bold;">Lojas:</label>
-          <select name="lojas_{{ grupo }}" multiple style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
+          <label><strong>Lojas Permitidas:</strong></label>
+          <select name="lojas_grupo_{{ grupo }}" multiple style="width: 100%; padding: 10px; margin: 10px 0; border-radius: 8px;">
             {% for loja in lojas_disponiveis %}
-            <option value="{{ loja }}" {% if loja in bot_config.get('lojas_' ~ grupo, []) %}selected{% endif %}>{{ loja }}</option>
+              <option value="{{ loja }}" {% if loja in bot_config.get('lojas_grupo_' ~ grupo, []) %}selected{% endif %}>{{ loja }}</option>
             {% endfor %}
           </select>
 
-          <label style="font-weight: bold;">Palavra-chave:</label>
-          <input type="text" name="palavra_chave_{{ grupo }}" value="{{ bot_config.get('palavra_chave_' ~ grupo, '') }}" placeholder="Ex: whey, fone bluetooth"
+          <label><strong>Palavra-chave (opcional):</strong></label>
+          <input type="text" name="palavra_grupo_{{ grupo }}" value="{{ bot_config.get('palavra_grupo_' ~ grupo, '') }}" placeholder="Ex: whey, fone"
             style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
+
+          <label><strong>Mensagens por Minuto:</strong></label>
+          <select name="msg_grupo_{{ grupo }}" style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
+            {% for i in range(1, 7) %}
+              <option value="{{ i }}" {% if bot_config.get('msg_grupo_' ~ grupo) == i %}selected{% endif %}>{{ i }}</option>
+            {% endfor %}
+          </select>
+
+          <label><strong>Intervalo entre envios:</strong></label>
+          <select name="intervalo_grupo_{{ grupo }}" style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
+            {% for op in ['5 min', '10 min', '15 min', '30 min', '1h', '2h', '6h', '12h'] %}
+              <option value="{{ op }}" {% if bot_config.get('intervalo_grupo_' ~ grupo) == op %}selected{% endif %}>{{ op }}</option>
+            {% endfor %}
+          </select>
+
+          <label><strong>Horário de envio:</strong></label><br>
+          <select name="hora_inicio_grupo_{{ grupo }}" style="margin-right: 10px; padding: 10px; border-radius: 8px;">
+            {% for h in range(0, 24) %}
+              <option value="{{ h }}" {% if bot_config.get('hora_inicio_grupo_' ~ grupo) == h %}selected{% endif %}>{{ "%02d:00" % h }}</option>
+            {% endfor %}
+          </select>
+          até
+          <select name="hora_fim_grupo_{{ grupo }}" style="margin-left: 10px; padding: 10px; border-radius: 8px;">
+            {% for h in range(0, 24) %}
+              <option value="{{ h }}" {% if bot_config.get('hora_fim_grupo_' ~ grupo) == h %}selected{% endif %}>{{ "%02d:00" % h }}</option>
+            {% endfor %}
+          </select>
         </div>
         {% endfor %}
 
-        <h2 style="margin: 40px 0 20px; color: #5e3ea1;">⏱️ Regras de Envio</h2>
-
-        <label style="font-weight: bold;">Mensagens por Minuto:</label>
-        <select name="msg_por_minuto" style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
-          {% for i in range(1,7) %}
-          <option value="{{ i }}" {% if bot_config.get('msg_por_minuto') == i %}selected{% endif %}>{{ i }}</option>
-          {% endfor %}
-        </select>
-
-        <label style="font-weight: bold;">Intervalo entre envios:</label>
-        <select name="intervalo" style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
-          {% for op in ['5 min', '10 min', '15 min', '30 min', '1h', '2h', '6h', '12h'] %}
-          <option value="{{ op }}" {% if bot_config.get('intervalo') == op %}selected{% endif %}>{{ op }}</option>
-          {% endfor %}
-        </select>
-
-        <label style="font-weight: bold;">Horário de envio:</label><br>
-        <select name="hora_inicio" style="margin: 10px 10px 20px 0; padding: 10px; border-radius: 8px;">
-          {% for h in range(0, 24) %}
-          <option value="{{ h }}" {% if bot_config.get('hora_inicio') == h %}selected{% endif %}>{{ "%02d:00" % h }}</option>
-          {% endfor %}
-        </select>
-        até
-        <select name="hora_fim" style="margin: 10px 0 20px 10px; padding: 10px; border-radius: 8px;">
-          {% for h in range(0, 24) %}
-          <option value="{{ h }}" {% if bot_config.get('hora_fim') == h %}selected{% endif %}>{{ "%02d:00" % h }}</option>
-          {% endfor %}
-        </select>
-
-        <button type="submit" style="margin-top: 20px; background-color: #5e3ea1; color: white; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">📂 Salvar Configuração</button>
-        <a href="/enviar-bot/{{ bot_id }}" style="margin-left: 10px; background-color: #27ae60; color: white; padding: 12px 20px; border-radius: 8px; font-size: 1rem; text-decoration: none;">📤 Enviar Agora</a>
+        <button type="submit" style="background-color: #5e3ea1; color: white; padding: 12px 20px; border-radius: 8px;">📂 Salvar Configuração</button>
+        <a href="/enviar-bot/{{ bot_id }}" style="margin-left: 10px; background-color: #27ae60; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none;">📤 Enviar Agora</a>
 
         <div style="margin-top: 30px;">
           <h3 style="color:#5e3ea1;">🔍 Logs de Envio</h3>
-          <p>📋 Em breve você poderá visualizar todos os envios realizados com status, data, grupo e mensagem enviada.</p>
+          {% if logs %}
+            <ul>
+              {% for log in logs %}
+                <li>{{ log.enviado_em }} — Grupo {{ log.grupo }} — {{ log.status }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>📋 Ainda não há registros de envio.</p>
+          {% endif %}
         </div>
 
       </div>
