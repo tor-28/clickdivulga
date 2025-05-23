@@ -1132,15 +1132,17 @@ def config_telegram():
 
     uid = session["usuario"]["uid"]
     doc_ref = db.collection("api_shopee").document(uid)
-
     doc = doc_ref.get()
     dados = doc.to_dict() if doc.exists else {}
 
-    dados["grupo_telegram_1"] = request.form.get("grupo_telegram_1")
-    dados["grupo_telegram_2"] = request.form.get("grupo_telegram_2")
-    dados["grupo_telegram_3"] = request.form.get("grupo_telegram_3")
-    dados["atualizado_em"] = datetime.now().isoformat()
+    # Registra até 3 bots com nome e token
+    for i in range(1, 4):
+        dados[f"bot_nome_{i}"] = request.form.get(f"bot_nome_{i}", "").strip()
+        dados[f"bot_token_{i}"] = request.form.get(f"bot_token_{i}", "").strip()
 
+    dados["atualizado_em"] = datetime.now().isoformat()
     doc_ref.set(dados)
-    flash("Grupos do Telegram atualizados com sucesso!", "success")
+
+    flash("🤖 Bots do Telegram salvos com sucesso!", "success")
     return redirect("/minha-api")
+
