@@ -1223,3 +1223,63 @@ def salvar_config_bot(bot_id):
         flash(f"✅ Grupo {grupo} salvo com sucesso!", "success")
 
     return redirect(f"/config-bot/{bot_id}")
+
+@app.route("/enviar-bot/<bot_id>")
+@verificar_login
+def enviar_bot(bot_id):
+    from datetime import datetime
+    import requests
+
+    uid = session["usuario"]["uid"]
+    grupo = request.args.get("grupo")
+
+    if grupo not in ["2", "3"]:
+        flash("❌ Grupo inválido para envio manual.", "error")
+        return redirect(f"/config-bot/{bot_id}")
+
+    # Busca dados do painel do afiliado (minha-api)
+    dados_api = db.collection("api_shopee").document(uid).get().to_dict()
+    bot_token = dados_api.get(f"bot_token_{bot_id}")
+    grupo_id = dados_api.get(f"grupo_{grupo}_{bot_id}")
+
+    # Busca a configuração do bot
+    bot_config_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
+    bot_config = bot_config_ref.get().to_dict() if bot_config_ref.get().exists else {}
+    produtos = bot_config.get(f"produtos_grupo_{grupo}", [])
+
+    if not bot_token or not grupo_id:
+        flash("❌ Token do bot ou grupo não configurado.", "error")
+        return redirect(f"/config-bot/{bot_id}")
+
+    if not produtos:
+        flash("❌ Nenhum produto selecionado para esse grupo.", "error")
+        return redirect(f"/config-bot/{bot_id}")
+
+    # Envia os produtos para o grupo via Telegram
+    for p in produtos:
+        try:
+            msg = f"🔥 *{p}*\nClique aqui para conferir!"
+            send_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+            payload = {
+                "chat_id": grupo_id,
+                "text": msg,
+                "parse_mode": "Markdown"
+            }
+            requests.post(send_url, data=payload)
+
+            # Loga envio
+            db.collection("telegram_logs").document(uid).collection(bot_id).add({
+                "enviado_em": datetime.now().isoformat(),
+                "grupo": grupo,
+                "status": f"Enviado: {p}"
+            })
+
+        except Exception as e:
+            db.collection("telegram_logs").document(uid).collection(bot_id).add({
+                "enviado_em": datetime.now().isoformat(),
+                "grupo": grupo,
+                "status": f"Erro ao enviar {p}: {e}"
+            })
+
+    flash(f"✅ Mensagens enviadas com sucesso para o Grupo {grupo}!", "success")
+    return redirect(f"/config-bot/{bot_id}")
