@@ -36,25 +36,31 @@
     <form method="POST" action="/config-bot/{{ bot_id }}" style="max-width: 800px;">
       <div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
 
-        <h2 style="margin-bottom: 20px; color: #5e3ea1;">🎯 Filtros de Envio</h2>
+        <h2 style="margin-bottom: 20px; color: #5e3ea1;">🎯 Filtros de Envio por Grupo</h2>
 
-        <label style="font-weight: bold;">Categoria:</label>
-        <select name="categorias" multiple style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
-          {% for cat in categorias_disponiveis %}
-          <option value="{{ cat }}" {% if cat in bot_config.get('categorias', []) %}selected{% endif %}>{{ cat }}</option>
-          {% endfor %}
-        </select>
+        {% for grupo in [1, 2, 3] %}
+        <div style="margin-bottom: 30px; border: 1px solid #e0e0e0; padding: 20px; border-radius: 12px;">
+          <h3 style="color: #5e3ea1;">Grupo {{ grupo }} {% if grupo == 1 %}(Templates e Figurinhas){% else %}(Promoções){% endif %}</h3>
 
-        <label style="font-weight: bold;">Lojas:</label>
-        <select name="lojas" multiple style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
-          {% for loja in lojas_disponiveis %}
-          <option value="{{ loja }}" {% if loja in bot_config.get('lojas', []) %}selected{% endif %}>{{ loja }}</option>
-          {% endfor %}
-        </select>
+          <label style="font-weight: bold;">Categoria:</label>
+          <select name="categorias_{{ grupo }}" multiple style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
+            {% for cat in categorias_disponiveis %}
+            <option value="{{ cat }}" {% if cat in bot_config.get('categorias_' ~ grupo, []) %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+          </select>
 
-        <label style="font-weight: bold;">Palavra-chave:</label>
-        <input type="text" name="palavra_chave" value="{{ bot_config.get('palavra_chave', '') }}" placeholder="Ex: whey, fone bluetooth"
-          style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
+          <label style="font-weight: bold;">Lojas:</label>
+          <select name="lojas_{{ grupo }}" multiple style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
+            {% for loja in lojas_disponiveis %}
+            <option value="{{ loja }}" {% if loja in bot_config.get('lojas_' ~ grupo, []) %}selected{% endif %}>{{ loja }}</option>
+            {% endfor %}
+          </select>
+
+          <label style="font-weight: bold;">Palavra-chave:</label>
+          <input type="text" name="palavra_chave_{{ grupo }}" value="{{ bot_config.get('palavra_chave_' ~ grupo, '') }}" placeholder="Ex: whey, fone bluetooth"
+            style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
+        </div>
+        {% endfor %}
 
         <h2 style="margin: 40px 0 20px; color: #5e3ea1;">⏱️ Regras de Envio</h2>
 
@@ -84,20 +90,6 @@
           <option value="{{ h }}" {% if bot_config.get('hora_fim') == h %}selected{% endif %}>{{ "%02d:00" % h }}</option>
           {% endfor %}
         </select>
-
-        <h2 style="margin: 40px 0 20px; color: #5e3ea1;">📄 Chat ID dos Grupos</h2>
-
-        <p><strong>Grupo 1:</strong> (Templates e Figurinhas)</p>
-        <input type="text" name="grupo_1_id" value="{{ bot_config.get('grupo_1_id', '') }}" placeholder="Chat ID do Grupo 1"
-          style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
-
-        <p><strong>Grupo 2:</strong> (Promoções)</p>
-        <input type="text" name="grupo_2_id" value="{{ bot_config.get('grupo_2_id', '') }}" placeholder="Chat ID do Grupo 2"
-          style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
-
-        <p><strong>Grupo 3:</strong> (Promoções)</p>
-        <input type="text" name="grupo_3_id" value="{{ bot_config.get('grupo_3_id', '') }}" placeholder="Chat ID do Grupo 3"
-          style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
 
         <button type="submit" style="margin-top: 20px; background-color: #5e3ea1; color: white; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">📂 Salvar Configuração</button>
         <a href="/enviar-bot/{{ bot_id }}" style="margin-left: 10px; background-color: #27ae60; color: white; padding: 12px 20px; border-radius: 8px; font-size: 1rem; text-decoration: none;">📤 Enviar Agora</a>
