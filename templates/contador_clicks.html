@@ -2,15 +2,50 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Clique registrado - ClickDivulga</title>
-  <link rel="stylesheet" href="../static/css/redir.css">
+  <title>Login - ClickDivulga</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/grupos.css') }}">
 </head>
 <body>
-  <div class="container">
-    <img src="../static/img/clickdivulga-logo.png" alt="ClickDivulga" class="logo">
-    <h2>✅ Clique Registrado!</h2>
-    <p>Obrigado por acessar essa promoção.</p>
-    <p>Volte sempre ao ClickDivulga 💜</p>
+  <div class="content" style="max-width: 400px; margin: 60px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center;">
+    <img src="{{ url_for('static', filename='img/clickdivulga-logo.png') }}" alt="ClickDivulga" style="max-width: 160px; margin-bottom: 20px;">
+    <h2 style="color: #5e3ea1; margin-bottom: 20px;">Entrar na Plataforma</h2>
+    <form id="loginForm">
+      <input type="email" id="email" placeholder="E-mail" required style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc;">
+      <input type="password" id="senha" placeholder="Senha" required style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #ccc;">
+      <button type="submit" class="btn" style="width: 100%;">Entrar</button>
+    </form>
   </div>
+
+  <!-- Firebase + Login script -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "clickdivulga-83a73.firebaseapp.com",
+        projectId: "clickdivulga-83a73"
+      };
+      firebase.initializeApp(firebaseConfig);
+      document.getElementById("loginForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const email = document.getElementById("email").value;
+        const senha = document.getElementById("senha").value;
+        try {
+          const user = await firebase.auth().signInWithEmailAndPassword(email, senha);
+          const token = await user.user.getIdToken();
+          const response = await fetch("/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ idToken: token })
+          });
+          if (response.redirected) window.location.href = response.url;
+          else alert("Erro: " + (await response.text()));
+        } catch (error) {
+          alert("Erro ao logar: " + error.message);
+        }
+      });
+    });
+  </script>
 </body>
 </html>
