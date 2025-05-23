@@ -1146,6 +1146,7 @@ def config_telegram():
     flash("🤖 Bots do Telegram salvos com sucesso!", "success")
     return redirect("/minha-api")
 
+# GET → mostra a página
 @app.route("/config-bot/<bot_id>", methods=["GET"])
 @verificar_login
 def config_bot(bot_id):
@@ -1155,13 +1156,10 @@ def config_bot(bot_id):
     dados = doc.to_dict() if doc.exists else {}
 
     bot_nome = dados.get(f"bot_nome_{bot_id}", f"Bot {bot_id}")
-
-    # Buscar configuração salva desse bot (se houver)
     bot_config_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
     bot_config_doc = bot_config_ref.get()
     bot_config = bot_config_doc.to_dict() if bot_config_doc.exists else {}
 
-    # Buscar produtos salvos para filtros
     termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
     categorias, lojas = set(), set()
 
@@ -1180,3 +1178,28 @@ def config_bot(bot_id):
         categorias_disponiveis=sorted(categorias),
         lojas_disponiveis=sorted(lojas)
     )
+
+# POST → salva as configurações
+@app.route("/config-bot/<bot_id>", methods=["POST"])
+@verificar_login
+def salvar_config_bot(bot_id):
+    from datetime import datetime
+
+    uid = session["usuario"]["uid"]
+    doc_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
+
+    data = {
+        "categorias": request.form.getlist("categorias"),
+        "lojas": request.form.getlist("lojas"),
+        "palavra_chave": request.form.get("palavra_chave", "").strip().lower(),
+        "msg_por_minuto": int(request.form.get("msg_por_minuto", 1)),
+        "intervalo": request.form.get("intervalo"),
+        "hora_inicio": int(request.form.get("hora_inicio")),
+        "hora_fim": int(request.form.get("hora_fim")),
+        "atualizado_em": datetime.now().isoformat()
+    }
+
+    doc_ref.set(data)
+    flash("✅ Configuração do bot salva com sucesso!", "success")
+    return redirect(f"/config-bot/{bot_id}")
+
