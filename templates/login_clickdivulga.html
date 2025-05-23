@@ -4,25 +4,63 @@
   <meta charset="UTF-8">
   <title>Login - ClickDivulga</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/grupos.css') }}">
+  <style>
+    body {
+      margin: 0;
+      background-color: #f5f5fc;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .login-box {
+      background: #6c2bd9;
+      padding: 40px 30px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 100%;
+      max-width: 360px;
+    }
+    .login-box img {
+      max-width: 140px;
+      margin-bottom: 16px;
+    }
+    .login-box h2 {
+      color: white;
+      margin-bottom: 20px;
+      font-size: 1.4rem;
+    }
+    .login-box input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 14px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+    }
+    .login-box button {
+      width: 100%;
+      background: white;
+      color: #6c2bd9;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+  </style>
 </head>
-<body style="background-color: #f5f5fc;">
-  <div style="max-width: 400px; margin: 80px auto; background: #6c2bd9; padding: 40px 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center;">
-    
-    <!-- Logo -->
-    <img src="{{ url_for('static', filename='img/logo-clickdivulga.png') }}" alt="ClickDivulga" style="max-width: 160px; margin-bottom: 30px;">
-
-    <!-- Título -->
-    <h2 style="color: white; margin-bottom: 25px;">Entrar na Plataforma</h2>
-
-    <!-- Formulário -->
+<body>
+  <div class="login-box">
+    <img src="{{ url_for('static', filename='img/logo-clickdivulga.png') }}" alt="ClickDivulga">
+    <h2>Entrar na Plataforma</h2>
     <form id="loginForm">
-      <input type="email" id="email" placeholder="E-mail" required
-             style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: none; font-size: 1rem;">
-      <input type="password" id="senha" placeholder="Senha" required
-             style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: none; font-size: 1rem;">
-      <button type="submit" style="width: 100%; background: white; color: #6c2bd9; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer;">
-        Entrar
-      </button>
+      <input type="email" id="email" placeholder="E-mail" required>
+      <input type="password" id="senha" placeholder="Senha" required>
+      <button type="submit">Entrar</button>
     </form>
   </div>
 
