@@ -23,64 +23,70 @@
     <div class="topbar">
       <h1>🤖 Configurar {{ nome_bot }}</h1>
     </div>
-    <form method="POST" action="/config-bot/{{ bot_id }}">
-      <div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); max-width: 1000px;">
+<form method="POST" action="/config-bot/{{ bot_id }}">
+  <div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); max-width: 1000px;">
 
-        {% for grupo in [2, 3] %}
-        <div style="border: 1px solid #ddd; border-radius: 12px; padding: 20px; margin-bottom: 30px;">
-          <h3 style="color:#5e3ea1;">🎯 Grupo {{ grupo }} – Configuração de Envio</h3>
+    {% for grupo in [2, 3] %}
+    <div style="border: 1px solid #ddd; border-radius: 12px; padding: 20px; margin-bottom: 30px;">
+      <h3 style="color:#5e3ea1;">🎯 Grupo {{ grupo }} – Configuração de Envio</h3>
 
-          <label><strong>Lojas Permitidas:</strong></label>
-          <select name="lojas_grupo_{{ grupo }}" multiple style="width: 100%; padding: 10px; margin: 10px 0; border-radius: 8px;">
-            {% for loja in lojas_disponiveis %}
-              <option value="{{ loja }}" {% if loja in bot_config.get('lojas_grupo_' ~ grupo, []) %}selected{% endif %}>{{ loja }}</option>
-            {% endfor %}
-          </select>
+      <input type="hidden" name="grupo" value="{{ grupo }}">
 
-          <label><strong>Palavra-chave (opcional):</strong></label>
-          <input type="text" name="palavra_grupo_{{ grupo }}" value="{{ bot_config.get('palavra_grupo_' ~ grupo, '') }}" placeholder="Ex: whey, fone"
-            style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
+      <label><strong>Lojas Permitidas:</strong></label>
+      <select name="lojas_grupo_{{ grupo }}" multiple style="width: 100%; padding: 10px; margin: 10px 0; border-radius: 8px;">
+        {% for loja in lojas_disponiveis %}
+          <option value="{{ loja }}" {% if loja in bot_config.get('lojas_grupo_' ~ grupo, []) %}selected{% endif %}>{{ loja }}</option>
+        {% endfor %}
+      </select>
 
-          <label><strong>Selecionar Produtos:</strong></label>
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px;">
-            {% for p in bot_config.get('produtos_disponiveis', []) %}
-              <div style="border: 1px solid #ccc; border-radius: 8px; padding: 10px; text-align: center;">
-                <img src="{{ p.imagem }}" alt="{{ p.titulo }}" style="width: 100%; max-height: 120px; object-fit: cover; border-radius: 6px;">
-                <p style="margin: 10px 0 5px; font-weight: bold; font-size: 0.9rem;">{{ p.titulo }}</p>
-                <p style="font-size: 0.8rem; color: #555;">{{ p.loja }} – R$ {{ p.preco }}</p>
-                <input type="checkbox" name="produtos_grupo_{{ grupo }}" value="{{ p.titulo }}" {% if p.titulo in bot_config.get('produtos_grupo_' ~ grupo, []) %}checked{% endif %}> Enviar
-              </div>
-            {% endfor %}
-          </div>
+      <label><strong>Palavra-chave (opcional):</strong></label>
+      <input type="text" name="palavra_grupo_{{ grupo }}" value="{{ bot_config.get('palavra_grupo_' ~ grupo, '') }}" placeholder="Ex: whey, fone"
+        style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
 
-          <label><strong>Mensagens por Minuto:</strong></label>
-          <select name="msg_grupo_{{ grupo }}" style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
-            {% for i in range(1, 7) %}
-              <option value="{{ i }}" {% if bot_config.get('msg_grupo_' ~ grupo) == i %}selected{% endif %}>{{ i }}</option>
-            {% endfor %}
-          </select>
+      <label><strong>Mensagens por Minuto:</strong></label>
+      <select name="msg_grupo_{{ grupo }}" style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
+        {% for i in range(1, 7) %}
+          <option value="{{ i }}" {% if bot_config.get('msg_grupo_' ~ grupo) == i %}selected{% endif %}>{{ i }}</option>
+        {% endfor %}
+      </select>
 
-          <label><strong>Intervalo entre envios:</strong></label>
-          <select name="intervalo_grupo_{{ grupo }}" style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
-            {% for op in ['5 min', '10 min', '15 min', '30 min', '1h', '2h', '6h', '12h'] %}
-              <option value="{{ op }}" {% if bot_config.get('intervalo_grupo_' ~ grupo) == op %}selected{% endif %}>{{ op }}</option>
-            {% endfor %}
-          </select>
+      <label><strong>Intervalo entre envios:</strong></label>
+      <select name="intervalo_grupo_{{ grupo }}" style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
+        {% for op in ['5 min', '10 min', '15 min', '30 min', '1h', '2h', '6h', '12h'] %}
+          <option value="{{ op }}" {% if bot_config.get('intervalo_grupo_' ~ grupo) == op %}selected{% endif %}>{{ op }}</option>
+        {% endfor %}
+      </select>
 
-          <h3 style="margin-top: 20px;">Texto promocional</h3>
-          <label>
-            <input type="radio" name="modo_texto_grupo_{{ grupo }}" value="manual" {% if bot_config.get('modo_texto_grupo_' ~ grupo, 'manual') == 'manual' %}checked{% endif %}>
-            Montar manualmente
-          </label>
-          <label style="margin-left: 15px;">
-            <input type="radio" name="modo_texto_grupo_{{ grupo }}" value="ia" {% if bot_config.get('modo_texto_grupo_' ~ grupo) == 'ia' %}checked{% endif %}>
-            Gerar com IA
-          </label>
-          <textarea name="texto_grupo_{{ grupo }}" rows="5" style="width: 100%; margin-top: 10px; border-radius: 8px; padding: 10px;">{{ bot_config.get('texto_grupo_' ~ grupo, '') }}</textarea>
-          
-          <div style="margin-top: 30px;">
-            <button type="submit" class="btn" name="acao" value="salvar_{{ grupo }}">📂 Salvar Grupo {{ grupo }}</button>
-            <a href="/enviar-bot/{{ bot_id }}?grupo={{ grupo }}" class="btn" style="background: #27ae60; margin-left: 10px;">📤 Enviar Agora Grupo {{ grupo }}</a>
-            </div>
-            {% endfor %}
-  
+      <label><strong>Horário de envio:</strong></label><br>
+      <select name="hora_inicio_grupo_{{ grupo }}" style="margin-right: 10px; padding: 10px; border-radius: 8px;">
+        {% for h in range(0, 24) %}
+          <option value="{{ h }}" {% if bot_config.get('hora_inicio_grupo_' ~ grupo) == h %}selected{% endif %}>{{ "%02d:00" % h }}</option>
+        {% endfor %}
+      </select>
+      até
+      <select name="hora_fim_grupo_{{ grupo }}" style="margin-left: 10px; padding: 10px; border-radius: 8px;">
+        {% for h in range(0, 24) %}
+          <option value="{{ h }}" {% if bot_config.get('hora_fim_grupo_' ~ grupo) == h %}selected{% endif %}>{{ "%02d:00" % h }}</option>
+        {% endfor %}
+      </select>
+
+      <h3 style="margin-top: 20px;">Texto promocional</h3>
+      <label>
+        <input type="radio" name="modo_texto_grupo_{{ grupo }}" value="manual" {% if bot_config.get('modo_texto_grupo_' ~ grupo, 'manual') == 'manual' %}checked{% endif %}>
+        Montar manualmente
+      </label>
+      <label style="margin-left: 15px;">
+        <input type="radio" name="modo_texto_grupo_{{ grupo }}" value="ia" {% if bot_config.get('modo_texto_grupo_' ~ grupo) == 'ia' %}checked{% endif %}>
+        Gerar com IA
+      </label>
+      <textarea name="texto_grupo_{{ grupo }}" rows="5" style="width: 100%; margin-top: 10px; border-radius: 8px; padding: 10px;">{{ bot_config.get('texto_grupo_' ~ grupo, '') }}</textarea>
+
+      <div style="margin-top: 30px;">
+        <button type="submit" class="btn" name="acao" value="salvar_{{ grupo }}">📂 Salvar Grupo {{ grupo }}</button>
+        <a href="/enviar-bot/{{ bot_id }}?grupo={{ grupo }}" class="btn" style="background: #27ae60; margin-left: 10px;">📤 Enviar Agora Grupo {{ grupo }}</a>
+      </div>
+    </div>
+    {% endfor %}
+
+  </div>
+</form>
