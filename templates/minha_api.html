@@ -7,60 +7,64 @@
 </head>
 <body>
   <div class="sidebar">
-  <h2>ClickDivulga</h2>
-  <div class="menu">
-    <a href="/painel"><i>🏠</i> Dashboard</a>
-    <a href="/criar-link"><i>➕</i> Criar Link</a>
-    <a href="/grupos"><i>📊</i> Desempenho de Grupos</a>
-    <a href="/produtos"><i>🛍️</i> Produtos</a>
-    <a href="/minha-api" class="active"><i>🔐</i> Config Afiliado</a>
-    <a href="/config-bot"><i>🤖</i> Telegram</a>
-    <a href="/logout"><i>🚪</i> Sair</a>
+    <h2>ClickDivulga</h2>
+    <div class="menu">
+      <a href="/painel"><i>🏠</i> Dashboard</a>
+      <a href="/criar-link"><i>➕</i> Criar Link</a>
+      <a href="/grupos"><i>📊</i> Desempenho de Grupos</a>
+      <a href="/produtos"><i>🛍️</i> Produtos</a>
+      <a href="/minha-api" class="active"><i>🔐</i> Config Afiliado</a>
+      <a href="/config-bot/1"><i>🤖</i> Telegram</a>
+      <a href="/logout"><i>🚪</i> Sair</a>
+    </div>
   </div>
-</div>
 
   <div class="content">
     <div class="topbar">
       <h1>🔐 Configuração do Afiliado</h1>
     </div>
 
-    <!-- 🔐 API SHOPEE -->
-    <div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 40px; max-width: 700px;">
-      <h2 style="margin-bottom: 20px; color: #5e3ea1;">📎 Salve suas credenciais da API Shopee</h2>
-
+    <!-- API Shopee -->
+    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom:40px; max-width:700px;">
+      <h2 style="margin-bottom:20px; color:#5e3ea1;">📎 Salve suas credenciais da API Shopee</h2>
       <form method="POST">
-        <div style="margin-bottom: 20px;">
-          <label style="font-weight: 600;">App ID:</label>
-          <input type="text" name="app_id" placeholder="Seu App ID da Shopee" value="{{ dados.get('app_id', '') }}" required style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
+        <div style="margin-bottom:20px;">
+          <label style="font-weight:600;">App ID:</label>
+          <input type="text" name="app_id" value="{{ dados.get('app_id', '') }}" required placeholder="Seu App ID da Shopee" style="width:100%; padding:10px; margin-top:6px; border:1px solid #ccc; border-radius:8px;">
         </div>
-
-        <div style="margin-bottom: 20px;">
-          <label style="font-weight: 600;">App Secret:</label>
-          <input type="text" name="app_secret" placeholder="Sua chave secreta da Shopee" value="{{ dados.get('app_secret', '') }}" required style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
+        <div style="margin-bottom:20px;">
+          <label style="font-weight:600;">App Secret:</label>
+          <input type="text" name="app_secret" value="{{ dados.get('app_secret', '') }}" required placeholder="Sua chave secreta da Shopee" style="width:100%; padding:10px; margin-top:6px; border:1px solid #ccc; border-radius:8px;">
         </div>
-
-        <button type="submit" style="background-color: #5e3ea1; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">💾 Salvar API</button>
+        <button type="submit" style="background-color:#5e3ea1; color:white; padding:12px 20px; border-radius:8px; font-size:1rem; cursor:pointer;">💾 Salvar API</button>
       </form>
     </div>
 
-    <!-- 🤖 TELEGRAM BOTS -->
-    <div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); max-width: 700px;">
-      <h2 style="margin-bottom: 20px; color: #5e3ea1;">🤖 Bots do Telegram para envio automático</h2>
-
+    <!-- Bots do Telegram -->
+    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); max-width:700px;">
+      <h2 style="margin-bottom:20px; color:#5e3ea1;">🤖 Cadastro de Bots e Grupos</h2>
       <form method="POST" action="/config-telegram">
         {% for i in range(1, 4) %}
-        <div style="margin-bottom: 20px;">
-          <label style="font-weight: 600;">Bot {{ i }} – Nome:</label>
-          <input type="text" name="bot_nome_{{ i }}" value="{{ dados.get('bot_nome_' ~ i, '') }}" placeholder="Ex: Promoções Rápidas {{ i }}" style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
-        </div>
+        <div style="margin-bottom:40px; border-bottom:1px solid #eee; padding-bottom:20px;">
+          <h3 style="color:#444;">🤖 Bot {{ i }}</h3>
+          <label><strong>Nome:</strong></label>
+          <input type="text" name="bot_nome_{{ i }}" value="{{ dados.get('bot_nome_' ~ i, '') }}" placeholder="Ex: Bot Promoções {{ i }}" style="width:100%; margin-bottom:10px; padding:10px; border-radius:8px;">
 
-        <div style="margin-bottom: 30px;">
-          <label style="font-weight: 600;">Bot {{ i }} – Token:</label>
-          <input type="text" name="bot_token_{{ i }}" value="{{ dados.get('bot_token_' ~ i, '') }}" placeholder="123456:ABC-DEFG..." style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
+          <label><strong>Token:</strong></label>
+          <input type="text" name="bot_token_{{ i }}" value="{{ dados.get('bot_token_' ~ i, '') }}" placeholder="123456:ABC-DEFG..." style="width:100%; margin-bottom:10px; padding:10px; border-radius:8px;">
+
+          <label><strong>Grupo 1 (Figurinhas/Templates):</strong></label>
+          <input type="text" name="grupo_1_{{ i }}" value="{{ dados.get('grupo_1_' ~ i, '') }}" placeholder="chat_id ex: -1001234567890" style="width:100%; margin-bottom:10px; padding:10px; border-radius:8px;">
+
+          <label><strong>Grupo 2 (Promoções):</strong></label>
+          <input type="text" name="grupo_2_{{ i }}" value="{{ dados.get('grupo_2_' ~ i, '') }}" placeholder="chat_id ex: -1009876543210" style="width:100%; margin-bottom:10px; padding:10px; border-radius:8px;">
+
+          <label><strong>Grupo 3 (Promoções):</strong></label>
+          <input type="text" name="grupo_3_{{ i }}" value="{{ dados.get('grupo_3_' ~ i, '') }}" placeholder="chat_id opcional" style="width:100%; margin-bottom:10px; padding:10px; border-radius:8px;">
         </div>
         {% endfor %}
 
-        <button type="submit" style="background-color: #5e3ea1; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">💾 Salvar Bots</button>
+        <button type="submit" style="background-color:#5e3ea1; color:white; padding:12px 20px; border-radius:8px; font-size:1rem; cursor:pointer;">💾 Salvar Bots e Grupos</button>
       </form>
     </div>
   </div>
