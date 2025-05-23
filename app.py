@@ -1146,39 +1146,25 @@ def config_telegram():
     flash("🤖 Bots do Telegram salvos com sucesso!", "success")
     return redirect("/minha-api")
 
-@app.route("/config-bot/<bot_id>", methods=["GET", "POST"])
+@app.route("/config-bot/<bot_id>", methods=["POST"])
 @verificar_login
-def config_bot(bot_id):
+def salvar_config_bot(bot_id):
     from datetime import datetime
 
     uid = session["usuario"]["uid"]
-    bot_path = f"telegram_bots/{uid}/bot_{bot_id}"
-    doc_ref = db.document(bot_path)
-    doc = doc_ref.get()
-    bot_config = doc.to_dict() if doc.exists else {}
+    doc_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
 
-    # Nome simbólico para exibição
-    nome_bot = f"Bot {bot_id}"
+    data = {
+        "categorias": request.form.getlist("categorias"),
+        "lojas": request.form.getlist("lojas"),
+        "palavra_chave": request.form.get("palavra_chave", "").strip().lower(),
+        "msg_por_minuto": int(request.form.get("msg_por_minuto", 1)),
+        "intervalo": request.form.get("intervalo"),
+        "hora_inicio": int(request.form.get("hora_inicio")),
+        "hora_fim": int(request.form.get("hora_fim")),
+        "atualizado_em": datetime.now().isoformat()
+    }
 
-    # Buscar produtos para filtros
-    termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
-    categorias, lojas, palavras = set(), set(), set()
-
-    for doc in termos_ref:
-        dados_termo = doc.to_dict()
-        for p in dados_termo.get("produtos", []):
-            if p.get("loja"):
-                lojas.add(p["loja"])
-            if dados_termo.get("termo"):
-                palavras.add(dados_termo["termo"].lower())
-            if dados_termo.get("tipo") == "produto":
-                categorias.add(dados_termo.get("categoria", "Outros"))
-
-    return render_template("config-telegram.html",
-        bot_id=bot_id,
-        nome_bot=nome_bot,
-        bot_config=bot_config,
-        categorias_disponiveis=sorted(categorias),
-        lojas_disponiveis=sorted(lojas),
-    )
-                
+    doc_ref.set(data)
+    flash("✅ Configuração do bot salva com sucesso!", "success")
+    return redirect(f"/config-bot?bot={bot_id}")
