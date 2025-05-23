@@ -1054,6 +1054,14 @@ def excluir_produto():
         "atualizado_em": datetime.now().isoformat()
     })
 
+    # 🔐 Loga a exclusão
+    db.collection("logs_exclusao").add({
+        "uid": uid,
+        "termo_id": termo_id,
+        "titulo": titulo_produto,
+        "data": datetime.now().isoformat()
+    })
+
     flash("✅ Produto removido com sucesso!", "success")
     return redirect("/produtos")
 
