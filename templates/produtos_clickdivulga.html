@@ -12,7 +12,7 @@
       <a href="/painel"><i>🏠</i> Dashboard</a>
       <a href="/criar-link"><i>➕</i> Criar Link</a>
       <a href="/grupos"><i>📊</i> Desempenho de Grupos</a>
-      <a href="/produtos" class="active"><i>🛍️</i> Produtos</a>
+      <a href="/produtos" class="active"><i>🛙️</i> Produtos</a>
       <a href="/minha-api"><i>🔐</i> API Shopee</a>
       <a href="/logout"><i>🚪</i> Sair</a>
     </div>
@@ -20,7 +20,7 @@
 
   <div class="content">
     <div class="topbar">
-      <h1>🛍️ Buscar Produtos com Comissão</h1>
+      <h1>🛙️ Buscar Produtos com Comissão</h1>
     </div>
 
     <div style="display: flex; gap: 30px; flex-wrap: wrap; margin-bottom: 40px;">
@@ -55,7 +55,7 @@
           <input type="url" name="url" id="campoUrl" placeholder="https://shopee.com.br/..."
             style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
 
-          <button type="submit" style="width: 100%; background-color: #5e3ea1; color: white; padding: 12px; border-radius: 8px;">🔍 Buscar Produto</button>
+          <button type="submit" style="width: 100%; background-color: #5e3ea1; color: white; padding: 12px; border-radius: 8px;">🔎 Buscar Produto</button>
         </form>
       </div>
 
@@ -74,7 +74,7 @@
           <input type="number" name="preco_max" step="0.01" placeholder="Ex: 200.00"
             style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
 
-          <button type="submit" style="width: 100%; background-color: #5e3ea1; color: white; padding: 12px; border-radius: 8px;">🔍 Buscar Loja</button>
+          <button type="submit" style="width: 100%; background-color: #5e3ea1; color: white; padding: 12px; border-radius: 8px;">🔎 Buscar Loja</button>
         </form>
       </div>
     </div>
@@ -106,6 +106,14 @@
           <small style="color:#666;">🏪 {{ p.loja }}</small><br>
           <small style="color:#666;">🌟 Comissão da Loja: {{ p.comissao }}%</small><br>
           <small style="color:#666;">🎥 Live: R$ {{ p.comissao_live }} | 📱 Redes: R$ {{ p.comissao_redes }}</small><br>
+
+          <button onclick="copiarTexto('{{ p.link }}')" style="margin-top:10px; background-color:#3c8dbc; color:white; padding:6px 10px; border:none; border-radius:6px; width:100%;">🔗 Copiar Link</button>
+
+          <form method="POST" action="/excluir-produto" style="margin-top:8px;">
+            <input type="hidden" name="termo_id" value="{{ p.termo_id }}">
+            <input type="hidden" name="titulo" value="{{ p.titulo }}">
+            <button type="submit" style="background-color:#e74c3c; color:white; padding:6px 10px; border:none; border-radius:6px; width:100%;">🗑️ Excluir</button>
+          </form>
         </div>
         {% endfor %}
       </div>
@@ -128,6 +136,14 @@
         return false;
       }
       return true;
+    }
+
+    function copiarTexto(texto) {
+      navigator.clipboard.writeText(texto).then(function() {
+        alert("🔗 Link copiado com sucesso!");
+      }, function(err) {
+        alert("❌ Erro ao copiar link.");
+      });
     }
   </script>
 </body>
