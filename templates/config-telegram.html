@@ -27,7 +27,7 @@
     <form method="POST" action="/config-bot/{{ bot_id }}">
       <div style="display: flex; gap: 30px;">
         {% for grupo in [2, 3] %}
-        <div style="flex: 1; background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+        <div style="flex: 1; max-height: 92vh; overflow-y: auto; background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
           <h2 style="color:#5e3ea1;">🎯 Grupo {{ grupo }}</h2>
           <input type="hidden" name="grupo" value="{{ grupo }}">
 
