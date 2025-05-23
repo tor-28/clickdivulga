@@ -1149,13 +1149,12 @@ def config_telegram():
     flash("🤖 Bots e grupos do Telegram salvos com sucesso!", "success")
     return redirect("/minha-api")
 
-# Redirecionamento padrão para Bot 1
 @app.route("/config-bot")
 @verificar_login
 def redirecionar_config_bot():
     return redirect("/config-bot/1")
 
-# Exibe a página de configuração do bot
+
 @app.route("/config-bot/<bot_id>", methods=["GET"])
 @verificar_login
 def config_bot(bot_id):
@@ -1193,7 +1192,7 @@ def config_bot(bot_id):
         logs=logs
     )
 
-# Salva apenas a configuração do grupo alterado (2 ou 3)
+
 @app.route("/config-bot/<bot_id>", methods=["POST"])
 @verificar_login
 def salvar_config_bot(bot_id):
@@ -1201,6 +1200,7 @@ def salvar_config_bot(bot_id):
 
     uid = session["usuario"]["uid"]
     grupo = request.form.get("grupo")
+    acao = request.form.get("acao", "")
 
     doc_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
     bot_config_doc = doc_ref.get()
@@ -1213,59 +1213,16 @@ def salvar_config_bot(bot_id):
         bot_config[f"intervalo_grupo_{grupo}"] = request.form.get(f"intervalo_grupo_{grupo}", "10 min")
         bot_config[f"hora_inicio_grupo_{grupo}"] = int(request.form.get(f"hora_inicio_grupo_{grupo}", 0))
         bot_config[f"hora_fim_grupo_{grupo}"] = int(request.form.get(f"hora_fim_grupo_{grupo}", 23))
-        bot_config[f"produtos_grupo_{grupo}"] = request.form.getlist(f"produtos_grupo_{grupo}")
+
+        if acao.startswith("salvar"):
+            bot_config[f"produtos_grupo_{grupo}"] = request.form.getlist(f"produtos_grupo_{grupo}")
 
     bot_config["atualizado_em"] = datetime.now().isoformat()
     doc_ref.set(bot_config)
-    flash(f"✅ Grupo {grupo} salvo com sucesso!", "success")
-    return redirect(f"/config-bot/{bot_id}")
 
-# Envia manualmente os produtos configurados para um grupo
-@app.route("/enviar-bot/<bot_id>")
-@verificar_login
-def enviar_bot(bot_id):
-    from datetime import datetime
-    uid = session["usuario"]["uid"]
-    grupo = request.args.get("grupo")
+    if acao.startswith("filtrar"):
+        flash("🔍 Filtros aplicados. Agora selecione os produtos desejados.", "info")
+    else:
+        flash(f"✅ Grupo {grupo} salvo com sucesso!", "success")
 
-    if grupo not in ["2", "3"]:
-        flash("❌ Grupo inválido para envio manual.", "error")
-        return redirect(f"/config-bot/{bot_id}")
-
-    bot_config_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
-    bot_config = bot_config_ref.get().to_dict() if bot_config_ref.get().exists else {}
-
-    dados_api = db.collection("api_shopee").document(uid).get().to_dict()
-    bot_token = dados_api.get(f"bot_token_{bot_id}")
-    grupo_id = dados_api.get(f"grupo_{grupo}_{bot_id}")
-    produtos = bot_config.get(f"produtos_grupo_{grupo}", [])
-
-    if not bot_token or not grupo_id or not produtos:
-        flash("❌ Bot, grupo ou produtos não configurados corretamente.", "error")
-        return redirect(f"/config-bot/{bot_id}")
-
-    for p in produtos:
-        try:
-            msg = f"🔥 *{p}*\nClique aqui para conferir!"
-            send_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-            payload = {
-                "chat_id": grupo_id,
-                "text": msg,
-                "parse_mode": "Markdown"
-            }
-            requests.post(send_url, data=payload)
-
-            db.collection("telegram_logs").document(uid).collection(bot_id).add({
-                "enviado_em": datetime.now().isoformat(),
-                "grupo": grupo,
-                "status": f"Enviado: {p}"
-            })
-        except Exception as e:
-            db.collection("telegram_logs").document(uid).collection(bot_id).add({
-                "enviado_em": datetime.now().isoformat(),
-                "grupo": grupo,
-                "status": f"Erro ao enviar {p}: {e}"
-            })
-
-    flash(f"✅ Mensagens enviadas com sucesso para o Grupo {grupo}!", "success")
     return redirect(f"/config-bot/{bot_id}")
