@@ -1124,3 +1124,23 @@ scheduler.add_job(buscar_produtos_agendado, 'cron', hour=8, minute=1)
 scheduler.add_job(buscar_produtos_agendado, 'cron', hour=12, minute=1)
 scheduler.add_job(buscar_produtos_agendado, 'cron', hour=20, minute=1)
 scheduler.start()
+
+@app.route("/config-telegram", methods=["POST"])
+@verificar_login
+def config_telegram():
+    from datetime import datetime
+
+    uid = session["usuario"]["uid"]
+    doc_ref = db.collection("api_shopee").document(uid)
+
+    doc = doc_ref.get()
+    dados = doc.to_dict() if doc.exists else {}
+
+    dados["grupo_telegram_1"] = request.form.get("grupo_telegram_1")
+    dados["grupo_telegram_2"] = request.form.get("grupo_telegram_2")
+    dados["grupo_telegram_3"] = request.form.get("grupo_telegram_3")
+    dados["atualizado_em"] = datetime.now().isoformat()
+
+    doc_ref.set(dados)
+    flash("Grupos do Telegram atualizados com sucesso!", "success")
+    return redirect("/minha-api")
