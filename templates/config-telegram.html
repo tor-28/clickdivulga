@@ -44,20 +44,21 @@
 
           <label><strong>Selecionar Produtos:</strong></label>
           <button type="button" onclick="selecionarTodos({{ grupo }})" class="btn" style="margin-bottom: 10px;">Selecionar Todos</button>
-          <div id="produtos_grupo_{{ grupo }}" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-bottom: 20px;">
-            {% for p in produtos_disponiveis %}
-              {% if (not bot_config.get('lojas_grupo_' ~ grupo) or p.loja in bot_config.get('lojas_grupo_' ~ grupo)) and
-                     (not bot_config.get('palavra_grupo_' ~ grupo) or bot_config.get('palavra_grupo_' ~ grupo).lower() in p.titulo|lower) %}
-              <div style="border: 1px solid #ccc; border-radius: 8px; padding: 10px; text-align: center;">
-                <img src="{{ p.imagem }}" alt="{{ p.titulo }}" style="width: 100%; max-height: 100px; object-fit: cover; border-radius: 6px;">
-                <p style="font-weight: bold; font-size: 0.9rem; margin: 8px 0 4px;">{{ p.titulo|truncate(40) }}</p>
-                <p style="font-size: 0.8rem; color: #555;">{{ p.loja }}<br>R$ {{ p.preco }}</p>
-                <input type="checkbox" name="produtos_grupo_{{ grupo }}" value="{{ p.titulo }}"
-                       {% if p.titulo in bot_config.get('produtos_grupo_' ~ grupo, []) %}checked{% endif %}>
-                <label>Selecionar</label>
-              </div>
-              {% endif %}
-            {% endfor %}
+          <div id="produtos_grupo_{{ grupo }}" style="border: 1px solid #ddd; border-radius: 8px; padding: 10px; max-height: 280px; overflow-y: auto;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;">
+              {% for p in produtos_disponiveis %}
+                {% if (not bot_config.get('lojas_grupo_' ~ grupo) or p.loja in bot_config.get('lojas_grupo_' ~ grupo)) and
+                       (not bot_config.get('palavra_grupo_' ~ grupo) or bot_config.get('palavra_grupo_' ~ grupo).lower() in p.titulo|lower) %}
+                <div style="border: 1px solid #ccc; border-radius: 8px; padding: 8px; text-align: center;">
+                  <img src="{{ p.imagem }}" alt="{{ p.titulo }}" style="width: 100%; max-height: 80px; object-fit: cover; border-radius: 4px;">
+                  <p style="font-size: 0.85rem; font-weight: bold; margin: 4px 0;">{{ p.titulo|truncate(36) }}</p>
+                  <p style="font-size: 0.75rem; color: #555;">{{ p.loja }}<br>R$ {{ p.preco }}</p>
+                  <input type="checkbox" name="produtos_grupo_{{ grupo }}" value="{{ p.titulo }}"
+                         {% if p.titulo in bot_config.get('produtos_grupo_' ~ grupo, []) %}checked{% endif %}> <label>Selecionar</label>
+                </div>
+                {% endif %}
+              {% endfor %}
+            </div>
           </div>
 
           <label><strong>Mensagens por Minuto:</strong></label>
