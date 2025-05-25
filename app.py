@@ -1345,3 +1345,100 @@ def gerar_beneficio_extra(titulo):
         "Aproveite agora, antes que acabe!"
     ]
     return random.choice(frases)
+
+@app.route("/enviar-produto/<bot_id>")
+@verificar_login
+def enviar_produto_individual(bot_id):
+    from datetime import datetime
+    import requests
+    import random
+
+    uid = session["usuario"]["uid"]
+    grupo = request.args.get("grupo")
+    titulo_param = request.args.get("titulo", "").strip()
+
+    if grupo not in ["2", "3"] or not titulo_param:
+        flash("❌ Parâmetros inválidos.", "error")
+        return redirect(f"/config-bot/{bot_id}")
+
+    dados_api = db.collection("api_shopee").document(uid).get().to_dict()
+    bot_token = dados_api.get(f"bot_token_{bot_id}")
+    grupo_id = dados_api.get(f"grupo_{grupo}_{bot_id}")
+
+    if not bot_token or not grupo_id:
+        flash("❌ Token do bot ou grupo não configurado.", "error")
+        return redirect(f"/config-bot/{bot_id}")
+
+    bot_config_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
+    bot_config = bot_config_ref.get().to_dict() if bot_config_ref.get().exists else {}
+
+    modo_texto = bot_config.get(f"modo_texto_grupo_{grupo}", "manual")
+    texto_manual = bot_config.get(f"texto_grupo_{grupo}", "").strip()
+
+    termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
+    produto = None
+    for doc in termos_ref:
+        termo = doc.to_dict()
+        for p in termo.get("produtos", []):
+            if p.get("titulo") == titulo_param:
+                produto = p
+                break
+        if produto:
+            break
+
+    if not produto:
+        flash("❌ Produto não encontrado.", "error")
+        return redirect(f"/config-bot/{bot_id}")
+
+    titulo = produto.get("titulo", "")
+    preco = produto.get("preco", "0")
+    preco_de = produto.get("preco_original") or "0"
+    link = produto.get("link") or produto.get("url") or "https://shopee.com.br"
+    imagem = produto.get("imagem") or produto.get("image")
+
+    if not imagem:
+        flash("❌ Produto sem imagem.", "error")
+        return redirect(f"/config-bot/{bot_id}")
+
+    corpo = ""
+    if modo_texto == "manual" and texto_manual:
+        corpo = texto_manual.strip()
+    else:
+        descricao = f"✨ {gerar_descricao(titulo)}"
+        vantagem1 = f"✔️ {gerar_beneficio(titulo)}"
+        vantagem2 = f"✔️ {gerar_beneficio_extra(titulo)}"
+        corpo = f"{descricao}\n{vantagem1}\n{vantagem2}"
+
+    linha_preco_de = f"❌ R$ {preco_de}" if preco_de and preco_de != "0" else ""
+
+    legenda = f"🔥 {titulo}\n"
+    if linha_preco_de:
+        legenda += f"\n{linha_preco_de}"
+    legenda += f"\n💵 R$ {preco}\n\n{corpo}\n\n🔗 {link}\n\n📦 Ofertas diárias Shopee para você aproveitar\n⚠️ Preço sujeito a alteração."
+
+    try:
+        send_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
+        payload = {
+            "chat_id": grupo_id,
+            "photo": imagem,
+            "caption": legenda,
+            "parse_mode": "HTML"
+        }
+        requests.post(send_url, data=payload)
+
+        db.collection("telegram_logs").document(uid).collection(bot_id).add({
+            "enviado_em": datetime.now().isoformat(),
+            "grupo": grupo,
+            "status": f"Enviado individual: {titulo}"
+        })
+
+        flash(f"✅ Produto enviado com sucesso para o Grupo {grupo}!", "success")
+    except Exception as e:
+        db.collection("telegram_logs").document(uid).collection(bot_id).add({
+            "enviado_em": datetime.now().isoformat(),
+            "grupo": grupo,
+            "status": f"Erro ao enviar individual {titulo}: {e}"
+        })
+        flash("❌ Erro ao enviar o produto individual.", "error")
+
+    return redirect(f"/config-bot/{bot_id}")
