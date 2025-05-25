@@ -25,36 +25,38 @@
     </div>
 
     <form method="POST" action="/config-bot/{{ bot_id }}">
+      <div style="margin-bottom: 20px;">
+        <label><strong>Selecionar Bot:</strong></label>
+        <select name="bot_id" onchange="location.href='/config-bot/' + this.value" style="padding: 10px; border-radius: 8px; margin-left: 10px;">
+          {% for i in [1, 2, 3] %}
+            <option value="{{ i }}" {% if bot_id == i|string %}selected{% endif %}>Bot {{ i }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
       <div style="display: flex; gap: 30px;">
         {% for grupo in [2, 3] %}
         <div style="flex: 1; max-height: 92vh; overflow-y: auto; background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
           <h2 style="color:#5e3ea1;">🎯 Grupo {{ grupo }}</h2>
-          <input type="hidden" name="grupo" value="{{ grupo }}">
 
-          <label><strong>Lojas Permitidas:</strong></label>
-          <select name="lojas_grupo_{{ grupo }}" multiple style="width: 100%; padding: 10px; margin: 10px 0; border-radius: 8px;">
-            {% for loja in lojas_disponiveis %}
-              <option value="{{ loja }}" {% if loja in bot_config.get('lojas_grupo_' ~ grupo, []) %}selected{% endif %}>{{ loja }}</option>
-            {% endfor %}
+          <label><strong>Grupo:</strong></label>
+          <select name="grupo" style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
+            <option value="2" {% if grupo == 2 %}selected{% endif %}>Grupo 2</option>
+            <option value="3" {% if grupo == 3 %}selected{% endif %}>Grupo 3</option>
           </select>
 
           <label><strong>Palavra-chave (opcional):</strong></label>
           <input type="text" name="palavra_grupo_{{ grupo }}" value="{{ bot_config.get('palavra_grupo_' ~ grupo, '') }}" placeholder="Ex: whey, fone"
-            style="width: 100%; margin-bottom: 10px; padding: 10px; border-radius: 8px;">
-
-          <button type="submit" class="btn" name="acao" value="filtrar_{{ grupo }}" style="margin-bottom: 20px;">🔍 Aplicar Filtros</button>
+            style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
 
           <label><strong>Selecionar Produtos:</strong></label>
           <button type="button" onclick="selecionarTodos({{ grupo }})" class="btn" style="margin-bottom: 10px;">Selecionar Todos</button>
           <div id="produtos_grupo_{{ grupo }}" style="border: 1px solid #ddd; border-radius: 8px; padding: 10px; max-height: 280px; overflow-y: auto;">
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;">
               {% for p in produtos_disponiveis %}
-                {% set lojas_filtro = bot_config.get('lojas_grupo_' ~ grupo, []) %}
                 {% set palavra_filtro = bot_config.get('palavra_grupo_' ~ grupo, '') | trim | lower %}
-                {% set loja_ok = (not request.args or request.args.get('acao') != 'filtrar_' ~ grupo or lojas_filtro | length == 0 or p.loja in lojas_filtro) %}
                 {% set titulo = p.titulo | default('') | lower %}
-                {% set palavra_ok = (not request.args or request.args.get('acao') != 'filtrar_' ~ grupo or palavra_filtro == '' or palavra_filtro in titulo) %}
-                {% if loja_ok and palavra_ok %}
+                {% if palavra_filtro == '' or palavra_filtro in titulo %}
                 <div style="border: 1px solid #ccc; border-radius: 8px; padding: 8px; text-align: center;">
                   <img src="{{ p.imagem }}" alt="{{ p.titulo }}" style="width: 100%; max-height: 80px; object-fit: cover; border-radius: 4px;">
                   <p style="font-size: 0.85rem; font-weight: bold; margin: 4px 0;">{{ p.titulo|truncate(36) }}</p>
