@@ -1169,6 +1169,9 @@ def config_bot(bot_id):
     from google.cloud import firestore
 
     uid = session["usuario"]["uid"]
+    print(f"📥 Acessando painel de configuração do bot {bot_id} para UID: {uid}")
+
+    # Carrega dados da API do usuário (nome do bot)
     doc_ref = db.collection("api_shopee").document(uid)
     doc = doc_ref.get()
     dados = doc.to_dict() if doc.exists else {}
@@ -1178,6 +1181,17 @@ def config_bot(bot_id):
     bot_config_doc = bot_config_ref.get()
     bot_config = bot_config_doc.to_dict() if bot_config_doc.exists else {}
 
+    # 🧠 Lógica para ignorar filtros ao carregar pela primeira vez
+    acao = request.args.get("acao")
+    grupo_aplicando = request.args.get("grupo")
+
+    if not acao or not grupo_aplicando:
+        for g in ["2", "3"]:
+            print(f"🔄 Resetando filtros visuais do grupo {g}")
+            bot_config[f"lojas_grupo_{g}"] = []
+            bot_config[f"palavra_grupo_{g}"] = ""
+
+    # 📦 Carrega produtos disponíveis
     lojas = set()
     produtos_disponiveis = []
     termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
@@ -1188,6 +1202,10 @@ def config_bot(bot_id):
             if p.get("loja"):
                 lojas.add(p["loja"])
 
+    print(f"🛍️ {len(produtos_disponiveis)} produtos carregados para exibição")
+    print(f"🏪 Lojas únicas detectadas: {sorted(lojas)}")
+
+    # Logs de envio (últimos 10)
     logs_ref = db.collection("telegram_logs").document(uid).collection(bot_id).order_by("enviado_em", direction=firestore.Query.DESCENDING).limit(10)
     logs = [log.to_dict() for log in logs_ref.stream()]
 
