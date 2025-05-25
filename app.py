@@ -1152,6 +1152,7 @@ def salvar_config_bot(bot_id):
     config_data[f"texto_grupo_{grupo}"] = request.form.get(f"texto_grupo_{grupo}", "")
     config_data["atualizado_em"] = datetime.now().isoformat()
 
+    print(">> CONFIG DATA SALVA:", config_data)
     bot_config_ref.set(config_data, merge=True)
 
     flash(f"✅ Configuração do Grupo {grupo} salva com sucesso!", "success")
