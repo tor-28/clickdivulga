@@ -58,6 +58,9 @@
                   <input type="checkbox" name="produtos_grupo_{{ grupo }}" value="{{ p.titulo }}"
                          {% if p.titulo in bot_config.get('produtos_grupo_' ~ grupo, []) %}checked{% endif %}> <label>Selecionar</label>
                 </div>
+                <div style="margin-top: 8px;">
+                  <a href="/enviar-bot/{{ bot_id }}?grupo={{ grupo }}&produto={{ p.titulo|urlencode }}" class="btn" style="background: #3498db; color: white;">📤 Enviar Agora</a>
+                </div>
               </div>
               {% endfor %}
             </div>
@@ -99,11 +102,26 @@
             <input type="radio" name="modo_texto_grupo_{{ grupo }}" value="ia" {% if bot_config.get('modo_texto_grupo_' ~ grupo) == 'ia' %}checked{% endif %}>
             Gerar com IA (benefícios + descrição)
           </label>
-          <textarea name="texto_grupo_{{ grupo }}" rows="6" style="width: 100%; margin-top: 10px; border-radius: 8px; padding: 10px;" placeholder="Escreva os benefícios ou descrição... IA preencherá automaticamente se selecionado.">{{ bot_config.get('texto_grupo_' ~ grupo, '') }}</textarea>
+          <textarea name="texto_grupo_{{ grupo }}" rows="10" style="width: 100%; margin-top: 10px; border-radius: 8px; padding: 10px;">{% if bot_config.get('texto_grupo_' ~ grupo) %}
+{{ bot_config.get('texto_grupo_' ~ grupo) }}
+{% else %}
+🔥 NOME DO PRODUTO AQUI
+
+❌ R$ PREÇO DE
+💵 R$ PREÇO ATUAL
+
+✨ Descrição personalizada aqui.
+✔️ Benefício 1 aqui.
+✔️ Benefício 2 aqui.
+
+🔗 LINK DO PRODUTO AQUI
+
+📦 Ofertas diárias Shopee para você aproveitar
+⚠️ Preço sujeito a alteração.
+{% endif %}</textarea>
 
           <div style="margin-top: 30px;">
             <button type="submit" class="btn" name="acao" value="salvar_{{ grupo }}">📂 Salvar Grupo {{ grupo }}</button>
-            <a href="/enviar-bot/{{ bot_id }}?grupo={{ grupo }}" class="btn" style="background: #27ae60; margin-left: 10px;">📤 Enviar Agora Grupo {{ grupo }}</a>
           </div>
         </div>
         {% endfor %}
