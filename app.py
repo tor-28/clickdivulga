@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 import requests
+import random  # ✅ necessário para gerar frases aleatórias da IA
 
 
 load_dotenv()
