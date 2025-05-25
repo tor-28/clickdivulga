@@ -93,13 +93,13 @@
           <h3 style="margin-top: 20px;">Texto promocional</h3>
           <label>
             <input type="radio" name="modo_texto_grupo_{{ grupo }}" value="manual" {% if bot_config.get('modo_texto_grupo_' ~ grupo, 'manual') == 'manual' %}checked{% endif %}>
-            Montar manualmente
+            Montar manualmente (1-3 linhas)
           </label>
           <label style="margin-left: 15px;">
             <input type="radio" name="modo_texto_grupo_{{ grupo }}" value="ia" {% if bot_config.get('modo_texto_grupo_' ~ grupo) == 'ia' %}checked{% endif %}>
-            Gerar com IA
+            Gerar com IA (benefícios + descrição)
           </label>
-          <textarea name="texto_grupo_{{ grupo }}" rows="6" style="width: 100%; margin-top: 10px; border-radius: 8px; padding: 10px;" placeholder="🔹 TÍTULO:\n🔹 DESCRIÇÃO:\n🔹 VANTAGENS:\n🔹 CHAMADA PARA AÇÃO:">{{ bot_config.get('texto_grupo_' ~ grupo, '') }}</textarea>
+          <textarea name="texto_grupo_{{ grupo }}" rows="6" style="width: 100%; margin-top: 10px; border-radius: 8px; padding: 10px;" placeholder="Escreva os benefícios ou descrição... IA preencherá automaticamente se selecionado.">{{ bot_config.get('texto_grupo_' ~ grupo, '') }}</textarea>
 
           <div style="margin-top: 30px;">
             <button type="submit" class="btn" name="acao" value="salvar_{{ grupo }}">📂 Salvar Grupo {{ grupo }}</button>
