@@ -1252,35 +1252,69 @@ def enviar_bot(bot_id):
         flash("❌ Nenhum produto selecionado para esse grupo.", "error")
         return redirect(f"/config-bot/{bot_id}")
 
-    for p in produtos:
-        try:
-            # Decide o texto a enviar
-            if modo_texto == "manual" and texto_manual:
-                texto = texto_manual
-            else:
-                texto = f"🔥 Oferta imperdível!\nConfira esse produto: *{p}*\n👉 Aproveite agora!"
+    # Dados dos produtos salvos no Firestore
+    termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
+    produtos_salvos = []
+    for doc in termos_ref:
+        termo = doc.to_dict()
+        produtos_salvos.extend(termo.get("produtos", []))
 
-            send_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    for p in produtos_salvos:
+        if p.get("titulo") not in produtos:
+            continue
+
+        titulo = p.get("titulo", "")
+        preco = p.get("preco", "0")
+        preco_de = p.get("preco_original") or "0"
+        link = p.get("link") or p.get("url") or "https://shopee.com.br"
+        imagem = p.get("imagem") or p.get("image")
+
+        if not imagem:
+            continue  # pular se não tiver imagem
+
+        if modo_texto == "manual" and texto_manual:
+            corpo = texto_manual.strip()
+        else:
+            # IA gera a descrição e benefícios
+            descricao = f"✨ {gerar_descricao(titulo)}"
+            vantagem1 = f"✔️ {gerar_beneficio(titulo)}"
+            vantagem2 = f"✔️ {gerar_beneficio_extra(titulo)}"
+            corpo = f"{descricao}\n{vantagem1}\n{vantagem2}"
+
+        legenda = f"🔥 {titulo}\n\n❌ R$ {preco_de}\n💵 R$ {preco}\n\n{corpo}\n\n🔗 {link}\n\n📦 Ofertas diárias Shopee para você aproveitar\n⚠️ Preço sujeito a alteração."
+
+        try:
+            send_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
             payload = {
                 "chat_id": grupo_id,
-                "text": texto,
-                "parse_mode": "Markdown"
+                "photo": imagem,
+                "caption": legenda,
+                "parse_mode": "HTML"
             }
             requests.post(send_url, data=payload)
 
-            # Loga envio
             db.collection("telegram_logs").document(uid).collection(bot_id).add({
                 "enviado_em": datetime.now().isoformat(),
                 "grupo": grupo,
-                "status": f"Enviado: {p}"
+                "status": f"Enviado: {titulo}"
             })
 
         except Exception as e:
             db.collection("telegram_logs").document(uid).collection(bot_id).add({
                 "enviado_em": datetime.now().isoformat(),
                 "grupo": grupo,
-                "status": f"Erro ao enviar {p}: {e}"
+                "status": f"Erro ao enviar {titulo}: {e}"
             })
 
     flash(f"✅ Mensagens enviadas com sucesso para o Grupo {grupo}!", "success")
     return redirect(f"/config-bot/{bot_id}")
+
+
+def gerar_descricao(titulo):
+    return f"Oferta especial em {titulo.split()[0]} para quem busca qualidade e economia."
+
+def gerar_beneficio(titulo):
+    return f"Produto ideal para quem ama {titulo.split()[1] if len(titulo.split()) > 1 else 'conforto'}."
+
+def gerar_beneficio_extra(titulo):
+    return "Entrega rápida e ótima avaliação na Shopee."
