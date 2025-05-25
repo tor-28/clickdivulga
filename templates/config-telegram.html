@@ -40,7 +40,9 @@
 
           <label><strong>Palavra-chave (opcional):</strong></label>
           <input type="text" name="palavra_grupo_{{ grupo }}" value="{{ bot_config.get('palavra_grupo_' ~ grupo, '') }}" placeholder="Ex: whey, fone"
-            style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: 8px;">
+            style="width: 100%; margin-bottom: 10px; padding: 10px; border-radius: 8px;">
+
+          <button type="submit" class="btn" name="acao" value="filtrar_{{ grupo }}" style="margin-bottom: 20px;">🔍 Aplicar Filtros</button>
 
           <label><strong>Selecionar Produtos:</strong></label>
           <button type="button" onclick="selecionarTodos({{ grupo }})" class="btn" style="margin-bottom: 10px;">Selecionar Todos</button>
