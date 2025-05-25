@@ -1223,6 +1223,7 @@ def config_bot(bot_id):
 def enviar_bot(bot_id):
     from datetime import datetime
     import requests
+    import random
 
     uid = session["usuario"]["uid"]
     grupo = request.args.get("grupo")
@@ -1231,7 +1232,6 @@ def enviar_bot(bot_id):
         flash("❌ Grupo inválido para envio manual.", "error")
         return redirect(f"/config-bot/{bot_id}")
 
-    # Dados da API e grupo
     dados_api = db.collection("api_shopee").document(uid).get().to_dict()
     bot_token = dados_api.get(f"bot_token_{bot_id}")
     grupo_id = dados_api.get(f"grupo_{grupo}_{bot_id}")
@@ -1240,7 +1240,6 @@ def enviar_bot(bot_id):
         flash("❌ Token do bot ou grupo não configurado.", "error")
         return redirect(f"/config-bot/{bot_id}")
 
-    # Configuração do bot
     bot_config_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
     bot_config = bot_config_ref.get().to_dict() if bot_config_ref.get().exists else {}
 
@@ -1252,7 +1251,6 @@ def enviar_bot(bot_id):
         flash("❌ Nenhum produto selecionado para esse grupo.", "error")
         return redirect(f"/config-bot/{bot_id}")
 
-    # Dados dos produtos salvos no Firestore
     termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
     produtos_salvos = []
     for doc in termos_ref:
@@ -1270,18 +1268,23 @@ def enviar_bot(bot_id):
         imagem = p.get("imagem") or p.get("image")
 
         if not imagem:
-            continue  # pular se não tiver imagem
+            continue
 
+        corpo = ""
         if modo_texto == "manual" and texto_manual:
             corpo = texto_manual.strip()
         else:
-            # IA gera a descrição e benefícios
             descricao = f"✨ {gerar_descricao(titulo)}"
             vantagem1 = f"✔️ {gerar_beneficio(titulo)}"
             vantagem2 = f"✔️ {gerar_beneficio_extra(titulo)}"
             corpo = f"{descricao}\n{vantagem1}\n{vantagem2}"
 
-        legenda = f"🔥 {titulo}\n\n❌ R$ {preco_de}\n💵 R$ {preco}\n\n{corpo}\n\n🔗 {link}\n\n📦 Ofertas diárias Shopee para você aproveitar\n⚠️ Preço sujeito a alteração."
+        linha_preco_de = f"❌ R$ {preco_de}" if preco_de and preco_de != "0" else ""
+
+        legenda = f"🔥 {titulo}\n"
+        if linha_preco_de:
+            legenda += f"\n{linha_preco_de}"
+        legenda += f"\n💵 R$ {preco}\n\n{corpo}\n\n🔗 {link}\n\n📦 Ofertas diárias Shopee para você aproveitar\n⚠️ Preço sujeito a alteração."
 
         try:
             send_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
@@ -1311,10 +1314,34 @@ def enviar_bot(bot_id):
 
 
 def gerar_descricao(titulo):
-    return f"Oferta especial em {titulo.split()[0]} para quem busca qualidade e economia."
+    frases = [
+        f"Aproveite uma oportunidade única com este produto incrível.",
+        f"Pensado para quem valoriza qualidade e praticidade.",
+        f"Ideal para seu dia a dia com conforto e estilo.",
+        f"Oferta exclusiva para transformar sua rotina.",
+        f"Um toque especial para quem quer mais.",
+        f"{titulo.split()[0]} com excelente custo-benefício."
+    ]
+    return random.choice(frases)
 
 def gerar_beneficio(titulo):
-    return f"Produto ideal para quem ama {titulo.split()[1] if len(titulo.split()) > 1 else 'conforto'}."
+    frases = [
+        "Produto com excelente reputação e entrega rápida.",
+        "Altamente recomendado por milhares de compradores.",
+        "Avaliações positivas e ótimo desempenho na Shopee.",
+        "Popular entre os mais vendidos da categoria.",
+        "Ótimo custo-benefício para seu bolso.",
+        "Marca confiável e reconhecida pelos consumidores."
+    ]
+    return random.choice(frases)
 
 def gerar_beneficio_extra(titulo):
-    return "Entrega rápida e ótima avaliação na Shopee."
+    frases = [
+        "Estoque limitado com preço promocional.",
+        "Design moderno e funcional para o dia a dia.",
+        "Produto bem embalado e com envio rápido.",
+        "Ideal para presentear ou uso próprio.",
+        "Combina praticidade com ótimo acabamento.",
+        "Aproveite agora, antes que acabe!"
+    ]
+    return random.choice(frases)
