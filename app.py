@@ -1125,28 +1125,37 @@ scheduler.add_job(buscar_produtos_agendado, 'cron', hour=12, minute=1)
 scheduler.add_job(buscar_produtos_agendado, 'cron', hour=20, minute=1)
 scheduler.start()
 
-@app.route("/config-telegram", methods=["POST"])
+@app.route("/config-bot/<bot_id>", methods=["POST"])
 @verificar_login
-def config_telegram():
+def salvar_config_bot(bot_id):
     from datetime import datetime
 
     uid = session["usuario"]["uid"]
-    doc_ref = db.collection("api_shopee").document(uid)
-    doc = doc_ref.get()
-    dados = doc.to_dict() if doc.exists else {}
+    grupo = request.form.get("grupo")
 
-    for i in range(1, 4):
-        dados[f"bot_nome_{i}"] = request.form.get(f"bot_nome_{i}", "").strip()
-        dados[f"bot_token_{i}"] = request.form.get(f"bot_token_{i}", "").strip()
-        dados[f"grupo_1_{i}"] = request.form.get(f"grupo_1_{i}", "").strip()
-        dados[f"grupo_2_{i}"] = request.form.get(f"grupo_2_{i}", "").strip()
-        dados[f"grupo_3_{i}"] = request.form.get(f"grupo_3_{i}", "").strip()
+    if grupo not in ["2", "3"]:
+        flash("❌ Grupo inválido.", "error")
+        return redirect(f"/config-bot/{bot_id}")
 
-    dados["atualizado_em"] = datetime.now().isoformat()
-    doc_ref.set(dados, merge=True)
+    bot_config_ref = db.collection("telegram_config").document(uid).collection("bots").document(bot_id)
+    bot_config_doc = bot_config_ref.get()
+    config_data = bot_config_doc.to_dict() if bot_config_doc.exists else {}
 
-    flash("🤖 Bots e grupos do Telegram salvos com sucesso!", "success")
-    return redirect("/minha-api")
+    config_data[f"lojas_grupo_{grupo}"] = request.form.getlist(f"lojas_grupo_{grupo}")
+    config_data[f"palavra_grupo_{grupo}"] = request.form.get(f"palavra_grupo_{grupo}", "")
+    config_data[f"produtos_grupo_{grupo}"] = request.form.getlist(f"produtos_grupo_{grupo}")
+    config_data[f"msg_grupo_{grupo}"] = int(request.form.get(f"msg_grupo_{grupo}", 1))
+    config_data[f"intervalo_grupo_{grupo}"] = request.form.get(f"intervalo_grupo_{grupo}", "10 min")
+    config_data[f"hora_inicio_grupo_{grupo}"] = int(request.form.get(f"hora_inicio_grupo_{grupo}", 0))
+    config_data[f"hora_fim_grupo_{grupo}"] = int(request.form.get(f"hora_fim_grupo_{grupo}", 23))
+    config_data[f"modo_texto_grupo_{grupo}"] = request.form.get(f"modo_texto_grupo_{grupo}", "manual")
+    config_data[f"texto_grupo_{grupo}"] = request.form.get(f"texto_grupo_{grupo}", "")
+    config_data["atualizado_em"] = datetime.now().isoformat()
+
+    bot_config_ref.set(config_data, merge=True)
+
+    flash(f"✅ Configuração do Grupo {grupo} salva com sucesso!", "success")
+    return redirect(f"/config-bot/{bot_id}")
 
 @app.route("/config-bot")
 @verificar_login
