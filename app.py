@@ -1376,8 +1376,9 @@ def enviar_produto_individual(bot_id):
     modo_texto = bot_config.get(f"modo_texto_grupo_{grupo}", "manual")
     texto_manual = bot_config.get(f"texto_grupo_{grupo}", "").strip()
 
-    termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
+    # Buscar o produto específico com base no título
     produto = None
+    termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
     for doc in termos_ref:
         termo = doc.to_dict()
         for p in termo.get("produtos", []):
@@ -1401,7 +1402,6 @@ def enviar_produto_individual(bot_id):
         flash("❌ Produto sem imagem.", "error")
         return redirect(f"/config-bot/{bot_id}")
 
-    corpo = ""
     if modo_texto == "manual" and texto_manual:
         corpo = texto_manual.strip()
     else:
