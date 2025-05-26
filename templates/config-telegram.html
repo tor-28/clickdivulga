@@ -59,7 +59,7 @@
                          {% if p.titulo in bot_config.get('produtos_grupo_' ~ grupo, []) %}checked{% endif %}> <label>Selecionar</label>
                 </div>
                 <div style="margin-top: 8px;">
-                  <a href="/enviar-bot/{{ bot_id }}?grupo={{ grupo }}&produto={{ p.titulo|urlencode }}" class="btn" style="background: #3498db; color: white;">📤 Enviar Agora</a>
+                  <a href="/enviar-produto/{{ bot_id }}?grupo={{ grupo }}&titulo={{ p.titulo|urlencode }}" class="btn" style="background: #3498db; color: white;">📤 Enviar Agora</a>
                 </div>
               </div>
               {% endfor %}
@@ -107,7 +107,7 @@
 {% else %}
 🔥 NOME DO PRODUTO AQUI (não edite esta linha)
 
-
+❌ R$ PREÇO DE (não edite esta linha)
 💵 R$ PREÇO ATUAL (não edite esta linha)
 
 ✨ Descrição personalizada aqui.
