@@ -236,6 +236,16 @@ def atualizar_categoria_links(uid):
     except Exception as e:
         print(f"Erro ao atualizar categorias automaticamente: {e}")
 
+@app.route("/teste-agendador")
+def teste_agendador():
+    try:
+        print("🚨 ROTA DE TESTE MANUAL DO AGENDADOR ACIONADA")
+        verificar_envio_agendado()
+        return "✅ Agendador executado manualmente com sucesso!", 200
+    except Exception as e:
+        print(f"❌ Erro ao executar agendador manualmente: {e}")
+        return f"Erro: {e}", 500
+
 @app.route("/")
 def index():
     return redirect(url_for("login"))
