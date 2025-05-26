@@ -99,7 +99,14 @@ def verificar_envio_agendado():
                         if p.get("titulo") not in produtos:
                             continue
 
+                        # Verifica se já foi enviado nas últimas 48h
+                        logs_ref = db.collection("telegram_logs").document(uid).collection(bot_id)
                         titulo = p.get("titulo", "")
+                        enviados_recentemente = logs_ref.where("enviado_em", ">=", (agora - timedelta(hours=48)).isoformat())\
+                            .where("status", "==", f"Enviado agendado: {titulo}").stream()
+                        if any(True for _ in enviados_recentemente):
+                            continue
+
                         preco = p.get("preco", "0")
                         preco_de = p.get("preco_original") or "0"
                         link = p.get("link") or p.get("url") or "https://shopee.com.br"
