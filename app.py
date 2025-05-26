@@ -44,7 +44,6 @@ def gerar_beneficio_extra(titulo):
     ])
 
 # ✅ Função do agendador com logs de depuração
-
 def verificar_envio_agendado():
     print("🔄 Verificando envios agendados...")
 
@@ -62,11 +61,11 @@ def verificar_envio_agendado():
                 produtos = bot_config.get(f"produtos_grupo_{grupo}", [])
                 print(f"\n🔍 UID: {uid} | Bot: {bot_id} | Grupo: {grupo}")
                 print(f"➡️ Produtos configurados: {len(produtos)}")
-                
+
                 if not produtos:
                     print("🚫 Nenhum produto configurado para esse grupo. Pulando...")
                     continue
-            
+
                 try:
                     hora_inicio = int(bot_config.get(f"hora_inicio_grupo_{grupo}", 0))
                     hora_fim = int(bot_config.get(f"hora_fim_grupo_{grupo}", 23))
@@ -76,24 +75,24 @@ def verificar_envio_agendado():
                     ultimo_envio_str = bot_config.get(f"ultimo_envio_grupo_{grupo}")
                     ultimo_envio = datetime.fromisoformat(ultimo_envio_str) if ultimo_envio_str else None
                     agora = datetime.now()
-            
+
                     print(f"🕓 Hora atual: {agora.hour} | Janela permitida: {hora_inicio} até {hora_fim}")
                     print(f"🔁 Intervalo entre envios: {intervalo} min")
                     print(f"📤 Último envio registrado: {ultimo_envio_str if ultimo_envio_str else 'N/A'}")
-            
+
                     if not (hora_inicio <= agora.hour <= hora_fim):
                         print("⏱️ Fora do horário permitido. Pulando...")
                         continue
                     if ultimo_envio and (agora - ultimo_envio).total_seconds() < intervalo * 60:
                         print("⏳ Ainda dentro do intervalo de espera. Pulando...")
                         continue
-            
+
                     dados_api = db.collection("api_shopee").document(uid).get().to_dict()
                     bot_token = dados_api.get(f"bot_token_{bot_id}")
                     grupo_id = dados_api.get(f"grupo_{grupo}_{bot_id}")
-            
+
                     print(f"🔐 Token: {'✅' if bot_token else '❌'} | Grupo ID: {'✅' if grupo_id else '❌'}")
-            
+
                     if not bot_token or not grupo_id:
                         print("❌ Bot token ou grupo_id ausente. Pulando envio.")
                         continue
@@ -114,7 +113,7 @@ def verificar_envio_agendado():
                         titulo = p.get("titulo", "")
                         logs_ref = db.collection("telegram_logs").document(uid).collection(bot_id)
                         enviados_recentemente = logs_ref.where("enviado_em", ">=", (agora - timedelta(hours=48)).isoformat())\
-                            .where("status", "==", f"Enviado agendado: {titulo}").stream()
+                            .where("titulo", "==", titulo).stream()
                         if any(True for _ in enviados_recentemente):
                             print(f"⏭️ Produto '{titulo}' já enviado nas últimas 48h para UID: {uid}")
                             continue
