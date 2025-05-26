@@ -240,6 +240,99 @@ def atualizar_categoria_links(uid):
     except Exception as e:
         print(f"Erro ao atualizar categorias automaticamente: {e}")
 
+@app.route("/forcar-envio")
+def forcar_envio_agora():
+    print("\n🚨 ROTA DE ENVIO FORÇADO ACIONADA (IGNORANDO FILTROS)")
+    
+    usuarios_ref = db.collection("telegram_config").stream()
+
+    for user_doc in usuarios_ref:
+        uid = user_doc.id
+        bots_ref = db.collection("telegram_config").document(uid).collection("bots").stream()
+
+        for bot_doc in bots_ref:
+            bot_id = bot_doc.id
+            bot_config = bot_doc.to_dict()
+
+            for grupo in ["2", "3"]:
+                produtos = bot_config.get(f"produtos_grupo_{grupo}", [])
+                if not produtos:
+                    continue
+
+                dados_api = db.collection("api_shopee").document(uid).get().to_dict()
+                bot_token = dados_api.get(f"bot_token_{bot_id}")
+                grupo_id = dados_api.get(f"grupo_{grupo}_{bot_id}")
+
+                if not bot_token or not grupo_id:
+                    continue
+
+                termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
+                produtos_salvos = []
+                for doc in termos_ref:
+                    termo = doc.to_dict()
+                    produtos_salvos.extend(termo.get("produtos", []))
+
+                enviados = 0
+                for p in produtos_salvos:
+                    if enviados >= 1:
+                        break
+                    if p.get("titulo") not in produtos:
+                        continue
+
+                    titulo = p.get("titulo", "")
+                    preco = p.get("preco", "0")
+                    preco_de = p.get("preco_original") or "0"
+                    link = p.get("link") or p.get("url") or "https://shopee.com.br"
+                    imagem = p.get("imagem") or p.get("image")
+                    if not imagem:
+                        continue
+
+                    modo_texto = bot_config.get(f"modo_texto_grupo_{grupo}", "manual")
+                    texto_manual = bot_config.get(f"texto_grupo_{grupo}", "").strip()
+
+                    corpo = texto_manual if modo_texto == "manual" and texto_manual else (
+                        f"✨ {gerar_descricao(titulo)}\n"
+                        f"✔️ {gerar_beneficio(titulo)}\n"
+                        f"✔️ {gerar_beneficio_extra(titulo)}"
+                    )
+
+                    linha_preco_de = f"❌ R$ {preco_de}" if preco_de and preco_de != "0" else ""
+                    legenda = f"🔥 {titulo}\n"
+                    if linha_preco_de:
+                        legenda += f"\n{linha_preco_de}"
+                    legenda += f"\n💵 R$ {preco}\n\n{corpo}\n\n🔗 {link}\n\n📦 Ofertas diárias Shopee para você aproveitar\n⚠️ Preço sujeito a alteração."
+
+                    try:
+                        requests.post(
+                            f"https://api.telegram.org/bot{bot_token}/sendPhoto",
+                            data={
+                                "chat_id": grupo_id,
+                                "photo": imagem,
+                                "caption": legenda,
+                                "parse_mode": "HTML"
+                            }
+                        )
+
+                        db.collection("telegram_logs").document(uid).collection(bot_id).add({
+                            "enviado_em": datetime.now().isoformat(),
+                            "grupo": grupo,
+                            "titulo": titulo,
+                            "legenda": legenda,
+                            "status": f"Enviado manual forçado: {titulo}"
+                        })
+                        enviados += 1
+
+                    except Exception as e:
+                        db.collection("telegram_logs").document(uid).collection(bot_id).add({
+                            "enviado_em": datetime.now().isoformat(),
+                            "grupo": grupo,
+                            "titulo": titulo,
+                            "erro": str(e),
+                            "status": f"Erro manual forçado: {titulo}: {e}"
+                        })
+
+    return "✅ Envio forçado executado. Verifique os logs."
+
 @app.route("/teste-agendador")
 def teste_agendador():
     try:
