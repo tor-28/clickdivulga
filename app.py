@@ -103,23 +103,21 @@ def verificar_envio_agendado():
                         termo = doc.to_dict()
                         produtos_salvos.extend(termo.get("produtos", []))
 
-                    produtos_formatados = [t.strip().lower() for t in produtos]
                     enviados = 0
                     for p in produtos_salvos:
                         if enviados >= mensagens_por_minuto:
                             break
 
-                        titulo_raw = p.get("titulo", "")
-                        titulo = titulo_raw.strip().lower()
-                        print(f"🧪 Comparando: '{titulo_raw}'")
-                        if titulo not in produtos_formatados:
+                        titulo_salvo = (p.get("titulo") or "").strip().lower()
+                        produtos_normalizados = [t.strip().lower() for t in produtos]
+                        if titulo_salvo not in produtos_normalizados:
                             continue
 
                         logs_ref = db.collection("telegram_logs").document(uid).collection(bot_id)
                         enviados_recentemente = logs_ref.where("enviado_em", ">=", (agora - timedelta(hours=48)).isoformat())\
-                            .where("titulo", "==", titulo_raw).stream()
+                            .where("titulo", "==", p.get("titulo", "")).stream()
                         if any(True for _ in enviados_recentemente):
-                            print(f"⏭️ Produto '{titulo_raw}' já enviado nas últimas 48h para UID: {uid}")
+                            print(f"⏭️ Produto '{p.get('titulo')}' já enviado nas últimas 48h para UID: {uid}")
                             continue
 
                         preco = p.get("preco", "0")
@@ -127,20 +125,20 @@ def verificar_envio_agendado():
                         link = p.get("link") or p.get("url") or "https://shopee.com.br"
                         imagem = p.get("imagem") or p.get("image")
                         if not imagem:
-                            print(f"⚠️ Produto '{titulo_raw}' sem imagem. Pulando...")
+                            print(f"⚠️ Produto '{p.get('titulo')}' sem imagem. Pulando...")
                             continue
 
                         modo_texto = bot_config.get(f"modo_texto_grupo_{grupo}", "manual")
                         texto_manual = bot_config.get(f"texto_grupo_{grupo}", "").strip()
 
                         corpo = texto_manual if modo_texto == "manual" and texto_manual else (
-                            f"✨ {gerar_descricao(titulo_raw)}\n"
-                            f"✔️ {gerar_beneficio(titulo_raw)}\n"
-                            f"✔️ {gerar_beneficio_extra(titulo_raw)}"
+                            f"✨ {gerar_descricao(p.get('titulo'))}\n"
+                            f"✔️ {gerar_beneficio(p.get('titulo'))}\n"
+                            f"✔️ {gerar_beneficio_extra(p.get('titulo'))}"
                         )
 
                         linha_preco_de = f"❌ R$ {preco_de}" if preco_de and preco_de != "0" else ""
-                        legenda = f"🔥 {titulo_raw}\n"
+                        legenda = f"🔥 {p.get('titulo')}\n"
                         if linha_preco_de:
                             legenda += f"\n{linha_preco_de}"
                         legenda += f"\n💵 R$ {preco}\n\n{corpo}\n\n🔗 {link}\n\n📦 Ofertas diárias Shopee para você aproveitar\n⚠️ Preço sujeito a alteração."
@@ -157,27 +155,27 @@ def verificar_envio_agendado():
                             )
 
                             if response.status_code == 200:
-                                print(f"✅ Enviado com sucesso: {titulo_raw}")
+                                print(f"✅ Enviado com sucesso: {p.get('titulo')}")
                             else:
-                                print(f"❌ Falha HTTP {response.status_code} ao enviar: {titulo_raw}")
+                                print(f"❌ Falha HTTP {response.status_code} ao enviar: {p.get('titulo')}")
 
                             enviados += 1
                             db.collection("telegram_logs").document(uid).collection(bot_id).add({
                                 "enviado_em": agora.isoformat(),
                                 "grupo": grupo,
-                                "titulo": titulo_raw,
+                                "titulo": p.get("titulo"),
                                 "legenda": legenda,
-                                "status": f"Enviado agendado: {titulo_raw}"
+                                "status": f"Enviado agendado: {p.get('titulo')}"
                             })
 
                         except Exception as e:
-                            print(f"❌ Erro ao enviar produto '{titulo_raw}': {e}")
+                            print(f"❌ Erro ao enviar produto '{p.get('titulo')}': {e}")
                             db.collection("telegram_logs").document(uid).collection(bot_id).add({
                                 "enviado_em": agora.isoformat(),
                                 "grupo": grupo,
-                                "titulo": titulo_raw,
+                                "titulo": p.get("titulo"),
                                 "erro": str(e),
-                                "status": f"Erro agendado: {titulo_raw}: {e}"
+                                "status": f"Erro agendado: {p.get('titulo')}: {e}"
                             })
 
                     bot_doc.reference.set({f"ultimo_envio_grupo_{grupo}": agora.isoformat()}, merge=True)
