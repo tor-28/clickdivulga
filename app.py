@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 import requests
 import random
-import unicodedata
 
 # ✅ Geração de descrições e benefícios (IA simplificada)
 def gerar_descricao(titulo):
@@ -43,9 +42,6 @@ def gerar_beneficio_extra(titulo):
         "Com avaliações incríveis!",
         "Garanta antes que acabe!"
     ])
-
-def normalizar(texto):
-    return unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8').lower().strip()
 
 # ✅ Função do agendador com logs de depuração
 def verificar_envio_agendado():
@@ -107,21 +103,23 @@ def verificar_envio_agendado():
                         termo = doc.to_dict()
                         produtos_salvos.extend(termo.get("produtos", []))
 
+                    produtos_formatados = [t.strip().lower() for t in produtos]
                     enviados = 0
                     for p in produtos_salvos:
                         if enviados >= mensagens_por_minuto:
                             break
 
-                        titulo = p.get("titulo", "")
-                        if normalizar(titulo) not in [normalizar(t) for t in produtos]:
-                            print(f"🔕 '{titulo}' não está na lista de produtos configurados após normalização.")
+                        titulo_raw = p.get("titulo", "")
+                        titulo = titulo_raw.strip().lower()
+                        print(f"🧪 Comparando: '{titulo_raw}'")
+                        if titulo not in produtos_formatados:
                             continue
 
                         logs_ref = db.collection("telegram_logs").document(uid).collection(bot_id)
                         enviados_recentemente = logs_ref.where("enviado_em", ">=", (agora - timedelta(hours=48)).isoformat())\
-                            .where("titulo", "==", titulo).stream()
+                            .where("titulo", "==", titulo_raw).stream()
                         if any(True for _ in enviados_recentemente):
-                            print(f"⏭️ Produto '{titulo}' já enviado nas últimas 48h para UID: {uid}")
+                            print(f"⏭️ Produto '{titulo_raw}' já enviado nas últimas 48h para UID: {uid}")
                             continue
 
                         preco = p.get("preco", "0")
@@ -129,20 +127,20 @@ def verificar_envio_agendado():
                         link = p.get("link") or p.get("url") or "https://shopee.com.br"
                         imagem = p.get("imagem") or p.get("image")
                         if not imagem:
-                            print(f"⚠️ Produto '{titulo}' sem imagem. Pulando...")
+                            print(f"⚠️ Produto '{titulo_raw}' sem imagem. Pulando...")
                             continue
 
                         modo_texto = bot_config.get(f"modo_texto_grupo_{grupo}", "manual")
                         texto_manual = bot_config.get(f"texto_grupo_{grupo}", "").strip()
 
                         corpo = texto_manual if modo_texto == "manual" and texto_manual else (
-                            f"✨ {gerar_descricao(titulo)}\n"
-                            f"✔️ {gerar_beneficio(titulo)}\n"
-                            f"✔️ {gerar_beneficio_extra(titulo)}"
+                            f"✨ {gerar_descricao(titulo_raw)}\n"
+                            f"✔️ {gerar_beneficio(titulo_raw)}\n"
+                            f"✔️ {gerar_beneficio_extra(titulo_raw)}"
                         )
 
                         linha_preco_de = f"❌ R$ {preco_de}" if preco_de and preco_de != "0" else ""
-                        legenda = f"🔥 {titulo}\n"
+                        legenda = f"🔥 {titulo_raw}\n"
                         if linha_preco_de:
                             legenda += f"\n{linha_preco_de}"
                         legenda += f"\n💵 R$ {preco}\n\n{corpo}\n\n🔗 {link}\n\n📦 Ofertas diárias Shopee para você aproveitar\n⚠️ Preço sujeito a alteração."
@@ -159,27 +157,27 @@ def verificar_envio_agendado():
                             )
 
                             if response.status_code == 200:
-                                print(f"✅ Enviado com sucesso: {titulo}")
+                                print(f"✅ Enviado com sucesso: {titulo_raw}")
                             else:
-                                print(f"❌ Falha HTTP {response.status_code} ao enviar: {titulo}")
+                                print(f"❌ Falha HTTP {response.status_code} ao enviar: {titulo_raw}")
 
                             enviados += 1
                             db.collection("telegram_logs").document(uid).collection(bot_id).add({
                                 "enviado_em": agora.isoformat(),
                                 "grupo": grupo,
-                                "titulo": titulo,
+                                "titulo": titulo_raw,
                                 "legenda": legenda,
-                                "status": f"Enviado agendado: {titulo}"
+                                "status": f"Enviado agendado: {titulo_raw}"
                             })
 
                         except Exception as e:
-                            print(f"❌ Erro ao enviar produto '{titulo}': {e}")
+                            print(f"❌ Erro ao enviar produto '{titulo_raw}': {e}")
                             db.collection("telegram_logs").document(uid).collection(bot_id).add({
                                 "enviado_em": agora.isoformat(),
                                 "grupo": grupo,
-                                "titulo": titulo,
+                                "titulo": titulo_raw,
                                 "erro": str(e),
-                                "status": f"Erro agendado: {titulo}: {e}"
+                                "status": f"Erro agendado: {titulo_raw}: {e}"
                             })
 
                     bot_doc.reference.set({f"ultimo_envio_grupo_{grupo}": agora.isoformat()}, merge=True)
