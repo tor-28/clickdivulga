@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 import requests
 import random
+import unicodedata
 
 # ✅ Geração de descrições e benefícios (IA simplificada)
 def gerar_descricao(titulo):
@@ -42,6 +43,9 @@ def gerar_beneficio_extra(titulo):
         "Com avaliações incríveis!",
         "Garanta antes que acabe!"
     ])
+
+def normalizar(texto):
+    return unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8').lower().strip()
 
 # ✅ Função do agendador com logs de depuração
 def verificar_envio_agendado():
@@ -107,10 +111,12 @@ def verificar_envio_agendado():
                     for p in produtos_salvos:
                         if enviados >= mensagens_por_minuto:
                             break
-                        if p.get("titulo") not in produtos:
-                            continue
 
                         titulo = p.get("titulo", "")
+                        if normalizar(titulo) not in [normalizar(t) for t in produtos]:
+                            print(f"🔕 '{titulo}' não está na lista de produtos configurados após normalização.")
+                            continue
+
                         logs_ref = db.collection("telegram_logs").document(uid).collection(bot_id)
                         enviados_recentemente = logs_ref.where("enviado_em", ">=", (agora - timedelta(hours=48)).isoformat())\
                             .where("titulo", "==", titulo).stream()
