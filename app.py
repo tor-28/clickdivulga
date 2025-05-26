@@ -240,63 +240,82 @@ def atualizar_categoria_links(uid):
 
 @app.route("/forcar-envio", methods=["GET"])
 def forcar_envio():
-    print("🚨 ROTA DE ENVIO FORÇADO ACIONADA (IGNORANDO FILTROS)")
+    print("\n🚨 ROTA DE ENVIO FORÇADO ACIONADA (IGNORANDO FILTROS)")
 
-    from datetime import datetime
+    try:
+        usuarios_ref = db.collection("telegram_config").stream()
+        agora = datetime.now()
 
-    usuarios_ref = db.collection("telegram_config").stream()
-    agora = datetime.now()
+        for user_doc in usuarios_ref:
+            uid = user_doc.id
+            print(f"👤 Verificando UID: {uid}")
+            bots_ref = db.collection("telegram_config").document(uid).collection("bots").stream()
 
-    for user_doc in usuarios_ref:
-        uid = user_doc.id
-        bots_ref = db.collection("telegram_config").document(uid).collection("bots").stream()
+            for bot_doc in bots_ref:
+                bot_id = bot_doc.id
+                bot_config = bot_doc.to_dict()
+                print(f"🤖 Bot ID: {bot_id} | Config: {bot_config is not None}")
 
-        for bot_doc in bots_ref:
-            bot_id = bot_doc.id
-            bot_config = bot_doc.to_dict()
-
-            produtos = bot_config.get("produtos_grupo_2", [])
-            print(f"🔧 UID: {uid} | Produtos configurados: {len(produtos)}")
-
-            dados_api = db.collection("api_shopee").document(uid).get().to_dict()
-            bot_token = dados_api.get(f"bot_token_{bot_id}")
-            grupo_id = dados_api.get(f"grupo_2_{bot_id}")
-
-            termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
-            produtos_salvos = []
-            for doc in termos_ref:
-                termo = doc.to_dict()
-                produtos_salvos.extend(termo.get("produtos", []))
-
-            for p in produtos_salvos:
-                if p.get("titulo") not in produtos:
+                produtos = bot_config.get("produtos_grupo_2", [])
+                print(f"➡️ Produtos selecionados: {len(produtos)}")
+                if not produtos:
+                    print("⚠️ Nenhum produto selecionado. Pulando...")
                     continue
 
-                titulo = p.get("titulo", "")
-                imagem = p.get("imagem")
-                preco = p.get("preco", "0")
-                link = p.get("link") or p.get("url")
+                dados_api = db.collection("api_shopee").document(uid).get().to_dict()
+                if not dados_api:
+                    print("❌ Dados da API Shopee não encontrados. Pulando...")
+                    continue
+                bot_token = dados_api.get(f"bot_token_{bot_id}")
+                grupo_id = dados_api.get(f"grupo_2_{bot_id}")
 
-                print(f"➡️ Preparando envio de: {titulo}")
-                if not imagem or not link or not bot_token or not grupo_id:
-                    print("❌ Dados incompletos. Pulando...")
+                print(f"🔐 Bot Token: {'SIM' if bot_token else 'NÃO'} | Grupo ID: {'SIM' if grupo_id else 'NÃO'}")
+                if not bot_token or not grupo_id:
+                    print("❌ Token ou Grupo ID ausente. Pulando...")
                     continue
 
-                legenda = f"🔥 {titulo}\n💵 R$ {preco}\n🔗 {link}"
-                try:
-                    response = requests.post(
-                        f"https://api.telegram.org/bot{bot_token}/sendPhoto",
-                        data={
-                            "chat_id": grupo_id,
-                            "photo": imagem,
-                            "caption": legenda,
-                            "parse_mode": "HTML"
-                        }
-                    )
-                    print(f"✅ RESPOSTA TELEGRAM: {response.status_code}")
-                except Exception as e:
-                    print(f"❌ ERRO: {e}")
-    return "✅ Teste de envio manual executado"
+                termos_ref = db.collection("resultados_busca").document(uid).collection("termos").stream()
+                produtos_salvos = []
+                for doc in termos_ref:
+                    termo = doc.to_dict()
+                    lista = termo.get("produtos", [])
+                    produtos_salvos.extend(lista)
+                print(f"🛍️ Produtos salvos no Firestore: {len(produtos_salvos)}")
+
+                enviados = 0
+                for p in produtos_salvos:
+                    if p.get("titulo") not in produtos:
+                        continue
+
+                    titulo = p.get("titulo", "")
+                    imagem = p.get("imagem") or p.get("image")
+                    preco = p.get("preco", "0")
+                    link = p.get("link") or p.get("url") or "https://shopee.com.br"
+
+                    if not imagem:
+                        print(f"⚠️ Produto '{titulo}' sem imagem. Pulando...")
+                        continue
+
+                    legenda = f"🔥 {titulo}\n💵 R$ {preco}\n🔗 {link}"
+
+                    print(f"➡️ Tentando enviar: {titulo}")
+                    try:
+                        response = requests.post(
+                            f"https://api.telegram.org/bot{bot_token}/sendPhoto",
+                            data={
+                                "chat_id": grupo_id,
+                                "photo": imagem,
+                                "caption": legenda,
+                                "parse_mode": "HTML"
+                            }
+                        )
+                        print(f"✅ Enviado: {titulo} | Status Code: {response.status_code}")
+                    except Exception as e:
+                        print(f"❌ ERRO AO ENVIAR: {e}")
+        return "✅ Teste de envio manual executado"
+    except Exception as erro:
+        print(f"🔥 ERRO GERAL: {erro}")
+        return "❌ Erro ao executar envio manual"
 
 @app.route("/teste-agendador")
 def teste_agendador():
