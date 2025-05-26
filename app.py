@@ -11,12 +11,41 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import requests
 import random
 
-# ✅ Função do agendador (já implementada anteriormente)
-def verificar_envio_agendado():
-    from datetime import datetime
-    import requests
-    import random
+# ✅ Geração de descrições e benefícios (IA simplificada)
+def gerar_descricao(titulo):
+    frases = [
+        f"Oportunidade única com {titulo.split()[0]}!",
+        "Qualidade e economia em destaque.",
+        "Destaque entre os mais vendidos.",
+        "Toque de sofisticação no seu dia a dia.",
+        "A escolha ideal para você!",
+        f"{titulo.split()[0]} com ótima reputação."
+    ]
+    return random.choice(frases)
 
+def gerar_beneficio(titulo):
+    return random.choice([
+        "Entrega rápida e bem avaliado na Shopee.",
+        "Excelente custo-benefício.",
+        "Favorito entre os compradores.",
+        "Alta qualidade e ótimo acabamento.",
+        "Marca com reputação excelente.",
+        "Design moderno e funcional."
+    ])
+
+def gerar_beneficio_extra(titulo):
+    return random.choice([
+        "Estoque limitado, aproveite já!",
+        "Recomendado por outros compradores.",
+        "Combina praticidade e elegância.",
+        "Ideal para presentear.",
+        "Com avaliações incríveis!",
+        "Garanta antes que acabe!"
+    ])
+
+# ✅ Função do agendador
+
+def verificar_envio_agendado():
     print("🔄 Verificando envios agendados...")
 
     usuarios_ref = db.collection("telegram_config").stream()
@@ -143,7 +172,11 @@ db = firestore.client()
 # ✅ Agendador de envio automático (a cada minuto)
 scheduler = BackgroundScheduler(timezone="America/Sao_Paulo")
 scheduler.add_job(verificar_envio_agendado, 'interval', minutes=1)
-scheduler.start()
+try:
+    scheduler.start()
+    print("✅ Scheduler iniciado com sucesso.")
+except Exception as e:
+    print(f"❌ Erro ao iniciar o scheduler: {e}")
 
 def verificar_login(f):
     @wraps(f)
