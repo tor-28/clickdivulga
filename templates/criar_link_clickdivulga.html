@@ -7,85 +7,91 @@
 </head>
 <body>
   <div class="sidebar">
-  <img src="{{ url_for('static', filename='img/logo-clickdivulga.png') }}" alt="ClickDivulga" style="max-width: 160px; display: block; margin: 0 auto 12px;">
-  <div class="menu">
-    <a href="/painel"><i>🏠</i> Dashboard</a>
-    <a href="/criar-link" class="active"><i>➕</i> Criar Link</a>
-    <a href="/grupos"><i>📊</i> Desempenho de Grupos</a>
-    <a href="/produtos"><i>🛍️</i> Produtos</a>
-    <a href="/minha-api"><i>🔐</i> Config Afiliado</a>
-    <a href="/config-bot"><i>🤖</i> Telegram</a>
-    <a href="/logout"><i>🚪</i> Sair</a>
+    <img src="{{ url_for('static', filename='img/logo-clickdivulga.png') }}" alt="ClickDivulga" style="max-width: 160px; display: block; margin: 0 auto 12px;">
+    <div class="menu">
+      <a href="/painel"><i>🏠</i> Dashboard</a>
+      <a href="/criar-link" class="active"><i>➕</i> Criar Link</a>
+      <a href="/grupos"><i>📊</i> Desempenho de Grupos</a>
+      <a href="/produtos"><i>🛍️</i> Produtos</a>
+      <a href="/minha-api"><i>🔐</i> Config Afiliado</a>
+      <a href="/config-bot"><i>🤖</i> Telegram</a>
+      <a href="/logout"><i>🚪</i> Sair</a>
+    </div>
   </div>
-</div>
 
   <div class="content">
     <div class="topbar">
       <h1>📎 Gerar Link Camuflado com Rastreamento</h1>
     </div>
 
-   <!-- 🔗 Formulário de Criação de Link -->
-<div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 40px; max-width: 700px;">
-  <h2 style="margin-bottom: 20px; color: #5e3ea1;">📎 Gerar Link Camuflado com Rastreamento</h2>
+    <div style="background:white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 40px; max-width: 700px;">
+      <h2 style="margin-bottom: 20px; color: #5e3ea1;">📎 Gerar Link Camuflado com Rastreamento</h2>
+      <form method="POST">
+        <div style="margin-bottom: 20px;">
+          <label style="font-weight: 600;">Nome do Link (slug personalizado):</label>
+          <input type="text" name="slug" required placeholder="ex: grupo-vip" style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px;">
+        </div>
 
-  <form method="POST">
-    <div style="margin-bottom: 20px;">
-      <label style="font-weight: 600;">Nome do Link (slug personalizado):</label>
-      <input type="text" name="slug" placeholder="ex: grupo-vip-ofertas" required style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
+        <div style="margin-bottom: 20px;">
+          <label style="font-weight: 600;">URL de destino:</label>
+          <input type="url" name="url_destino" required placeholder="Cole aqui o link final" style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px;">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="font-weight: 600;">Tipo de link:</label>
+          <select name="tipo" required style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px;">
+            <option value="whatsapp">Grupo WhatsApp</option>
+            <option value="produto">Produto</option>
+            <option value="contador">Contador de Cliques</option>
+          </select>
+        </div>
+
+        <button type="submit" style="background-color: #5e3ea1; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">Criar Link Camuflado</button>
+
+        <p style="margin-top: 20px; background-color: #f1f1f1; padding: 14px; border-left: 4px solid #5e3ea1; border-radius: 6px;">
+          O link final será camuflado como: <br>
+          <code>https://clickdivulga.com/r/&lt;slug&gt;</code><br>
+          Ideal para rastrear cliques e conversões.
+        </p>
+      </form>
     </div>
-
-    <div style="margin-bottom: 20px;">
-      <label style="font-weight: 600;">URL de destino (link final):</label>
-      <input type="url" name="url_destino" placeholder="Cole aqui o link do WhatsApp, produto ou página" required style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
+    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-top: 40px;">
+      <h2 style="margin-bottom:20px;">🧾 Seus Links Criados</h2>
+      {% if links %}
+      <table class="group-table">
+        <thead>
+          <tr>
+            <th>Slug</th>
+            <th>Tipo</th>
+            <th>Cliques</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for link in links %}
+          <tr>
+            <td>
+              <strong>{{ link.slug }}</strong><br>
+              <input type="text" value="https://clickdivulga.com/r/{{ link.slug }}" readonly style="width: 100%; margin-top: 6px; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 4px; padding: 4px;">
+              <button onclick="navigator.clipboard.writeText('https://clickdivulga.com/r/{{ link.slug }}'); this.nextElementSibling.style.display='inline'; setTimeout(() => this.nextElementSibling.style.display='none', 2000);" class="btn">
+                📋 Copiar
+              </button>
+              <span style="display:none; color:green; font-size:0.8rem;">✅ Copiado!</span>
+            </td>
+            <td>{{ link.categoria }}</td>
+            <td>{{ link.cliques }}</td>
+            <td style="display: flex; gap: 10px; justify-content: center;">
+              <a href="/editar-link/{{ link.id }}" class="btn">✏️ Editar</a>
+              <a href="/excluir-link/{{ link.id }}" class="btn danger" onclick="return confirm('Tem certeza que deseja excluir este link?')">🗑️ Excluir</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p style="padding: 10px; color: #666;">Você ainda não criou nenhum link.</p>
+      {% endif %}
     </div>
-
-    <div style="margin-bottom: 20px;">
-      <label style="font-weight: 600;">Tipo de link:</label>
-      <select name="tipo" required style="width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem;">
-        <option value="whatsapp">Grupo WhatsApp</option>
-        <option value="produto">Produto</option>
-        <option value="contador">Contador de Cliques (sem redirecionar)</option>
-      </select>
-    </div>
-
-    <button type="submit" style="background-color: #5e3ea1; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">Criar Link Camuflado</button>
-
-    <p style="margin-top: 20px; background-color: #f1f1f1; padding: 14px; border-left: 4px solid #5e3ea1; border-radius: 6px; font-size: 0.95rem;">
-      O link gerado será camuflado como: <br>
-      <code>https://clickdivulga.com/r/&lt;slug&gt;</code><br>
-      e poderá ser usado para rastrear cliques e engajamento com segurança.
-    </p>
-  </form>
-</div>
-
-  <!-- Lista de links -->
-<div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-top: 40px;">
-  <h2 style="margin-bottom:20px;">🧾 Seus Links Criados</h2>
-  {% if links %}
-  <table class="group-table">
-    <thead>
-      <tr>
-        <th>Slug</th>
-        <th>Tipo</th>
-        <th>Cliques</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for link in links %}
-      <tr>
-        <td><strong>{{ link.slug }}</strong></td>
-        <td>{{ link.categoria }}</td>
-        <td>{{ link.cliques }}</td>
-        <td style="display: flex; justify-content: center; gap: 10px;">
-          <a href="/editar-link/{{ link.id }}" class="btn">✏️ Editar</a>
-          <a href="/excluir-link/{{ link.id }}" class="btn danger" onclick="return confirm('Tem certeza que deseja excluir este link?')">🗑️ Excluir</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-    <p style="padding: 10px; color: #666;">Você ainda não criou nenhum link.</p>
-  {% endif %}
-</div>
+  </div>
+</body>
+</html>
