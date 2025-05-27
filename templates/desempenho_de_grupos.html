@@ -3,22 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <title>Desempenho de Grupos - ClickDivulga</title>
-  <link rel="stylesheet" href="../static/css/grupos.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/grupos.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="sidebar">
-  <img src="{{ url_for('static', filename='img/logo-clickdivulga.png') }}" alt="ClickDivulga" style="max-width: 160px; display: block; margin: 0 auto 12px;">
-  <div class="menu">
-    <a href="/painel"><i>🏠</i> Dashboard</a>
-    <a href="/criar-link"><i>➕</i> Criar Link</a>
-    <a href="/grupos" class="active"><i>📊</i> Desempenho de Grupos</a>
-    <a href="/produtos"><i>🛍️</i> Produtos</a>
-    <a href="/minha-api"><i>🔐</i> Config Afiliado</a>
-    <a href="/config-bot"><i>🤖</i> Telegram</a>
-    <a href="/logout"><i>🚪</i> Sair</a>
+    <img src="{{ url_for('static', filename='img/logo-clickdivulga.png') }}" alt="ClickDivulga" style="max-width: 160px; display: block; margin: 0 auto 12px;">
+    <div class="menu">
+      <a href="/painel"><i>🏠</i> Dashboard</a>
+      <a href="/criar-link"><i>➕</i> Criar Link</a>
+      <a href="/grupos" class="active"><i>📊</i> Desempenho de Grupos</a>
+      <a href="/produtos"><i>🛍️</i> Produtos</a>
+      <a href="/minha-api"><i>🔐</i> Config Afiliado</a>
+      <a href="/config-bot"><i>🤖</i> Telegram</a>
+      <a href="/logout"><i>🚪</i> Sair</a>
+    </div>
   </div>
-</div>
 
   <div class="content">
     <div class="topbar" style="display: flex; justify-content: space-between; align-items: center;">
@@ -35,13 +35,13 @@
         <label for="tipo">Tipo:</label>
         <select name="tipo" id="tipo" onchange="this.form.submit()" style="padding: 6px 10px; border-radius: 8px;">
           <option value="todos" {% if tipo == 'todos' %}selected{% endif %}>Todos</option>
-          <option value="grupo" {% if tipo == 'grupo' %}selected{% endif %}>Grupos</option>
+          <option value="grupo" {% if tipo == 'grupo' %}selected{% endif %}>Grupo WhatsApp</option>
           <option value="produto" {% if tipo == 'produto' %}selected{% endif %}>Produtos</option>
+          <option value="contador" {% if tipo == 'contador' %}selected{% endif %}>Contador de Cliques</option>
         </select>
       </form>
     </div>
 
-    <!-- 🔹 Cards de Resumo -->
     <div style="background: white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin: 30px auto; max-width: 1000px;">
       <div class="cards" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px;">
         {% for card in [
@@ -58,7 +58,6 @@
       </div>
     </div>
 
-    <!-- 📈 Tabela de Grupos -->
     <table class="group-table">
       <thead>
         <tr>
@@ -79,7 +78,7 @@
               <span style="font-size: 0.8rem; color: #555;">{{ tag }}</span>{% if not loop.last %} • {% endif %}
             {% endfor %}
           </td>
-          <td><a href="/r/{{ grupo.slug }}" target="_blank">Abrir</a></td>
+          <td><a href="{{ url_for('redirecionar', slug=grupo.slug, _external=True) }}" target="_blank">Abrir</a></td>
           <td>{{ grupo.cliques }}</td>
           <td>
             <form method="POST" action="/atualizar-entradas">
@@ -89,26 +88,25 @@
             </form>
           </td>
           <td>{{ grupo.conversao }}%</td>
-          <td><a href="/r/{{ grupo.slug }}" target="_blank">Copiar</a></td>
+          <td>
+            <button onclick="navigator.clipboard.writeText('{{ url_for('redirecionar', slug=grupo.slug, _external=True) }}'); this.innerText='✅ Copiado!'; setTimeout(() => this.innerText='📋 Copiar', 2000);">📋 Copiar</button>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
 
-    <!-- 📊 Gráfico de Cliques por Hora -->
     <hr style="margin: 40px 0;">
     <h2>⏱️ Cliques por Horário</h2>
     <div style="background:white; padding:20px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1); margin-bottom: 40px;">
       <canvas id="graficoCliques"></canvas>
     </div>
 
-    <!-- 📊 Gráfico Comparativo -->
     <h2>📈 Comparativo de Cliques por Grupo</h2>
     <div style="background:white; padding:20px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.1); margin-bottom: 40px;">
       <canvas id="graficoComparativo"></canvas>
     </div>
 
-    <!-- 🏆 Rankings -->
     <h2>🏆 Rankings</h2>
     <div style="display: flex; gap: 30px; flex-wrap: wrap;">
       {% for titulo, lista in [
@@ -127,7 +125,6 @@
       {% endfor %}
     </div>
 
-    <!-- 💡 Recomendações -->
     {% if recomendacoes %}
     <h2 style="margin-top: 50px;">💡 Recomendações Inteligentes</h2>
     <ul style="background:#fff; padding: 20px; border-radius: 12px; box-shadow:0 1px 4px rgba(0,0,0,0.1);">
