@@ -569,7 +569,10 @@ def redirecionar(slug):
 @app.route("/grupos", methods=["GET", "POST"])
 @verificar_login
 def grupos():
+    from pytz import timezone
+
     uid = session["usuario"]["uid"]
+    br_tz = timezone("America/Sao_Paulo")
 
     if request.method == "POST":
         slug = request.form["slug"]
@@ -603,7 +606,7 @@ def grupos():
         slug = dados.get("slug")
         criado_em = dados.get("criado_em", "")
         try:
-            dt_criado = datetime.fromisoformat(criado_em) if isinstance(criado_em, str) else criado_em
+            dt_criado = datetime.fromisoformat(criado_em.replace("Z", "")) if isinstance(criado_em, str) else criado_em
             if data_limite and dt_criado < data_limite:
                 continue
         except:
@@ -633,7 +636,7 @@ def grupos():
         comparativo_labels.append(slug)
         comparativo_data.append(cliques)
         total_cliques += cliques
-
+        
     # Resumo
     total_grupos = len(grupos)
     media_cliques = round(total_cliques / total_grupos, 2) if total_grupos else 0
@@ -646,18 +649,20 @@ def grupos():
         "mais_clicado": mais_clicado
     }
 
-    # Cliques por hora (gráfico)
+    # Cliques por hora (gráfico) com timezone BR
     cliques_por_hora = [0] * 24
     logs = db.collection("logs_cliques").where("uid", "==", uid).stream()
     for doc in logs:
         dados = doc.to_dict()
         data = dados.get("data")
         try:
-            dt = datetime.fromisoformat(data) if isinstance(data, str) else data
+            dt = datetime.fromisoformat(data.replace("Z", "")) if isinstance(data, str) else data
+            dt = dt.astimezone(br_tz)
             if data_limite and dt < data_limite:
                 continue
             cliques_por_hora[dt.hour] += 1
-        except:
+        except Exception as e:
+            print(f"[ERRO HORA BR] {e}")
             continue
 
     # Rankings
@@ -688,6 +693,7 @@ def grupos():
         comparativo_data=comparativo_data,
         recomendacoes=recomendacoes
     )
+
 
 @app.route("/atualizar-entradas", methods=["POST"])
 @verificar_login
