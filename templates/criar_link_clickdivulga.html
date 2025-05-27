@@ -72,11 +72,18 @@
           <tr>
             <td>
               <strong>{{ link.slug }}</strong><br>
-              <input type="text" value="https://clickdivulga.com/r/{{ link.slug }}" readonly style="width: 100%; margin-top: 6px; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 4px; padding: 4px;">
-              <button onclick="navigator.clipboard.writeText('https://clickdivulga.com/r/{{ link.slug }}'); this.nextElementSibling.style.display='inline'; setTimeout(() => this.nextElementSibling.style.display='none', 2000);" class="btn">
-                📋 Copiar
-              </button>
-              <span style="display:none; color:green; font-size:0.8rem;">✅ Copiado!</span>
+              <input type="text" value="{{ url_for('redirecionar', slug=link.get('slug'), _external=True) }}" readonly style="width: 100%; margin-bottom: 8px; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 4px; padding: 4px;">
+              <button onclick="navigator.clipboard.writeText('{{ url_for('redirecionar', slug=link.get('slug'), _external=True) }}'); this.nextElementSibling.style.display='inline'; setTimeout(() => this.nextElementSibling.style.display='none', 2000);" style="
+                background-color: #5e3ea1;
+                color: white;
+                border: none;
+                padding: 6px 10px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 0.9rem;
+              ">📋 Copiar</button>
+              <span class="copiado-msg" style="display:none; color:green; font-size: 0.85rem; margin-left: 6px;">✅ Copiado!</span>
+
             </td>
             <td>{{ link.categoria }}</td>
             <td>{{ link.cliques }}</td>
