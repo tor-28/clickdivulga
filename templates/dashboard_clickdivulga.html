@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Dashboard - ClickDivulga</title>
-  <link rel="stylesheet" href="../static/css/grupos.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/grupos.css') }}">
 </head>
 <body>
   <div class="sidebar">
@@ -25,6 +25,7 @@
       <p>Bem-vindo, {{ session['usuario']['email'] }}</p>
     </div>
 
+    <!-- 🔹 Cards de Resumo -->
     <div style="background: white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin: 30px auto; max-width: 1000px;">
       <div class="cards" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px;">
         {% for card in [
@@ -40,6 +41,8 @@
         {% endfor %}
       </div>
     </div>
+
+    <!-- 🔗 Links Recentes -->
     <div style="margin-top: 40px;">
       <h2 style="margin-bottom: 20px;">🔗 Seus Links Recentes</h2>
       <div style="display: flex; flex-wrap: wrap; gap: 20px;">
@@ -55,8 +58,9 @@
         ">
           <strong style="font-size: 1rem; color: #333;">{{ link.get('titulo') or link.get('slug') }}</strong><br>
           <small style="color: #666;">{{ link.get('cliques', 0) }} cliques – {{ link.get('categoria', 'Sem categoria') }}</small><br><br>
-          <input type="text" value="https://clickdivulga.com/r/{{ link.get('slug') }}" readonly style="width: 100%; margin-bottom: 8px; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 4px; padding: 4px;">
-          <button onclick="navigator.clipboard.writeText('https://clickdivulga.com/r/{{ link.get('slug') }}'); this.nextElementSibling.style.display='inline'; setTimeout(() => this.nextElementSibling.style.display='none', 2000);" style="
+
+          <input type="text" value="{{ url_for('redirecionar', slug=link.get('slug'), _external=True) }}" readonly style="width: 100%; margin-bottom: 8px; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 4px; padding: 4px;">
+          <button onclick="navigator.clipboard.writeText('{{ url_for('redirecionar', slug=link.get('slug'), _external=True) }}'); this.nextElementSibling.style.display='inline'; setTimeout(() => this.nextElementSibling.style.display='none', 2000);" style="
             background-color: #5e3ea1;
             color: white;
             border: none;
