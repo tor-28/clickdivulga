@@ -541,7 +541,6 @@ def editar_link(id):
 
 @app.route("/r/<slug>")
 def redirecionar(slug):
-    # Busca por slug via where (já que os docs não usam slug como ID)
     doc_ref = db.collection("links_encurtados").where("slug", "==", slug).limit(1).stream()
     doc = next(doc_ref, None)
 
@@ -558,15 +557,20 @@ def redirecionar(slug):
             "slug": slug,
             "uid": dados.get("uid", ""),
             "categoria": dados.get("categoria", ""),
-            "data": datetime.now(),  # agora é timestamp
+            "data": datetime.now(),
             "ip": request.remote_addr,
             "user_agent": request.headers.get("User-Agent")
         })
 
-        # Se for um link do tipo contador, não redireciona
+        # Se for contador, exibe página especial
         if dados.get("categoria") == "contador":
             return render_template("contador_clicks.html", slug=slug)
 
+        # ✅ Verifica se é modo camuflado
+        if dados.get("modo") == "camuflado":
+            return render_template("intermediario.html", link_grupo=dados.get("url_destino"), slug=slug)
+
+        # Padrão: redirecionamento direto
         return redirect(dados.get("url_destino", "/"))
 
     return "Link não encontrado", 404
