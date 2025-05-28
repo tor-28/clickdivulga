@@ -546,32 +546,35 @@ def redirecionar(slug):
 
     if doc:
         dados = doc.to_dict()
+        modo = dados.get("modo", "direto")  # <--- garantimos que esse campo seja lido
+        categoria = dados.get("categoria", "")
+        destino = dados.get("url_destino", "/")
 
         # Atualiza contador
         doc.reference.update({
             "cliques": firestore.Increment(1)
         })
 
-        # Salva clique com timestamp real
+        # Salva log
         db.collection("logs_cliques").add({
             "slug": slug,
             "uid": dados.get("uid", ""),
-            "categoria": dados.get("categoria", ""),
+            "categoria": categoria,
             "data": datetime.now(),
             "ip": request.remote_addr,
             "user_agent": request.headers.get("User-Agent")
         })
 
-        # Se for contador, exibe página especial
-        if dados.get("categoria") == "contador":
+        # Página especial para 'contador'
+        if categoria == "contador":
             return render_template("contador_clicks.html", slug=slug)
 
-        # ✅ Verifica se é modo camuflado
-        if dados.get("modo") == "camuflado":
-            return render_template("intermediario.html", link_grupo=dados.get("url_destino"), slug=slug)
+        # ✅ Página intermediária camuflada
+        if modo == "camuflado":
+            return render_template("intermediario.html", link_grupo=destino, slug=slug)
 
-        # Padrão: redirecionamento direto
-        return redirect(dados.get("url_destino", "/"))
+        # Redirecionamento direto (padrão)
+        return redirect(destino)
 
     return "Link não encontrado", 404
 
