@@ -43,6 +43,14 @@
           </select>
         </label>
 
+        <label>
+          Modo de abertura do link:
+          <div style="margin-top: 8px;">
+            <input type="radio" name="modo" value="direto" {% if link.modo != 'camuflado' %}checked{% endif %}> Redirecionar direto<br>
+            <input type="radio" name="modo" value="camuflado" {% if link.modo == 'camuflado' %}checked{% endif %}> Página camuflada com botão
+          </div>
+        </label>
+
         <button type="submit">Salvar Alterações</button>
 
         <p class="info" style="margin-top: 20px; background-color: #f4f4f4; padding: 10px; border-left: 4px solid #5e3ea1; border-radius: 6px;">
