@@ -425,17 +425,18 @@ def painel():
         links_recentes=links_formatados
     )
 
+# ✅ ROTA DE CRIAÇÃO DE LINK
 @app.route("/criar-link", methods=["GET", "POST"])
 @verificar_login
 def criar_link():
     uid = session["usuario"]["uid"]
-    
+
     if request.method == "POST":
         slug = request.form["slug"].strip()
         url_destino = request.form["url_destino"].strip()
         tipo = request.form["tipo"]
+        modo = request.form.get("modo", "direto")  # novo campo
 
-        # Verifica se o slug já existe
         existente = db.collection("links_encurtados").where("slug", "==", slug).get()
         if existente:
             flash("Esse slug já está em uso. Escolha outro.", "error")
@@ -445,6 +446,7 @@ def criar_link():
             "slug": slug,
             "url_destino": url_destino,
             "categoria": tipo,
+            "modo": modo,
             "uid": uid,
             "cliques": 0,
             "criado_em": datetime.now().isoformat()
@@ -454,7 +456,6 @@ def criar_link():
         flash("Link criado com sucesso!", "success")
         return redirect("/criar-link")
 
-    # Recupera todos os links do usuário
     links_ref = db.collection("links_encurtados").where("uid", "==", uid).order_by("criado_em", direction=firestore.Query.DESCENDING)
     links_docs = links_ref.stream()
 
@@ -466,7 +467,8 @@ def criar_link():
             "id": doc.id,
             "slug": dados.get("slug"),
             "cliques": dados.get("cliques", 0),
-            "categoria": dados.get("categoria", "indefinido")
+            "categoria": dados.get("categoria", "indefinido"),
+            "modo": dados.get("modo", "direto")
         })
 
     return render_template("criar_link_clickdivulga.html", links=links)
@@ -566,38 +568,26 @@ def redirecionar(slug):
 
     return "Link não encontrado", 404
 
+# ✅ ROTA PARA REGISTRAR CLIQUES REAIS (botão da página camuflada)
 @app.route("/registrar-clique-grupo/<slug>")
 def registrar_clique_grupo(slug):
-    # Busca o link encurtado correspondente
-    doc_ref = db.collection("links_encurtados") \
-        .where("slug", "==", slug) \
-        .limit(1) \
-        .stream()
+    doc_ref = db.collection("links_encurtados").where("slug", "==", slug).limit(1).stream()
     doc = next(doc_ref, None)
-
     if not doc:
         return "Link não encontrado", 404
 
     dados = doc.to_dict()
-    uid = dados.get("uid", "")
-    categoria = dados.get("categoria", "")
-    
-    # Adiciona log específico de clique real no grupo (botão da página camuflada)
     db.collection("logs_cliques").add({
         "slug": slug,
-        "uid": uid,
-        "categoria": categoria,
+        "uid": dados.get("uid", ""),
+        "categoria": dados.get("categoria", ""),
         "data": datetime.now(),
         "ip": request.remote_addr,
         "user_agent": request.headers.get("User-Agent"),
-        "tipo": "botao_grupo"  # indica que foi no botão
+        "tipo": "botao_grupo"
     })
 
-    # Atualiza contador manual de "entradas reais" no grupo (opcional)
-    doc.reference.update({
-        "cliques": firestore.Increment(1)
-    })
-
+    doc.reference.update({"cliques": firestore.Increment(1)})
     return "", 204
 
 @app.route("/grupos", methods=["GET", "POST"])
