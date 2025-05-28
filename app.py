@@ -566,6 +566,40 @@ def redirecionar(slug):
 
     return "Link não encontrado", 404
 
+@app.route("/registrar-clique-grupo/<slug>")
+def registrar_clique_grupo(slug):
+    # Busca o link encurtado correspondente
+    doc_ref = db.collection("links_encurtados") \
+        .where("slug", "==", slug) \
+        .limit(1) \
+        .stream()
+    doc = next(doc_ref, None)
+
+    if not doc:
+        return "Link não encontrado", 404
+
+    dados = doc.to_dict()
+    uid = dados.get("uid", "")
+    categoria = dados.get("categoria", "")
+    
+    # Adiciona log específico de clique real no grupo (botão da página camuflada)
+    db.collection("logs_cliques").add({
+        "slug": slug,
+        "uid": uid,
+        "categoria": categoria,
+        "data": datetime.now(),
+        "ip": request.remote_addr,
+        "user_agent": request.headers.get("User-Agent"),
+        "tipo": "botao_grupo"  # indica que foi no botão
+    })
+
+    # Atualiza contador manual de "entradas reais" no grupo (opcional)
+    doc.reference.update({
+        "cliques": firestore.Increment(1)
+    })
+
+    return "", 204
+
 @app.route("/grupos", methods=["GET", "POST"])
 @verificar_login
 def grupos():
