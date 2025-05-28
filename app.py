@@ -517,11 +517,13 @@ def editar_link(id):
         slug = request.form["slug"].strip()
         url_destino = request.form["url_destino"].strip()
         tipo = request.form["tipo"]
+        modo = request.form.get("modo", "direto")  # NOVO CAMPO
 
         doc_ref.update({
             "slug": slug,
             "url_destino": url_destino,
             "categoria": tipo,
+            "modo": modo  # SALVANDO O MODO
         })
 
         flash("Link atualizado com sucesso!", "success")
@@ -533,7 +535,8 @@ def editar_link(id):
         "id": id,
         "slug": dados.get("slug"),
         "url_destino": dados.get("url_destino"),
-        "categoria": dados.get("categoria")
+        "categoria": dados.get("categoria"),
+        "modo": dados.get("modo", "direto")  # Para renderizar corretamente o radio
     })
 
 @app.route("/r/<slug>")
