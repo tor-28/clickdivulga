@@ -46,7 +46,13 @@
           </select>
         </div>
 
-        <button type="submit" style="background-color: #5e3ea1; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">Criar Link Camuflado</button>
+        <div style="margin-bottom: 20px;">
+          <label style="font-weight: 600;">Modo de abertura do link:</label><br>
+          <input type="radio" name="modo" value="direto" checked> Redirecionar direto para o grupo<br>
+          <input type="radio" name="modo" value="camuflado"> Página camuflada com botão de entrada
+        </div>
+
+        <button type="submit" style="background-color: #5e3ea1; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer;">Criar Link</button>
 
         <p style="margin-top: 20px; background-color: #f1f1f1; padding: 14px; border-left: 4px solid #5e3ea1; border-radius: 6px;">
           O link final será camuflado como: <br>
@@ -55,6 +61,7 @@
         </p>
       </form>
     </div>
+
     <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-top: 40px;">
       <h2 style="margin-bottom:20px;">🧾 Seus Links Criados</h2>
       {% if links %}
@@ -83,7 +90,6 @@
                 font-size: 0.9rem;
               ">📋 Copiar</button>
               <span class="copiado-msg" style="display:none; color:green; font-size: 0.85rem; margin-left: 6px;">✅ Copiado!</span>
-
             </td>
             <td>{{ link.categoria }}</td>
             <td>{{ link.cliques }}</td>
