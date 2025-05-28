@@ -546,16 +546,14 @@ def redirecionar(slug):
 
     if doc:
         dados = doc.to_dict()
-        modo = dados.get("modo", "direto")  # <--- garantimos que esse campo seja lido
+        modo = dados.get("modo", "direto")
         categoria = dados.get("categoria", "")
         destino = dados.get("url_destino", "/")
 
-        # Atualiza contador
         doc.reference.update({
             "cliques": firestore.Increment(1)
         })
 
-        # Salva log
         db.collection("logs_cliques").add({
             "slug": slug,
             "uid": dados.get("uid", ""),
@@ -565,15 +563,12 @@ def redirecionar(slug):
             "user_agent": request.headers.get("User-Agent")
         })
 
-        # Página especial para 'contador'
         if categoria == "contador":
             return render_template("contador_clicks.html", slug=slug)
 
-        # ✅ Página intermediária camuflada
         if modo == "camuflado":
             return render_template("intermediario.html", link_grupo=destino, slug=slug)
 
-        # Redirecionamento direto (padrão)
         return redirect(destino)
 
     return "Link não encontrado", 404
