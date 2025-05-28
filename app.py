@@ -360,22 +360,23 @@ def painel():
 
     atualizar_categoria_links(uid)
 
-    # LINKS GERADOS HOJE
-    hoje = datetime.now().date().isoformat()
+    # 🔹 LINKS GERADOS HOJE (usando timestamp real)
+    hoje = datetime.combine(datetime.today(), datetime.min.time())
     links_hoje = db.collection("links_encurtados") \
         .where("uid", "==", uid) \
         .where("criado_em", ">=", hoje) \
         .stream()
     total_links_hoje = sum(1 for _ in links_hoje)
 
-    # CLIQUES NO MÊS (agora com timestamp real)
+    # 🔹 CLIQUES NO MÊS (limitado para evitar travamento)
     inicio_mes = datetime.now().replace(day=1)
     cliques_mes = sum(1 for _ in db.collection("logs_cliques")
                       .where("uid", "==", uid)
                       .where("data", ">=", inicio_mes)
+                      .limit(5000)  # proteção de memória
                       .stream())
 
-    # PRODUTO MAIS CLICADO
+    # 🔹 PRODUTO MAIS CLICADO
     try:
         produtos = db.collection("links_encurtados") \
             .where("uid", "==", uid) \
@@ -388,7 +389,7 @@ def painel():
         print("Erro ao buscar produto mais clicado:", e)
         nome_produto = "Nenhum"
 
-    # GRUPO MAIS CLICADO
+    # 🔹 GRUPO MAIS CLICADO
     try:
         grupos = db.collection("links_encurtados") \
             .where("uid", "==", uid) \
@@ -401,7 +402,7 @@ def painel():
         print("Erro ao buscar grupo mais clicado:", e)
         nome_grupo = "Nenhum"
 
-    # LINKS RECENTES
+    # 🔹 LINKS RECENTES
     links_recentes = db.collection("links_encurtados") \
         .where("uid", "==", uid) \
         .order_by("criado_em", direction=firestore.Query.DESCENDING) \
@@ -412,7 +413,7 @@ def painel():
         dados = doc.to_dict()
         links_formatados.append({
             "slug": dados.get("slug"),
-            "titulo": dados.get("titulo", ""),
+            "titulo": dados.get("titulo", "Sem título"),
             "cliques": dados.get("cliques", 0),
             "categoria": dados.get("categoria", "indefinido")
         })
@@ -424,6 +425,7 @@ def painel():
         grupo_mais_clicado=nome_grupo,
         links_recentes=links_formatados
     )
+
 
 # ✅ ROTA DE CRIAÇÃO DE LINK
 @app.route("/criar-link", methods=["GET", "POST"])
