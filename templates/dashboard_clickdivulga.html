@@ -10,8 +10,6 @@
     <img src="{{ url_for('static', filename='img/logo-clickdivulga.png') }}" alt="ClickDivulga" style="max-width: 160px; display: block; margin: 0 auto 12px;">
     <div class="menu">
       <a href="/painel" class="active"><i>🏠</i> Dashboard</a>
-      <a href="/criar-link"><i>➕</i> Criar Link</a>
-      <a href="/grupos"><i>📊</i> Desempenho de Grupos</a>
       <a href="/produtos"><i>🛍️</i> Produtos</a>
       <a href="/minha-api"><i>🔐</i> Config Afiliado</a>
       <a href="/config-bot"><i>🤖</i> Telegram</a>
@@ -25,51 +23,18 @@
       <p>Bem-vindo, {{ session['usuario']['email'] }}</p>
     </div>
 
-    <!-- 🔹 Cards de Resumo -->
+    <!-- Cards de resumo com métricas básicas dos produtos -->
     <div style="background: white; padding: 30px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin: 30px auto; max-width: 1000px;">
       <div class="cards" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px;">
         {% for card in [
-          ('Links gerados hoje', links_hoje or 0),
-          ('Cliques no mês', cliques_mes or 0),
-          ('Produto mais clicado', produto_mais_clicado or 'Nenhum'),
-          ('Grupo mais clicado', grupo_mais_clicado or 'Nenhum')
+          ('Produtos buscados hoje', produtos_hoje or 0),
+          ('Produtos salvos', produtos_totais or 0),
+          ('Último produto buscado', ultimo_produto or 'Nenhum'),
+          ('Loja mais buscada', loja_mais_buscada or 'Nenhuma')
         ] %}
         <div class="card" style="flex: 1 1 200px; max-width: 230px; background: #f8f8fc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e3dfff;">
           <h3>{{ card[0] }}</h3>
           <p class="big" style="font-size: 24px; font-weight: bold; color: #5e3ea1;">{{ card[1] }}</p>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-
-    <!-- 🔗 Links Recentes -->
-    <div style="margin-top: 40px;">
-      <h2 style="margin-bottom: 20px;">🔗 Seus Links Recentes</h2>
-      <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-        {% for link in links_recentes[:4] %}
-        <div style="
-          background: white;
-          padding: 20px;
-          border-radius: 12px;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-          width: 230px;
-          text-align: left;
-          border: 1px solid #eee;
-        ">
-          <strong style="font-size: 1rem; color: #333;">{{ link.get('titulo') or link.get('slug') }}</strong><br>
-          <small style="color: #666;">{{ link.get('cliques', 0) }} cliques – {{ link.get('categoria', 'Sem categoria') }}</small><br><br>
-
-          <input type="text" value="{{ url_for('redirecionar', slug=link.get('slug'), _external=True) }}" readonly style="width: 100%; margin-bottom: 8px; font-size: 0.85rem; border: 1px solid #ccc; border-radius: 4px; padding: 4px;">
-          <button onclick="navigator.clipboard.writeText('{{ url_for('redirecionar', slug=link.get('slug'), _external=True) }}'); this.nextElementSibling.style.display='inline'; setTimeout(() => this.nextElementSibling.style.display='none', 2000);" style="
-            background-color: #5e3ea1;
-            color: white;
-            border: none;
-            padding: 6px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
-          ">📋 Copiar</button>
-          <span class="copiado-msg" style="display:none; color:green; font-size: 0.85rem; margin-left: 6px;">✅ Copiado!</span>
         </div>
         {% endfor %}
       </div>
