@@ -10,7 +10,9 @@ from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 import requests
 import random
-from bs4 import BeautifulSoup  
+from bs4 import BeautifulSoup
+import re
+import json
 
 # ✅ Geração de descrições e benefícios (IA simplificada)
 def gerar_descricao(titulo):
@@ -825,48 +827,51 @@ def buscar_meli():
 
         if not url:
             print('[ERRO] Nenhuma URL enviada.')
-            return render_template('produtos_meli.html', produtos=None)
+            return render_template('produtos_meli.html', resultados=None)
 
         try:
             response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
             print(f'[LOG] Status da resposta: {response.status_code}')
             soup = BeautifulSoup(response.text, 'html.parser')
 
-            titulo_pagina = soup.title.string.strip() if soup.title else 'Página sem título'
-            print(f'[LOG] Título da página: {titulo_pagina}')
+            # Extrair script que contém os dados
+            script_tag = soup.find('script', string=re.compile('__PRELOADED_STATE__'))
+            if not script_tag:
+                print('[ERRO] Script __PRELOADED_STATE__ não encontrado.')
+                return render_template('produtos_meli.html', resultados=[])
 
-            cards = soup.select('.ui-search-layout .ui-search-result__wrapper')
-            print(f'[LOG] Cards encontrados: {len(cards)}')
+            match = re.search(r'window\.__PRELOADED_STATE__\s*=\s*({.*});', script_tag.string)
+            if not match:
+                print('[ERRO] JSON embutido não encontrado.')
+                return render_template('produtos_meli.html', resultados=[])
 
-            produtos = []
-            for card in cards:
+            data_json = json.loads(match.group(1))
+
+            # Extrair produtos
+            produtos_extraidos = data_json.get('seller_items', {}).get('results', [])
+            print(f'[LOG] Produtos encontrados: {len(produtos_extraidos)}')
+
+            resultados = []
+            for p in produtos_extraidos:
                 try:
-                    titulo = card.select_one('h2').text.strip()
-                    preco = card.select_one('.price-tag-fraction').text.strip().replace('.', '')
-                    imagem = card.select_one('img')['src']
-                    link = card.select_one('a')['href'].split('#')[0]
-
-                    produtos.append({
-                        'titulo': titulo,
-                        'preco': preco,
-                        'imagem': imagem,
-                        'link': link
+                    resultados.append({
+                        'titulo': p.get('title'),
+                        'preco': f"R$ {p.get('price')}",
+                        'imagem': p.get('thumbnail'),
+                        'link': p.get('permalink')
                     })
                 except Exception as e:
-                    print(f'[LOG] Erro ao processar um card: {e}')
+                    print(f'[LOG] Erro ao montar produto: {e}')
 
-            if not produtos:
-                print('[LOG] Nenhum produto extraído.')
-            else:
-                print(f'[LOG] {len(produtos)} produtos extraídos com sucesso.')
-
-            return render_template('produtos_meli.html', produtos=produtos)
+            if not resultados:
+                print('[LOG] Nenhum produto visível.')
+            return render_template('produtos_meli.html', resultados=resultados)
 
         except Exception as e:
-            print(f'[ERRO] Falha na requisição ou no parsing: {e}')
-            return render_template('produtos_meli.html', produtos=None)
+            print(f'[ERRO] Falha geral ao buscar Meli: {e}')
+            return render_template('produtos_meli.html', resultados=None)
 
-    return render_template('produtos_meli.html', produtos=None)
+    return render_template('produtos_meli.html', resultados=None)
     
 @app.route("/atualizar-buscas")
 def atualizar_buscas():
