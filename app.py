@@ -1,24 +1,30 @@
+# 🔧 Flask e dependências
 from flask import Flask, render_template, request, redirect, url_for, session, flash
+
+# 🔐 Firebase
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
+
+# 📦 Utilitários
 import os
 import base64
 import tempfile
+import json
+import random
+import re
+import requests
+import time
+from datetime import datetime, timedelta
 from functools import wraps
 from dotenv import load_dotenv
-from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
-import requests
-import random
 from bs4 import BeautifulSoup
-import re
-import json
 
-# ➕ IMPORTANTE PARA USO DO SELENIUM
+# 🤖 Selenium
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-import time
+
 
 # ✅ Geração de descrições e benefícios (IA simplificada)
 def gerar_descricao(titulo):
@@ -816,7 +822,7 @@ def buscar_loja():
         flash(f"Erro ao buscar loja: {e}", "error")
         return redirect("/produtos")
 
-@app.route("/buscar-produto-meli", methods=["GET", "POST"])
+@app.route("/buscar-meli", methods=["GET", "POST"])
 def buscar_produto_meli():
     if request.method == "POST":
         link_afiliado = request.form.get("url_meli")
@@ -825,8 +831,9 @@ def buscar_produto_meli():
             flash("URL não fornecida.", "erro")
             return render_template("produtos_meli.html", resultado=None)
 
+        driver = None
         try:
-            # Configuração do Selenium headless
+            # Configuração do Selenium Headless
             options = Options()
             options.add_argument("--headless=new")
             options.add_argument("--no-sandbox")
@@ -842,17 +849,18 @@ def buscar_produto_meli():
                 botao.click()
                 print("[INFO] Clicou no botão 'Ir ao produto'...")
                 time.sleep(3)
-            except:
+            except Exception as e:
                 flash("Botão 'Ir ao produto' não encontrado.", "erro")
-                driver.quit()
+                print("[ERRO] Botão não encontrado:", e)
                 return render_template("produtos_meli.html", resultado=None)
 
             # Troca para nova aba
             driver.switch_to.window(driver.window_handles[-1])
 
-            # Extrair os dados da página do produto
+            # Extrair os dados
             nome = driver.find_element(By.CLASS_NAME, "ui-pdp-title").text.strip()
             preco_atual = driver.find_element(By.CLASS_NAME, "andes-money-amount__fraction").text.strip()
+
             try:
                 preco_original = driver.find_element(By.CLASS_NAME, "andes-money-amount__discount").text.strip()
             except:
@@ -871,13 +879,16 @@ def buscar_produto_meli():
                 "link_final": driver.current_url
             }
 
-            driver.quit()
             return render_template("produtos_meli.html", resultado=resultado)
 
         except Exception as e:
-            print("[ERRO]", e)
-            flash("Erro ao processar a URL.", "erro")
+            print("[ERRO AO PROCESSAR]", e)
+            flash("Erro ao processar a URL do produto.", "erro")
             return render_template("produtos_meli.html", resultado=None)
+
+        finally:
+            if driver:
+                driver.quit()
 
     return render_template("produtos_meli.html", resultado=None)
     
