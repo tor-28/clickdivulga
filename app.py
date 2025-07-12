@@ -877,7 +877,7 @@ def enviar_meli():
     print("✅ Rota /enviar-meli acessada")
     
     if 'usuario' not in session or 'uid' not in session['usuario']:
-        print("⛔ Token não encontrado na sessão. Redirecionando para login.")
+        print("⛔ Sessão inválida. Redirecionando para login.")
         return redirect('/login')
 
     uid = session['usuario']['uid']
@@ -896,25 +896,17 @@ def enviar_meli():
         return redirect('/buscar-meli')
 
     try:
-        # 🔍 Buscar dados do Firestore
-        db_firestore = firestore.client()
-        config_ref = db_firestore.collection('usuarios').document(uid).collection('bots').document('bot1')
-        config_doc = config_ref.get()
+        # 🔍 Busca no caminho correto do Firestore (api_contador/{uid}/telegram_config)
+        config_ref = db.reference(f'api_contador/{uid}/telegram_config')
+        config = config_ref.get()
 
-        if not config_doc.exists:
+        if not config or 'token' not in config or 'grupo1' not in config:
             flash('Bot do Telegram não configurado corretamente.', 'erro')
             print(f"⚠️ Bot não configurado para UID: {uid}")
             return redirect('/buscar-meli')
 
-        config = config_doc.to_dict()
-
-        bot_token = config.get('token')
-        chat_id = config.get('grupo1')
-
-        if not bot_token or not chat_id:
-            flash('Token ou grupo do Telegram ausente.', 'erro')
-            print("⚠️ Token ou grupo1 ausente na configuração.")
-            return redirect('/buscar-meli')
+        bot_token = config['token']
+        chat_id = config['grupo1']  # Grupo 1 é o de templates
 
         mensagem = f"""
 🟡 *{titulo}*
