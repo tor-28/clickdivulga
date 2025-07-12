@@ -873,17 +873,23 @@ def buscar_meli():
 @app.route('/enviar-meli', methods=['POST'])
 def enviar_meli():
     print("✅ Rota /enviar-meli acessada")
-    
-    if 'token' not in session:
-        print("⛔ Token não encontrado na sessão. Redirecionando para login.")
+    print("📦 Sessão atual:", session)
+
+    # 🔐 Validação de sessão moderna (ClickDivulga)
+    if 'usuario' not in session or 'uid' not in session['usuario']:
+        print("⛔ Sessão inválida ou UID ausente. Redirecionando para login.")
         return redirect('/login')
 
+    uid = session['usuario']['uid']
+    print(f"👤 UID identificado: {uid}")
+
+    # 📦 Dados do formulário
     titulo = request.form.get('titulo')
     imagem = request.form.get('imagem')
     preco = request.form.get('preco')
     link = request.form.get('link')
 
-    print(f"📦 Dados recebidos: Título={titulo}, Preço={preco}, Link={link}")
+    print(f"📝 Dados recebidos: título={titulo}, imagem={imagem}, preco={preco}, link={link}")
 
     if not all([titulo, imagem, preco, link]):
         flash('Todos os campos são obrigatórios.', 'erro')
@@ -891,24 +897,19 @@ def enviar_meli():
         return redirect('/buscar-meli')
 
     try:
-        uid = session.get('usuario', {}).get('uid')
-        if not uid:
-            flash('Usuário não identificado.', 'erro')
-            print("⛔ UID não encontrado.")
-            return redirect('/buscar-meli')
-
         # 🔍 Buscar dados do Firestore (bot do afiliado)
         config_ref = db.reference(f'usuarios/{uid}/bots/bot1')
         config = config_ref.get()
 
         if not config or 'token' not in config or 'grupo1' not in config:
             flash('Bot do Telegram não configurado corretamente.', 'erro')
-            print(f"⚠️ Bot não configurado para UID: {uid}")
+            print(f"⚠️ Bot ou grupo não encontrado para UID: {uid}")
             return redirect('/buscar-meli')
 
         bot_token = config['token']
-        chat_id = config['grupo1']  # Grupo 1 reservado para templates
+        chat_id = config['grupo1']
 
+        # ✨ Mensagem para o grupo 1 (figurinhas/templates)
         mensagem = f"""
 🟡 *{titulo}*
 
@@ -927,16 +928,17 @@ def enviar_meli():
         }
 
         r = requests.post(telegram_url, data=payload)
+
         if r.status_code == 200:
             flash('Produto enviado com sucesso para o Telegram!', 'sucesso')
-            print("✅ Produto enviado para o Telegram.")
+            print("✅ Mensagem enviada com sucesso.")
         else:
             flash(f'Erro ao enviar para o Telegram: {r.text}', 'erro')
-            print(f"❌ Erro Telegram: {r.text}")
+            print(f"❌ Erro do Telegram: {r.text}")
 
     except Exception as e:
-        flash(f'Falha na comunicação com o Telegram: {str(e)}', 'erro')
-        print(f"❌ Exceção ao enviar para Telegram: {str(e)}")
+        flash(f'Erro ao enviar para o Telegram: {str(e)}', 'erro')
+        print(f"❌ Exceção ao enviar: {str(e)}")
 
     return redirect('/buscar-meli')
 
