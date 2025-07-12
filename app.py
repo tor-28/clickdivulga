@@ -828,42 +828,42 @@ def buscar_loja():
 @app.route('/buscar-meli', methods=['GET', 'POST'])
 def buscar_meli():
     print("✅ Acessando rota /buscar-meli")
-    print("📦 Sessão atual:", dict(session))
 
-    if 'token' not in session:
-        print("⛔ Token não encontrado na sessão. Redirecionando para login.")
+    # Verifica se o usuário está logado corretamente
+    if 'usuario' not in session:
+        print(f"⛔ Usuário não logado. Sessão atual: {session}")
         return redirect('/login')
+
+    produto = None
 
     if request.method == 'POST':
         url = request.form.get('url_meli')
-        print(f"🔎 Link recebido do formulário: {url}")
+        print(f"🔗 Link recebido: {url}")
 
         if not url:
-            flash('Link inválido.', 'erro')
+            flash('Link inválido ou ausente.', 'erro')
             return render_template('produtos_meli.html', produto=None)
 
         try:
-            response = requests.get(f'http://89.117.32.226:5005/extrair-meli?link={url}')
-            print(f"📡 Requisição para VPS retornou: {response.status_code}")
-            data = response.json()
-            print("📥 Dados recebidos:", data)
+            # Faz requisição para a API da VPS (ajuste IP se necessário)
+            vps_api = f"http://89.117.32.226:5005/extrair-meli?link={url}"
+            r = requests.get(vps_api)
+            dados = r.json()
+            print(f"📦 Resposta da VPS: {dados}")
 
-            if 'titulo' in data and data['titulo']:
+            if dados.get("titulo"):
                 produto = {
-                    'titulo': data['titulo'],
-                    'imagens': data.get('imagens', [])
+                    "titulo": dados["titulo"],
+                    "imagens": dados["imagens"] or []
                 }
-                return render_template('produtos_meli.html', produto=produto)
             else:
-                flash('Produto não encontrado ou estrutura da página mudou.', 'erro')
-                return render_template('produtos_meli.html', produto=None)
-        except Exception as e:
-            print("❌ Erro ao buscar produto:", str(e))
-            flash('Erro ao buscar o produto.', 'erro')
-            return render_template('produtos_meli.html', produto=None)
+                produto = {}
 
-    # GET request
-    return render_template('produtos_meli.html', produto=None)
+        except Exception as e:
+            print(f"❌ Erro ao acessar VPS: {e}")
+            flash('Erro ao buscar produto. Tente novamente mais tarde.', 'erro')
+
+    return render_template('produtos_meli.html', produto=produto)
 
 @app.route('/enviar-meli', methods=['POST'])
 def enviar_meli():
