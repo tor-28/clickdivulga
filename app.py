@@ -867,27 +867,37 @@ def buscar_meli():
 
 @app.route('/enviar-meli', methods=['POST'])
 def enviar_meli():
-    print("📤 Acessando rota /enviar-meli")
-
     if 'usuario' not in session:
-        print(f"⛔ Sessão inválida: {session}")
+        print("⛔ Sessão não encontrada. Redirecionando.")
         return redirect('/login')
 
+    uid = session['usuario']['uid']
     titulo = request.form.get('titulo')
     imagem = request.form.get('imagem')
     preco = request.form.get('preco')
     link = request.form.get('link')
 
-    print(f"📦 Dados recebidos: {titulo=}, {imagem=}, {preco=}, {link=}")
-
     if not all([titulo, imagem, preco, link]):
         flash('Todos os campos são obrigatórios.', 'erro')
         return redirect('/buscar-meli')
 
-    # ✅ Substitua pelos dados reais do afiliado ou torne dinâmico no futuro
-    chat_id = "-1001234567890"  # exemplo
-    bot_token = "123456789:ABCdefGHI_jklMNOpqrSTUvwxYZ"  # exemplo
+    # 🔎 Buscar dados do bot do Firestore (bot1, grupo1)
+    try:
+        bot_data = db.reference(f'usuarios/{uid}/bots/bot1').get()
+        print(f"✅ Dados do bot encontrados: {bot_data}")
 
+        if not bot_data or 'token' not in bot_data or 'grupo1' not in bot_data:
+            flash('Bot do Telegram não configurado corretamente. Verifique sua API.', 'erro')
+            return redirect('/buscar-meli')
+
+        bot_token = bot_data['token']
+        chat_id = bot_data['grupo1']
+    except Exception as e:
+        print(f"❌ Erro ao acessar Firebase: {str(e)}")
+        flash('Erro ao acessar dados do bot no Firebase.', 'erro')
+        return redirect('/buscar-meli')
+
+    # 🧩 Monta a mensagem
     mensagem = f"""
 🟡 *{titulo}*
 
@@ -897,6 +907,7 @@ def enviar_meli():
 🔗 [Compre agora]({link})
 """
 
+    # 📤 Envia via Telegram
     telegram_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
     payload = {
         'chat_id': chat_id,
@@ -906,18 +917,7 @@ def enviar_meli():
     }
 
     try:
-        r = requests.post(telegram_url, data=payload)
-        if r.status_code == 200:
-            print("✅ Enviado com sucesso para o Telegram")
-            flash('Produto enviado com sucesso para o Telegram!', 'sucesso')
-        else:
-            print(f"❌ Erro ao enviar: {r.text}")
-            flash(f'Erro ao enviar para o Telegram: {r.text}', 'erro')
-    except Exception as e:
-        print(f"❌ Falha na comunicação com o Telegram: {str(e)}")
-        flash(f'Falha na comunicação com o Telegram: {str(e)}', 'erro')
-
-    return redirect('/buscar-meli')
+        r = requests.post(telegram_u_
 
 @app.route("/atualizar-buscas")
 def atualizar_buscas():
