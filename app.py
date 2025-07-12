@@ -846,7 +846,7 @@ def buscar_meli():
             return render_template('produtos_meli.html', produto=None)
 
         try:
-            vps_url = os.getenv('VPS_MELI_ENDPOINT', 'http://127.0.0.1:8000/extrair')
+            vps_url = os.getenv('VPS_MELI_ENDPOINT', 'http://89.117.32.226:8000/extrair')
             payload = {'url': url}
             print(f"🌐 Fazendo requisição para a VPS: {vps_url}")
 
