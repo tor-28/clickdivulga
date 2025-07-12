@@ -869,6 +869,54 @@ def buscar_meli():
 
     return render_template('produtos_meli.html', produto=produto)
 
+@app.route('/enviar-meli', methods=['POST'])
+def enviar_meli():
+    if 'token' not in session:
+        return redirect('/login')
+
+    titulo = request.form.get('titulo')
+    imagem = request.form.get('imagem')
+    preco = request.form.get('preco')
+    link = request.form.get('link')
+
+    if not all([titulo, imagem, preco, link]):
+        flash('Todos os campos são obrigatórios.', 'erro')
+        return redirect('/buscar-meli')
+
+    # 🔧 Substitua pelos dados do bot do afiliado (pode ser dinâmico depois)
+    chat_id = "-1001234567890"  # exemplo de grupo privado
+    bot_token = "123456789:ABCdefGHI_jklMNOpqrSTUvwxYZ"
+
+    # Mensagem montada
+    mensagem = f"""
+🟡 *{titulo}*
+
+💰 De: ~R$ XXX~
+🔥 Por: *R$ {preco}*
+
+🔗 [Compre agora]({link})
+"""
+
+    # Envia mensagem com imagem via Telegram
+    telegram_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
+    payload = {
+        'chat_id': chat_id,
+        'photo': imagem,
+        'caption': mensagem,
+        'parse_mode': 'Markdown'
+    }
+
+    try:
+        r = requests.post(telegram_url, data=payload)
+        if r.status_code == 200:
+            flash('Produto enviado com sucesso para o Telegram!', 'sucesso')
+        else:
+            flash(f'Erro ao enviar para o Telegram: {r.text}', 'erro')
+    except Exception as e:
+        flash(f'Falha na comunicação com o Telegram: {str(e)}', 'erro')
+
+    return redirect('/buscar-meli')
+
 @app.route("/atualizar-buscas")
 def atualizar_buscas():
     import time, hashlib, requests, json, re
