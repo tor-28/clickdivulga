@@ -820,15 +820,12 @@ from bs4 import BeautifulSoup
 @verificar_login
 def buscar_meli():
     if request.method == 'POST':
-        keyword = request.form.get('keyword')
-        print(f'[LOG] Palavra-chave recebida: {keyword}')
+        url = request.form.get('url')
+        print(f'[LOG] URL recebida: {url}')
 
-        if not keyword:
-            print('[ERRO] Nenhuma palavra-chave enviada.')
-            return render_template('produtos_meli.html', produtos=[])
-
-        url = f"https://lista.mercadolivre.com.br/{keyword.replace(' ', '-')}"
-        print(f'[LOG] URL montada: {url}')
+        if not url:
+            print('[ERRO] Nenhuma URL enviada.')
+            return render_template('produtos_meli.html', produtos=None)
 
         try:
             response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -863,7 +860,7 @@ def buscar_meli():
             else:
                 print(f'[LOG] {len(produtos)} produtos extraídos com sucesso.')
 
-            return render_template('produtos_meli.html', produtos=produtos, titulo=titulo_pagina)
+            return render_template('produtos_meli.html', produtos=produtos)
 
         except Exception as e:
             print(f'[ERRO] Falha na requisição ou no parsing: {e}')
