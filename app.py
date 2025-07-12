@@ -875,7 +875,6 @@ def enviar_meli():
     print("✅ Rota /enviar-meli acessada")
     print("📦 Sessão atual:", session)
 
-    # 🔐 Validação de sessão moderna (ClickDivulga)
     if 'usuario' not in session or 'uid' not in session['usuario']:
         print("⛔ Sessão inválida ou UID ausente. Redirecionando para login.")
         return redirect('/login')
@@ -883,7 +882,6 @@ def enviar_meli():
     uid = session['usuario']['uid']
     print(f"👤 UID identificado: {uid}")
 
-    # 📦 Dados do formulário
     titulo = request.form.get('titulo')
     imagem = request.form.get('imagem')
     preco = request.form.get('preco')
@@ -897,19 +895,24 @@ def enviar_meli():
         return redirect('/buscar-meli')
 
     try:
-        # 🔍 Buscar dados do Firestore (bot do afiliado)
-        config_ref = db.reference(f'usuarios/{uid}/bots/bot1')
-        config = config_ref.get()
+        # 🔍 Buscar dados do Firestore (formato Firestore, não RTDB)
+        config_ref = db.collection('usuarios').document(uid).collection('bots').document('bot1')
+        config_doc = config_ref.get()
 
-        if not config or 'token' not in config or 'grupo1' not in config:
-            flash('Bot do Telegram não configurado corretamente.', 'erro')
-            print(f"⚠️ Bot ou grupo não encontrado para UID: {uid}")
+        if not config_doc.exists:
+            flash('Configuração do bot não encontrada.', 'erro')
+            print("⚠️ Documento bot1 não encontrado.")
             return redirect('/buscar-meli')
 
-        bot_token = config['token']
-        chat_id = config['grupo1']
+        config = config_doc.to_dict()
+        bot_token = config.get('token')
+        chat_id = config.get('grupo1')
 
-        # ✨ Mensagem para o grupo 1 (figurinhas/templates)
+        if not bot_token or not chat_id:
+            flash('Bot do Telegram não configurado corretamente.', 'erro')
+            print("⚠️ Token ou grupo1 ausente na configuração.")
+            return redirect('/buscar-meli')
+
         mensagem = f"""
 🟡 *{titulo}*
 
