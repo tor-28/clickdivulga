@@ -827,7 +827,7 @@ def buscar_meli():
 
         if not url:
             flash("URL não fornecida.", "erro")
-            return render_template("produtos_meli.html", resultado=None)
+            return render_template("produto_meli.html", produto=None)
 
         try:
             headers = {
@@ -837,40 +837,37 @@ def buscar_meli():
             print("[LOG] Status da resposta:", response.status_code)
 
             if response.status_code != 200:
-                flash("Erro ao acessar a URL do Mercado Livre.", "erro")
-                return render_template("produtos_meli.html", resultado=None)
+                flash("Erro ao acessar o link do produto.", "erro")
+                return render_template("produto_meli.html", produto=None)
 
             soup = BeautifulSoup(response.text, "html.parser")
 
-            # Extrair título da página (nome do perfil)
-            titulo = soup.title.string.strip() if soup.title else "Sem título"
-            print("[LOG] Título da página:", titulo)
+            titulo = soup.select_one("h1.ui-pdp-title")
+            preco = soup.select_one("span.andes-money-amount__fraction")
+            imagem = soup.select_one("img.ui-pdp-image") or soup.select_one("img[data-testid='gallery-image-main']")
 
-            # Extrair todos os links que apontam para produtos
-            produtos = []
-            for a in soup.find_all("a", href=True):
-                href = a["href"]
-                if "/produto/" in href or "mercadolivre.com.br" in href:
-                    texto = a.get_text(strip=True)
-                    if texto and len(texto) > 5:
-                        produtos.append({
-                            "titulo": texto,
-                            "link": href if href.startswith("http") else f"https://www.mercadolivre.com.br{href}"
-                        })
+            if not (titulo and preco and imagem):
+                print("[LOG] Elementos não encontrados corretamente.")
+                flash("Produto não encontrado ou estrutura da página mudou.", "erro")
+                return render_template("produto_meli.html", produto=None)
 
-            print(f"[LOG] {len(produtos)} produtos encontrados.")
+            produto = {
+                "titulo": titulo.get_text(strip=True),
+                "preco": preco.get_text(strip=True),
+                "imagem": imagem["src"],
+                "link": url
+            }
 
-            if not produtos:
-                flash("Nenhum produto foi encontrado na página.", "erro")
-
-            return render_template("produtos_meli.html", resultado=produtos, titulo=titulo)
+            print("[LOG] Produto extraído com sucesso:", produto)
+            return render_template("produto_meli.html", produto=produto)
 
         except Exception as e:
-            print("[ERRO]", e)
-            flash("Erro ao processar a URL.", "erro")
-            return render_template("produtos_meli.html", resultado=None)
+            print("[ERRO] Falha ao processar produto:", e)
+            flash("Erro ao processar o link do produto.", "erro")
+            return render_template("produto_meli.html", produto=None)
 
-    return render_template("produtos_meli.html", resultado=None)
+    return render_template("produto_meli.html", produto=None)
+
     
 @app.route("/atualizar-buscas")
 def atualizar_buscas():
