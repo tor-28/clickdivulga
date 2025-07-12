@@ -35,26 +35,30 @@
 
     {% if produto %}
     <!-- 📦 Exibição do produto encontrado -->
-    <div style="background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); max-width: 800px;">
-      <h2 style="margin-bottom: 20px;">📦 Produto Encontrado:</h2>
-      <div style="display: flex; gap: 20px;">
-        <img src="{{ produto.imagem }}" alt="Produto" style="width: 250px; height: auto; border-radius: 10px; border: 1px solid #eee;">
-        <div style="flex: 1;">
-          <h3 style="font-size: 1.2rem; margin-bottom: 10px;">{{ produto.titulo }}</h3>
+    <form method="POST" action="/enviar-meli">
+      <input type="hidden" name="titulo" value="{{ produto.titulo }}">
+      <input type="hidden" name="imagem" value="{{ produto.imagens[0] }}">
 
-          {% if produto.preco_original %}
-            <div style="margin-bottom: 6px;">
-              <small style="color:#999; text-decoration: line-through;">De: R$ {{ produto.preco_original }}</small><br>
-              <strong style="color:#27ae60; font-size: 1.1rem;">Por: R$ {{ produto.preco_desconto }}</strong>
-            </div>
-          {% else %}
-            <strong style="color:#333; font-size: 1.1rem;">R$ {{ produto.preco_desconto }}</strong>
-          {% endif %}
+      <div style="background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); max-width: 800px;">
+        <h2 style="margin-bottom: 20px;">📦 Produto Encontrado:</h2>
+        <div style="display: flex; gap: 20px;">
+          <img src="{{ produto.imagens[0] }}" alt="Produto" style="width: 250px; height: auto; border-radius: 10px; border: 1px solid #eee;">
+          <div style="flex: 1;">
+            <h3 style="font-size: 1.2rem; margin-bottom: 10px;">{{ produto.titulo }}</h3>
 
-          <a href="{{ produto.link }}" target="_blank" style="margin-top: 20px; display: inline-block; background-color:#3483fa; color:white; padding:12px 20px; border-radius:8px; text-decoration:none;">🌐 Ver no Mercado Livre</a>
+            <label>Preço de Promoção:</label>
+            <input type="text" name="preco" placeholder="Ex: de R$200 por R$150" required
+                   style="width: 100%; padding: 8px; margin: 8px 0 16px; border-radius: 6px; border: 1px solid #ccc;">
+
+            <label>Link do Afiliado:</label>
+            <input type="text" name="link" placeholder="Cole aqui o link final com comissão" required
+                   style="width: 100%; padding: 8px; margin-bottom: 20px; border-radius: 6px; border: 1px solid #ccc;">
+
+            <button type="submit" style="background-color:#27ae60; color:white; padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">📤 Enviar para o Telegram</button>
+          </div>
         </div>
       </div>
-    </div>
+    </form>
     {% elif produto is not none %}
     <div style="padding: 20px; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 20px;">
       Nenhum produto encontrado ou a estrutura da página mudou.
