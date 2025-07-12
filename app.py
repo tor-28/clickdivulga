@@ -818,60 +818,58 @@ from flask import render_template, request
 import requests
 from bs4 import BeautifulSoup
 
-@app.route('/buscar-meli', methods=['GET', 'POST'])
-@verificar_login
+@app.route("/buscar-meli", methods=["GET", "POST"])
 def buscar_meli():
-    if request.method == 'POST':
-        url = request.form.get('url')
-        print(f'[LOG] URL recebida: {url}')
+    if request.method == "POST":
+        url = request.form.get("url_meli")
+        print("[LOG] URL recebida:", url)
 
         if not url:
-            print('[ERRO] Nenhuma URL enviada.')
-            return render_template('produtos_meli.html', resultados=None)
+            flash("URL não fornecida.", "erro")
+            return render_template("buscar_meli.html", resultado=None)
 
         try:
-            response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
-            print(f'[LOG] Status da resposta: {response.status_code}')
-            soup = BeautifulSoup(response.text, 'html.parser')
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+            }
+            response = requests.get(url, headers=headers)
+            print("[LOG] Status da resposta:", response.status_code)
 
-            # Extrair script que contém os dados
-            script_tag = soup.find('script', string=re.compile('__PRELOADED_STATE__'))
-            if not script_tag:
-                print('[ERRO] Script __PRELOADED_STATE__ não encontrado.')
-                return render_template('produtos_meli.html', resultados=[])
+            if response.status_code != 200:
+                flash("Erro ao acessar a URL do Mercado Livre.", "erro")
+                return render_template("buscar_meli.html", resultado=None)
 
-            match = re.search(r'window\.__PRELOADED_STATE__\s*=\s*({.*});', script_tag.string)
-            if not match:
-                print('[ERRO] JSON embutido não encontrado.')
-                return render_template('produtos_meli.html', resultados=[])
+            soup = BeautifulSoup(response.text, "html.parser")
 
-            data_json = json.loads(match.group(1))
+            # Extrair título da página (nome do perfil)
+            titulo = soup.title.string.strip() if soup.title else "Sem título"
+            print("[LOG] Título da página:", titulo)
 
-            # Extrair produtos
-            produtos_extraidos = data_json.get('seller_items', {}).get('results', [])
-            print(f'[LOG] Produtos encontrados: {len(produtos_extraidos)}')
+            # Extrair todos os links que apontam para produtos
+            produtos = []
+            for a in soup.find_all("a", href=True):
+                href = a["href"]
+                if "/produto/" in href or "mercadolivre.com.br" in href:
+                    texto = a.get_text(strip=True)
+                    if texto and len(texto) > 5:
+                        produtos.append({
+                            "titulo": texto,
+                            "link": href if href.startswith("http") else f"https://www.mercadolivre.com.br{href}"
+                        })
 
-            resultados = []
-            for p in produtos_extraidos:
-                try:
-                    resultados.append({
-                        'titulo': p.get('title'),
-                        'preco': f"R$ {p.get('price')}",
-                        'imagem': p.get('thumbnail'),
-                        'link': p.get('permalink')
-                    })
-                except Exception as e:
-                    print(f'[LOG] Erro ao montar produto: {e}')
+            print(f"[LOG] {len(produtos)} produtos encontrados.")
 
-            if not resultados:
-                print('[LOG] Nenhum produto visível.')
-            return render_template('produtos_meli.html', resultados=resultados)
+            if not produtos:
+                flash("Nenhum produto foi encontrado na página.", "erro")
+
+            return render_template("buscar_meli.html", resultado=produtos, titulo=titulo)
 
         except Exception as e:
-            print(f'[ERRO] Falha geral ao buscar Meli: {e}')
-            return render_template('produtos_meli.html', resultados=None)
+            print("[ERRO]", e)
+            flash("Erro ao processar a URL.", "erro")
+            return render_template("buscar_meli.html", resultado=None)
 
-    return render_template('produtos_meli.html', resultados=None)
+    return render_template("buscar_meli.html", resultado=None)
     
 @app.route("/atualizar-buscas")
 def atualizar_buscas():
