@@ -851,7 +851,7 @@ def buscar_meli():
             print(f"🌐 Fazendo requisição para a VPS: {vps_url}")
 
             # Envia via GET com parâmetro na URL
-            response = requests.get(vps_url, params={'url': url}, timeout=30)
+            response = requests.get(vps_url, params={'link': url}, timeout=30)
 
             if response.status_code == 200:
                 dados = response.json()
