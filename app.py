@@ -873,21 +873,20 @@ def buscar_meli():
 @app.route('/enviar-meli', methods=['POST'])
 def enviar_meli():
     print("✅ Rota /enviar-meli acessada")
-    print("📦 Sessão atual:", session)
-
+    
     if 'usuario' not in session or 'uid' not in session['usuario']:
-        print("⛔ Sessão inválida ou UID ausente. Redirecionando para login.")
+        print("⛔ Sessão inválida. Redirecionando para login.")
         return redirect('/login')
 
     uid = session['usuario']['uid']
-    print(f"👤 UID identificado: {uid}")
+    print(f"👤 UID: {uid}")
 
     titulo = request.form.get('titulo')
     imagem = request.form.get('imagem')
     preco = request.form.get('preco')
     link = request.form.get('link')
 
-    print(f"📝 Dados recebidos: título={titulo}, imagem={imagem}, preco={preco}, link={link}")
+    print(f"📦 Dados recebidos: Título={titulo}, Preço={preco}, Link={link}")
 
     if not all([titulo, imagem, preco, link]):
         flash('Todos os campos são obrigatórios.', 'erro')
@@ -895,23 +894,24 @@ def enviar_meli():
         return redirect('/buscar-meli')
 
     try:
-        # 🔍 Buscar dados do Firestore (formato Firestore, não RTDB)
-        config_ref = db.collection('usuarios').document(uid).collection('bots').document('bot1')
-        config_doc = config_ref.get()
+        # 🔍 Buscar dados do Firestore (bot do afiliado)
+        db_firestore = firestore.client()
+        doc_ref = db_firestore.collection('telegram_config').document(uid)
+        doc = doc_ref.get()
 
-        if not config_doc.exists:
+        if not doc.exists:
             flash('Configuração do bot não encontrada.', 'erro')
-            print("⚠️ Documento bot1 não encontrado.")
+            print(f"⚠️ Documento telegram_config/{uid} não encontrado.")
             return redirect('/buscar-meli')
 
-        config = config_doc.to_dict()
-        bot_token = config.get('token')
-        chat_id = config.get('grupo1')
-
-        if not bot_token or not chat_id:
+        config = doc.to_dict()
+        if not config or 'token' not in config or 'grupo1' not in config:
             flash('Bot do Telegram não configurado corretamente.', 'erro')
-            print("⚠️ Token ou grupo1 ausente na configuração.")
+            print(f"⚠️ Bot mal configurado para UID: {uid}")
             return redirect('/buscar-meli')
+
+        bot_token = config['token']
+        chat_id = config['grupo1']  # Grupo 1 reservado para templates
 
         mensagem = f"""
 🟡 *{titulo}*
@@ -931,17 +931,16 @@ def enviar_meli():
         }
 
         r = requests.post(telegram_url, data=payload)
-
         if r.status_code == 200:
             flash('Produto enviado com sucesso para o Telegram!', 'sucesso')
-            print("✅ Mensagem enviada com sucesso.")
+            print("✅ Produto enviado para o Telegram.")
         else:
             flash(f'Erro ao enviar para o Telegram: {r.text}', 'erro')
-            print(f"❌ Erro do Telegram: {r.text}")
+            print(f"❌ Erro Telegram: {r.text}")
 
     except Exception as e:
-        flash(f'Erro ao enviar para o Telegram: {str(e)}', 'erro')
-        print(f"❌ Exceção ao enviar: {str(e)}")
+        flash(f'Falha na comunicação com o Telegram: {str(e)}', 'erro')
+        print(f"❌ Exceção ao enviar para Telegram: {str(e)}")
 
     return redirect('/buscar-meli')
 
