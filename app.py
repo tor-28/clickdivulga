@@ -843,14 +843,14 @@ def buscar_produto_meli():
             driver.get(link_afiliado)
             time.sleep(3)
 
-            # Clica no botão "Ir ao produto"
+            # Clica no botão "Ir para produto"
             try:
-                botao = driver.find_element(By.XPATH, "//a[contains(., 'Ir ao produto')]")
+                botao = driver.find_element(By.XPATH, "//a[contains(., 'Ir para produto')]")
                 botao.click()
-                print("[INFO] Clicou no botão 'Ir ao produto'...")
+                print("[INFO] Clicou no botão 'Ir para produto'...")
                 time.sleep(3)
             except Exception as e:
-                flash("Botão 'Ir ao produto' não encontrado.", "erro")
+                flash("Botão 'Ir para produto' não encontrado.", "erro")
                 print("[ERRO] Botão não encontrado:", e)
                 return render_template("produtos_meli.html", resultado=None)
 
@@ -891,7 +891,7 @@ def buscar_produto_meli():
                 driver.quit()
 
     return render_template("produtos_meli.html", resultado=None)
-    
+
 @app.route("/atualizar-buscas")
 def atualizar_buscas():
     import time, hashlib, requests, json, re
