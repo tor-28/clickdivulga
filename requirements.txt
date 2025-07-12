@@ -5,3 +5,4 @@ requests
 apscheduler
 gunicorn
 pytz
+beautifulsoup4
