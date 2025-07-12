@@ -896,9 +896,9 @@ def enviar_meli():
         return redirect('/buscar-meli')
 
     try:
-        # 🔍 Busca no caminho correto do Firestore (api_contador/{uid}/telegram_config)
-        config_ref = db.reference(f'api_contador/{uid}/telegram_config')
-        config = config_ref.get()
+        # ✅ Acesso correto ao Firestore
+        doc_ref = db.collection('api_contador').document(uid).collection('telegram_config').document('bot1')
+        config = doc_ref.get().to_dict()
 
         if not config or 'token' not in config or 'grupo1' not in config:
             flash('Bot do Telegram não configurado corretamente.', 'erro')
@@ -906,7 +906,7 @@ def enviar_meli():
             return redirect('/buscar-meli')
 
         bot_token = config['token']
-        chat_id = config['grupo1']  # Grupo 1 é o de templates
+        chat_id = config['grupo1']
 
         mensagem = f"""
 🟡 *{titulo}*
