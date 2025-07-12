@@ -846,11 +846,12 @@ def buscar_meli():
             return render_template('produtos_meli.html', produto=None)
 
         try:
-            vps_url = os.getenv('VPS_MELI_ENDPOINT', 'http://89.117.32.226:5005/extrair')
-            payload = {'url': url}
+            # 🔄 Corrigido para usar GET + endpoint /extrair-meli
+            vps_url = os.getenv('VPS_MELI_ENDPOINT', 'http://89.117.32.226:5005/extrair-meli')
             print(f"🌐 Fazendo requisição para a VPS: {vps_url}")
 
-            response = requests.post(vps_url, json=payload, timeout=30)
+            # Envia via GET com parâmetro na URL
+            response = requests.get(vps_url, params={'url': url}, timeout=30)
 
             if response.status_code == 200:
                 dados = response.json()
