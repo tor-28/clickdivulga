@@ -10,7 +10,7 @@
     <img src="{{ url_for('static', filename='img/logo-clickdivulga.png') }}" alt="ClickDivulga" style="max-width: 160px; display: block; margin: 0 auto 12px;">
     <div class="menu">
       <a href="/painel"><i>🏠</i> Dashboard</a>
-      <a href="/produtos"><i>🟠 </i> Shopee</a>
+      <a href="/Shopee"><i>🟠 </i> Shopee</a>
       <a href="/buscar-meli" class="active"><i>🟡</i> Mercado Livre</a>
       <a href="/minha-api"><i>🔐</i> Config Afiliado</a>
       <a href="/config-bot"><i>🤖</i> Telegram</a>
@@ -24,32 +24,32 @@
     </div>
 
     <!-- 🔍 Formulário de busca -->
-    <div style="background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 40px;">
-      <form method="POST" action="/buscar-meli">
-        <label for="url">Cole o link do Mercado Livre:</label>
-        <input type="url" name="url" id="url" placeholder="https://mercadolivre.com.br/..." required
+    <div style="background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 40px; max-width: 700px;">
+      <form method="POST">
+        <label for="keyword">Buscar por palavra-chave:</label>
+        <input type="text" name="keyword" id="keyword" placeholder="Ex: fone bluetooth" required
                style="width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #ccc;">
         <button type="submit" style="margin-top: 20px; background-color: #f7b500; color: #333; font-weight: bold; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer;">🔍 Buscar Produtos</button>
       </form>
     </div>
 
-    {% if produtos %}
+    {% if resultados %}
     <div style="background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-      <h2 style="margin-bottom: 20px;">📦 Resultados para: {{ titulo }}</h2>
+      <h2 style="margin-bottom: 20px;">📦 Resultados:</h2>
       <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-        {% for p in produtos %}
+        {% for p in resultados %}
         <div style="background: #f8f8fc; padding: 20px; border-radius: 12px; width: 240px; border: 1px solid #e3dfff;">
           <img src="{{ p.imagem }}" alt="Produto" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom: 10px;">
           <strong style="font-size: 0.95rem;">{{ p.titulo }}</strong><br>
-          <small style="color:#666;">💰 R$ {{ p.preco }}</small><br><br>
+          <small style="color:#666;">{{ p.preco }}</small><br><br>
           <a href="{{ p.link }}" target="_blank" style="display: block; background-color:#3483fa; color:white; text-align:center; padding:8px; border-radius:6px; text-decoration:none;">🌐 Ver no Meli</a>
         </div>
         {% endfor %}
       </div>
     </div>
-    {% elif produtos is not none %}
+    {% elif resultados is not none %}
     <div style="padding: 20px; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 20px;">
-      Nenhum produto encontrado na página informada.
+      Nenhum produto encontrado para a busca.
     </div>
     {% endif %}
   </div>
