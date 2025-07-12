@@ -852,7 +852,7 @@ def buscar_meli():
             except Exception as e:
                 print(f"Erro ao buscar produtos do Mercado Livre: {e}")
 
-    return render_template("buscar_meli.html", resultados=resultados)
+    return render_template("produtos_meli.html", resultados=resultados)
 
 @app.route("/atualizar-buscas")
 def atualizar_buscas():
