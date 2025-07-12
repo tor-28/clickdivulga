@@ -870,12 +870,14 @@ def buscar_meli():
     return render_template('produtos_meli.html', produto=None)
 
 
+from firebase_admin import firestore
+
 @app.route('/enviar-meli', methods=['POST'])
 def enviar_meli():
     print("✅ Rota /enviar-meli acessada")
-
+    
     if 'usuario' not in session or 'uid' not in session['usuario']:
-        print("⛔ Sessão inválida. Redirecionando para login.")
+        print("⛔ Token não encontrado na sessão. Redirecionando para login.")
         return redirect('/login')
 
     uid = session['usuario']['uid']
@@ -890,20 +892,29 @@ def enviar_meli():
 
     if not all([titulo, imagem, preco, link]):
         flash('Todos os campos são obrigatórios.', 'erro')
+        print("⚠️ Campos obrigatórios ausentes.")
         return redirect('/buscar-meli')
 
     try:
-        # 🔍 Buscar a mesma configuração utilizada no envio da Shopee
-        config_ref = db.reference(f'usuarios/{uid}/bots/bot1')
-        config = config_ref.get()
+        # 🔍 Buscar dados do Firestore
+        db_firestore = firestore.client()
+        config_ref = db_firestore.collection('usuarios').document(uid).collection('bots').document('bot1')
+        config_doc = config_ref.get()
 
-        if not config or 'token' not in config or 'grupo1' not in config:
+        if not config_doc.exists:
             flash('Bot do Telegram não configurado corretamente.', 'erro')
             print(f"⚠️ Bot não configurado para UID: {uid}")
             return redirect('/buscar-meli')
 
-        bot_token = config['token']
-        chat_id = config['grupo1']
+        config = config_doc.to_dict()
+
+        bot_token = config.get('token')
+        chat_id = config.get('grupo1')
+
+        if not bot_token or not chat_id:
+            flash('Token ou grupo do Telegram ausente.', 'erro')
+            print("⚠️ Token ou grupo1 ausente na configuração.")
+            return redirect('/buscar-meli')
 
         mensagem = f"""
 🟡 *{titulo}*
@@ -931,8 +942,8 @@ def enviar_meli():
             print(f"❌ Erro Telegram: {r.text}")
 
     except Exception as e:
-        flash(f'Erro ao enviar para o Telegram: {str(e)}', 'erro')
-        print(f"❌ Exceção: {str(e)}")
+        flash(f'Falha na comunicação com o Telegram: {str(e)}', 'erro')
+        print(f"❌ Exceção ao enviar para Telegram: {str(e)}")
 
     return redirect('/buscar-meli')
 
