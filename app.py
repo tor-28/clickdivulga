@@ -819,6 +819,7 @@ import requests
 from bs4 import BeautifulSoup
 
 @app.route("/buscar-meli", methods=["GET", "POST"])
+@verificar_login
 def buscar_meli():
     if request.method == "POST":
         url = request.form.get("url_meli")
@@ -826,7 +827,7 @@ def buscar_meli():
 
         if not url:
             flash("URL não fornecida.", "erro")
-            return render_template("buscar_meli.html", resultado=None)
+            return render_template("produtos_meli.html", resultado=None)
 
         try:
             headers = {
@@ -837,7 +838,7 @@ def buscar_meli():
 
             if response.status_code != 200:
                 flash("Erro ao acessar a URL do Mercado Livre.", "erro")
-                return render_template("buscar_meli.html", resultado=None)
+                return render_template("produtos_meli.html", resultado=None)
 
             soup = BeautifulSoup(response.text, "html.parser")
 
@@ -862,14 +863,14 @@ def buscar_meli():
             if not produtos:
                 flash("Nenhum produto foi encontrado na página.", "erro")
 
-            return render_template("buscar_meli.html", resultado=produtos, titulo=titulo)
+            return render_template("produtos_meli.html", resultado=produtos, titulo=titulo)
 
         except Exception as e:
             print("[ERRO]", e)
             flash("Erro ao processar a URL.", "erro")
-            return render_template("buscar_meli.html", resultado=None)
+            return render_template("produtos_meli.html", resultado=None)
 
-    return render_template("buscar_meli.html", resultado=None)
+    return render_template("produtos_meli.html", resultado=None)
     
 @app.route("/atualizar-buscas")
 def atualizar_buscas():
