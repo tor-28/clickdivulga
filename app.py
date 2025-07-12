@@ -830,65 +830,44 @@ def buscar_meli():
     print("✅ Acessando rota /buscar-meli")
     print("📦 Sessão atual:", session)
 
-    if 'token' not in session:
-        print("⛔ Token não encontrado na sessão. Redirecionando para login.")
+    if 'usuario' not in session or 'uid' not in session['usuario']:
+        print("⛔ Sessão inválida ou UID ausente. Redirecionando para login.")
         return redirect('/login')
 
-    produto = None
+    uid = session['usuario']['uid']
+    print(f"👤 UID identificado: {uid}")
 
     if request.method == 'POST':
-        link = request.form.get('url_meli')
-        print(f"🔗 Link recebido: {link}")
+        url = request.form.get('url_meli')
+        print(f"🔗 Link recebido: {url}")
 
-        def extrair_dados(link):
-            from bs4 import BeautifulSoup
-            import requests
-            from urllib.parse import urlparse
+        if not url:
+            flash('Link não informado.', 'erro')
+            return render_template('produtos_meli.html', produto=None)
 
-            try:
-                parsed = urlparse(link)
-                path_limpo = parsed.path
-                link_base = f"https://www.mercadolivre.com.br{path_limpo}"
-                print(f"🔍 Link limpo: {link_base}")
+        try:
+            vps_url = os.getenv('VPS_MELI_ENDPOINT', 'http://127.0.0.1:8000/extrair')
+            payload = {'url': url}
+            print(f"🌐 Fazendo requisição para a VPS: {vps_url}")
 
-                headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
-                }
-                resposta = requests.get(link_base, headers=headers, timeout=10)
-                resposta.raise_for_status()
-                html = resposta.text
+            response = requests.post(vps_url, json=payload, timeout=30)
 
-                soup = BeautifulSoup(html, "html.parser")
+            if response.status_code == 200:
+                dados = response.json()
+                print(f"✅ Produto retornado pela VPS: {dados}")
+                return render_template('produtos_meli.html', produto=dados)
+            else:
+                print(f"⚠️ Erro ao buscar produto. Status code: {response.status_code}")
+                flash('Erro ao buscar produto. Verifique o link.', 'erro')
+                return render_template('produtos_meli.html', produto=None)
 
-                titulo_tag = soup.find("h1")
-                titulo = titulo_tag.get_text(strip=True) if titulo_tag else "Produto sem título"
-                print(f"✅ Título: {titulo}")
+        except Exception as e:
+            print(f"❌ Erro durante requisição à VPS: {str(e)}")
+            flash('Erro interno ao buscar o produto.', 'erro')
+            return render_template('produtos_meli.html', produto=None)
 
-                imagens = []
-                for tag in soup.find_all("img", src=True):
-                    src = tag["src"]
-                    if "ML" in src and src.startswith("https://http2.mlstatic.com") and src not in imagens:
-                        imagens.append(src)
-                    if len(imagens) >= 5:
-                        break
-                print(f"🖼️ {len(imagens)} imagem(ns) extraída(s)")
+    return render_template('produtos_meli.html', produto=None)
 
-                return {
-                    "titulo": titulo,
-                    "imagens": imagens,
-                    "preco": None,
-                    "loja": None
-                }
-
-            except Exception as e:
-                print(f"⛔ Erro ao extrair dados do link Meli: {str(e)}")
-                return None
-
-        produto = extrair_dados(link)
-        if not produto:
-            flash('Erro ao extrair os dados do produto. Verifique o link.', 'erro')
-
-    return render_template('produtos_meli.html', produto=produto)
 
 @app.route('/enviar-meli', methods=['POST'])
 def enviar_meli():
