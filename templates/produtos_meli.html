@@ -37,12 +37,12 @@
     <!-- 📦 Exibição do produto encontrado -->
     <form method="POST" action="/enviar-meli">
       <input type="hidden" name="titulo" value="{{ produto.titulo }}">
-      <input type="hidden" name="imagem" value="{{ produto.imagens[0] }}">
+      <input type="hidden" name="imagem" value="{{ produto.imagens[0] if produto.imagens else '' }}">
 
       <div style="background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); max-width: 800px;">
         <h2 style="margin-bottom: 20px;">📦 Produto Encontrado:</h2>
         <div style="display: flex; gap: 20px;">
-          <img src="{{ produto.imagens[0] }}" alt="Produto" style="width: 250px; height: auto; border-radius: 10px; border: 1px solid #eee;">
+          <img src="{{ produto.imagens[0] if produto.imagens else '' }}" alt="Produto" style="width: 250px; height: auto; border-radius: 10px; border: 1px solid #eee;">
           <div style="flex: 1;">
             <h3 style="font-size: 1.2rem; margin-bottom: 10px;">{{ produto.titulo }}</h3>
 
