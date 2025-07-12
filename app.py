@@ -867,38 +867,44 @@ def buscar_meli():
 
 @app.route('/enviar-meli', methods=['POST'])
 def enviar_meli():
-    if 'usuario' not in session:
-        print("⛔ Sessão não encontrada. Redirecionando.")
+    print("✅ Rota /enviar-meli acessada")
+    
+    if 'token' not in session:
+        print("⛔ Token não encontrado na sessão. Redirecionando para login.")
         return redirect('/login')
 
-    uid = session['usuario']['uid']
     titulo = request.form.get('titulo')
     imagem = request.form.get('imagem')
     preco = request.form.get('preco')
     link = request.form.get('link')
 
+    print(f"📦 Dados recebidos: Título={titulo}, Preço={preco}, Link={link}")
+
     if not all([titulo, imagem, preco, link]):
         flash('Todos os campos são obrigatórios.', 'erro')
+        print("⚠️ Campos obrigatórios ausentes.")
         return redirect('/buscar-meli')
 
-    # 🔎 Buscar dados do bot do Firestore (bot1, grupo1)
     try:
-        bot_data = db.reference(f'usuarios/{uid}/bots/bot1').get()
-        print(f"✅ Dados do bot encontrados: {bot_data}")
-
-        if not bot_data or 'token' not in bot_data or 'grupo1' not in bot_data:
-            flash('Bot do Telegram não configurado corretamente. Verifique sua API.', 'erro')
+        uid = session.get('usuario', {}).get('uid')
+        if not uid:
+            flash('Usuário não identificado.', 'erro')
+            print("⛔ UID não encontrado.")
             return redirect('/buscar-meli')
 
-        bot_token = bot_data['token']
-        chat_id = bot_data['grupo1']
-    except Exception as e:
-        print(f"❌ Erro ao acessar Firebase: {str(e)}")
-        flash('Erro ao acessar dados do bot no Firebase.', 'erro')
-        return redirect('/buscar-meli')
+        # 🔍 Buscar dados do Firestore (bot do afiliado)
+        config_ref = db.reference(f'usuarios/{uid}/bots/bot1')
+        config = config_ref.get()
 
-    # 🧩 Monta a mensagem
-    mensagem = f"""
+        if not config or 'token' not in config or 'grupo1' not in config:
+            flash('Bot do Telegram não configurado corretamente.', 'erro')
+            print(f"⚠️ Bot não configurado para UID: {uid}")
+            return redirect('/buscar-meli')
+
+        bot_token = config['token']
+        chat_id = config['grupo1']  # Grupo 1 reservado para templates
+
+        mensagem = f"""
 🟡 *{titulo}*
 
 💰 De: ~R$ XXX~
@@ -907,17 +913,27 @@ def enviar_meli():
 🔗 [Compre agora]({link})
 """
 
-    # 📤 Envia via Telegram
-    telegram_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
-    payload = {
-        'chat_id': chat_id,
-        'photo': imagem,
-        'caption': mensagem,
-        'parse_mode': 'Markdown'
-    }
+        telegram_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
+        payload = {
+            'chat_id': chat_id,
+            'photo': imagem,
+            'caption': mensagem,
+            'parse_mode': 'Markdown'
+        }
 
-    try:
-        r = requests.post(telegram_u_
+        r = requests.post(telegram_url, data=payload)
+        if r.status_code == 200:
+            flash('Produto enviado com sucesso para o Telegram!', 'sucesso')
+            print("✅ Produto enviado para o Telegram.")
+        else:
+            flash(f'Erro ao enviar para o Telegram: {r.text}', 'erro')
+            print(f"❌ Erro Telegram: {r.text}")
+
+    except Exception as e:
+        flash(f'Falha na comunicação com o Telegram: {str(e)}', 'erro')
+        print(f"❌ Exceção ao enviar para Telegram: {str(e)}")
+
+    return redirect('/buscar-meli')
 
 @app.route("/atualizar-buscas")
 def atualizar_buscas():
