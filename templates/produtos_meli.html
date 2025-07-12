@@ -20,13 +20,13 @@
 
   <div class="content">
     <div class="topbar">
-      <h1>🟡 Produto do Mercado Livre</h1>
+      <h1>🟡 Buscar Produto no Mercado Livre</h1>
     </div>
 
-    <!-- 🔍 Formulário -->
+    <!-- 🔍 Formulário de busca -->
     <div style="background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 40px; max-width: 700px;">
       <form method="POST">
-        <label for="url_meli">Cole o link de um produto do Mercado Livre:</label>
+        <label for="url_meli">Cole o link do produto do Mercado Livre:</label>
         <input type="text" name="url_meli" id="url_meli" placeholder="Ex: https://www.mercadolivre.com.br/..." required
                style="width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #ccc;">
         <button type="submit" style="margin-top: 20px; background-color: #f7b500; color: #333; font-weight: bold; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer;">🔍 Buscar Produto</button>
@@ -34,20 +34,30 @@
     </div>
 
     {% if produto %}
-    <div style="background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-      <h2 style="margin-bottom: 20px;">📦 Resultado:</h2>
+    <!-- 📦 Exibição do produto encontrado -->
+    <div style="background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); max-width: 800px;">
+      <h2 style="margin-bottom: 20px;">📦 Produto Encontrado:</h2>
       <div style="display: flex; gap: 20px;">
-        <div style="background: #f8f8fc; padding: 20px; border-radius: 12px; width: 260px; border: 1px solid #e3dfff;">
-          <img src="{{ produto.imagem }}" alt="Produto" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom: 10px;">
-          <strong style="font-size: 0.95rem;">{{ produto.titulo }}</strong><br>
-          <small style="color:#666;">R$ {{ produto.preco }}</small><br><br>
-          <a href="{{ produto.link }}" target="_blank" style="display: block; background-color:#3483fa; color:white; text-align:center; padding:8px; border-radius:6px; text-decoration:none;">🌐 Ver no Meli</a>
+        <img src="{{ produto.imagem }}" alt="Produto" style="width: 250px; height: auto; border-radius: 10px; border: 1px solid #eee;">
+        <div style="flex: 1;">
+          <h3 style="font-size: 1.2rem; margin-bottom: 10px;">{{ produto.titulo }}</h3>
+
+          {% if produto.preco_original %}
+            <div style="margin-bottom: 6px;">
+              <small style="color:#999; text-decoration: line-through;">De: R$ {{ produto.preco_original }}</small><br>
+              <strong style="color:#27ae60; font-size: 1.1rem;">Por: R$ {{ produto.preco_desconto }}</strong>
+            </div>
+          {% else %}
+            <strong style="color:#333; font-size: 1.1rem;">R$ {{ produto.preco_desconto }}</strong>
+          {% endif %}
+
+          <a href="{{ produto.link }}" target="_blank" style="margin-top: 20px; display: inline-block; background-color:#3483fa; color:white; padding:12px 20px; border-radius:8px; text-decoration:none;">🌐 Ver no Mercado Livre</a>
         </div>
       </div>
     </div>
     {% elif produto is not none %}
     <div style="padding: 20px; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 20px;">
-      Nenhum produto encontrado ou link inválido.
+      Nenhum produto encontrado ou estrutura da página não reconhecida.
     </div>
     {% endif %}
   </div>
