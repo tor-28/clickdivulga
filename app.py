@@ -828,40 +828,65 @@ def buscar_loja():
 @app.route('/buscar-meli', methods=['GET', 'POST'])
 def buscar_meli():
     print("✅ Acessando rota /buscar-meli")
+    print("📦 Sessão atual:", session)
 
-    # Verifica se o usuário está logado corretamente
-    if 'usuario' not in session:
-        print(f"⛔ Usuário não logado. Sessão atual: {session}")
+    if 'token' not in session:
+        print("⛔ Token não encontrado na sessão. Redirecionando para login.")
         return redirect('/login')
 
     produto = None
 
     if request.method == 'POST':
-        url = request.form.get('url_meli')
-        print(f"🔗 Link recebido: {url}")
+        link = request.form.get('url_meli')
+        print(f"🔗 Link recebido: {link}")
 
-        if not url:
-            flash('Link inválido ou ausente.', 'erro')
-            return render_template('produtos_meli.html', produto=None)
+        def extrair_dados(link):
+            from bs4 import BeautifulSoup
+            import requests
+            from urllib.parse import urlparse
 
-        try:
-            # Faz requisição para a API da VPS (ajuste IP se necessário)
-            vps_api = f"http://89.117.32.226:5005/extrair-meli?link={url}"
-            r = requests.get(vps_api)
-            dados = r.json()
-            print(f"📦 Resposta da VPS: {dados}")
+            try:
+                parsed = urlparse(link)
+                path_limpo = parsed.path
+                link_base = f"https://www.mercadolivre.com.br{path_limpo}"
+                print(f"🔍 Link limpo: {link_base}")
 
-            if dados.get("titulo"):
-                produto = {
-                    "titulo": dados["titulo"],
-                    "imagens": dados["imagens"] or []
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
                 }
-            else:
-                produto = {}
+                resposta = requests.get(link_base, headers=headers, timeout=10)
+                resposta.raise_for_status()
+                html = resposta.text
 
-        except Exception as e:
-            print(f"❌ Erro ao acessar VPS: {e}")
-            flash('Erro ao buscar produto. Tente novamente mais tarde.', 'erro')
+                soup = BeautifulSoup(html, "html.parser")
+
+                titulo_tag = soup.find("h1")
+                titulo = titulo_tag.get_text(strip=True) if titulo_tag else "Produto sem título"
+                print(f"✅ Título: {titulo}")
+
+                imagens = []
+                for tag in soup.find_all("img", src=True):
+                    src = tag["src"]
+                    if "ML" in src and src.startswith("https://http2.mlstatic.com") and src not in imagens:
+                        imagens.append(src)
+                    if len(imagens) >= 5:
+                        break
+                print(f"🖼️ {len(imagens)} imagem(ns) extraída(s)")
+
+                return {
+                    "titulo": titulo,
+                    "imagens": imagens,
+                    "preco": None,
+                    "loja": None
+                }
+
+            except Exception as e:
+                print(f"⛔ Erro ao extrair dados do link Meli: {str(e)}")
+                return None
+
+        produto = extrair_dados(link)
+        if not produto:
+            flash('Erro ao extrair os dados do produto. Verifique o link.', 'erro')
 
     return render_template('produtos_meli.html', produto=produto)
 
