@@ -816,45 +816,54 @@ from flask import render_template, request
 import requests
 from bs4 import BeautifulSoup
 
-@app.route("/buscar-meli", methods=["GET", "POST"])
+@app.route('/buscar-meli', methods=['GET', 'POST'])
+@verificar_login
 def buscar_meli():
-    resultados = []
+    if request.method == 'POST':
+        url = request.form.get('url')
+        print(f'[LOG] URL recebida: {url}')
 
-    if request.method == "POST":
-        keyword = request.form.get("keyword")
+        try:
+            response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+            print(f'[LOG] Status da resposta: {response.status_code}')
+            soup = BeautifulSoup(response.text, 'html.parser')
 
-        if keyword:
-            # Monta URL com base na palavra-chave
-            url = f"https://listado.mercadolivre.com.br/{keyword.replace(' ', '-')}"
-            headers = {
-                "User-Agent": "Mozilla/5.0"
-            }
+            titulo_pagina = soup.title.string.strip() if soup.title else 'Página sem título'
+            print(f'[LOG] Título da página: {titulo_pagina}')
 
-            try:
-                response = requests.get(url, headers=headers, timeout=10)
-                soup = BeautifulSoup(response.text, "html.parser")
+            cards = soup.select('.ui-search-layout .ui-search-result__wrapper')
+            print(f'[LOG] Cards encontrados: {len(cards)}')
 
-                produtos_html = soup.select("li.ui-search-layout__item")
+            produtos = []
+            for card in cards:
+                try:
+                    titulo = card.select_one('h2').text.strip()
+                    preco = card.select_one('.price-tag-fraction').text.strip().replace('.', '')
+                    imagem = card.select_one('img')['src']
+                    link = card.select_one('a')['href'].split('#')[0]
 
-                for item in produtos_html[:10]:  # limita a 10 produtos
-                    titulo = item.select_one("h2.ui-search-item__title")
-                    preco = item.select_one("span.price-tag-fraction")
-                    imagem = item.select_one("img.ui-search-result-image__element")
-                    link = item.select_one("a.ui-search-link")
+                    produtos.append({
+                        'titulo': titulo,
+                        'preco': preco,
+                        'imagem': imagem,
+                        'link': link
+                    })
+                except Exception as e:
+                    print(f'[LOG] Erro ao processar um card: {e}')
 
-                    if titulo and preco and imagem and link:
-                        resultados.append({
-                            "titulo": titulo.text.strip(),
-                            "preco": f'R$ {preco.text.strip()}',
-                            "imagem": imagem["src"],
-                            "link": link["href"]
-                        })
+            if not produtos:
+                print('[LOG] Nenhum produto extraído.')
+            else:
+                print(f'[LOG] {len(produtos)} produtos extraídos com sucesso.')
 
-            except Exception as e:
-                print(f"Erro ao buscar produtos do Mercado Livre: {e}")
+            return render_template('produtos_meli.html', produtos=produtos, titulo=titulo_pagina)
 
-    return render_template("produtos_meli.html", resultados=resultados)
+        except Exception as e:
+            print(f'[ERRO] Falha na requisição ou no parsing: {e}')
+            return render_template('produtos_meli.html', produtos=None)
 
+    return render_template('produtos_meli.html', produtos=None)
+    
 @app.route("/atualizar-buscas")
 def atualizar_buscas():
     import time, hashlib, requests, json, re
