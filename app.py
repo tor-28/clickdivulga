@@ -820,8 +820,15 @@ from bs4 import BeautifulSoup
 @verificar_login
 def buscar_meli():
     if request.method == 'POST':
-        url = request.form.get('url')
-        print(f'[LOG] URL recebida: {url}')
+        keyword = request.form.get('keyword')
+        print(f'[LOG] Palavra-chave recebida: {keyword}')
+
+        if not keyword:
+            print('[ERRO] Nenhuma palavra-chave enviada.')
+            return render_template('produtos_meli.html', produtos=[])
+
+        url = f"https://lista.mercadolivre.com.br/{keyword.replace(' ', '-')}"
+        print(f'[LOG] URL montada: {url}')
 
         try:
             response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
