@@ -873,7 +873,7 @@ def buscar_meli():
 @app.route('/enviar-meli', methods=['POST'])
 def enviar_meli():
     print("✅ Rota /enviar-meli acessada")
-    
+
     if 'usuario' not in session or 'uid' not in session['usuario']:
         print("⛔ Sessão inválida. Redirecionando para login.")
         return redirect('/login')
@@ -890,28 +890,20 @@ def enviar_meli():
 
     if not all([titulo, imagem, preco, link]):
         flash('Todos os campos são obrigatórios.', 'erro')
-        print("⚠️ Campos obrigatórios ausentes.")
         return redirect('/buscar-meli')
 
     try:
-        # 🔍 Buscar dados do Firestore (bot do afiliado)
-        db_firestore = firestore.client()
-        doc_ref = db_firestore.collection('telegram_config').document(uid)
-        doc = doc_ref.get()
+        # 🔍 Buscar a mesma configuração utilizada no envio da Shopee
+        config_ref = db.reference(f'usuarios/{uid}/bots/bot1')
+        config = config_ref.get()
 
-        if not doc.exists:
-            flash('Configuração do bot não encontrada.', 'erro')
-            print(f"⚠️ Documento telegram_config/{uid} não encontrado.")
-            return redirect('/buscar-meli')
-
-        config = doc.to_dict()
         if not config or 'token' not in config or 'grupo1' not in config:
             flash('Bot do Telegram não configurado corretamente.', 'erro')
-            print(f"⚠️ Bot mal configurado para UID: {uid}")
+            print(f"⚠️ Bot não configurado para UID: {uid}")
             return redirect('/buscar-meli')
 
         bot_token = config['token']
-        chat_id = config['grupo1']  # Grupo 1 reservado para templates
+        chat_id = config['grupo1']
 
         mensagem = f"""
 🟡 *{titulo}*
@@ -939,8 +931,8 @@ def enviar_meli():
             print(f"❌ Erro Telegram: {r.text}")
 
     except Exception as e:
-        flash(f'Falha na comunicação com o Telegram: {str(e)}', 'erro')
-        print(f"❌ Exceção ao enviar para Telegram: {str(e)}")
+        flash(f'Erro ao enviar para o Telegram: {str(e)}', 'erro')
+        print(f"❌ Exceção: {str(e)}")
 
     return redirect('/buscar-meli')
 
