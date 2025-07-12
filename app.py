@@ -23,7 +23,10 @@ from bs4 import BeautifulSoup
 # 🤖 Selenium
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 # ✅ Geração de descrições e benefícios (IA simplificada)
@@ -829,6 +832,7 @@ def buscar_produto_meli():
 
         if not link_afiliado:
             flash("URL não fornecida.", "erro")
+            print("[ERRO] Nenhuma URL fornecida no formulário.")
             return render_template("produtos_meli.html", resultado=None)
 
         driver = None
@@ -840,36 +844,52 @@ def buscar_produto_meli():
             options.add_argument("--disable-dev-shm-usage")
 
             driver = webdriver.Chrome(options=options)
+            print(f"[INFO] Acessando link: {link_afiliado}")
             driver.get(link_afiliado)
             time.sleep(3)
 
-            # Clica no botão "Ir para produto"
+            # Tenta localizar e clicar no botão "Ir para produto"
             try:
-                botao = driver.find_element(By.XPATH, "//a[contains(., 'Ir para produto')]")
+                wait = WebDriverWait(driver, 10)
+                botao = wait.until(
+                    EC.element_to_be_clickable((By.XPATH, "//a[contains(text(), 'Ir para produto')]"))
+                )
                 botao.click()
-                print("[INFO] Clicou no botão 'Ir para produto'...")
+                print("[INFO] Botão 'Ir para produto' clicado com sucesso.")
                 time.sleep(3)
             except Exception as e:
-                flash("Botão 'Ir para produto' não encontrado.", "erro")
-                print("[ERRO] Botão não encontrado:", e)
+                print("[ERRO] Botão 'Ir para produto' não encontrado:", str(e))
+                flash("Botão 'Ir para produto' não encontrado ou não carregou a tempo.", "erro")
                 return render_template("produtos_meli.html", resultado=None)
 
             # Troca para nova aba
             driver.switch_to.window(driver.window_handles[-1])
+            print("[INFO] Troca para a aba final feita.")
 
-            # Extrair os dados
-            nome = driver.find_element(By.CLASS_NAME, "ui-pdp-title").text.strip()
-            preco_atual = driver.find_element(By.CLASS_NAME, "andes-money-amount__fraction").text.strip()
+            # Extrair os dados do produto
+            try:
+                nome = driver.find_element(By.CLASS_NAME, "ui-pdp-title").text.strip()
+            except:
+                nome = "[ERRO AO OBTER TÍTULO]"
+                print("[ERRO] Título não encontrado.")
+
+            try:
+                preco_atual = driver.find_element(By.CLASS_NAME, "andes-money-amount__fraction").text.strip()
+            except:
+                preco_atual = None
+                print("[ERRO] Preço atual não encontrado.")
 
             try:
                 preco_original = driver.find_element(By.CLASS_NAME, "andes-money-amount__discount").text.strip()
             except:
                 preco_original = None
+                print("[INFO] Produto não possui preço original com desconto.")
 
             try:
                 imagem = driver.find_element(By.CSS_SELECTOR, "img.ui-pdp-image").get_attribute("src")
             except:
                 imagem = None
+                print("[ERRO] Imagem do produto não localizada.")
 
             resultado = {
                 "nome": nome,
@@ -879,16 +899,18 @@ def buscar_produto_meli():
                 "link_final": driver.current_url
             }
 
+            print("[INFO] Produto extraído com sucesso:", resultado)
             return render_template("produtos_meli.html", resultado=resultado)
 
         except Exception as e:
-            print("[ERRO AO PROCESSAR]", e)
+            print("[ERRO AO PROCESSAR TUDO]", str(e))
             flash("Erro ao processar a URL do produto.", "erro")
             return render_template("produtos_meli.html", resultado=None)
 
         finally:
             if driver:
                 driver.quit()
+                print("[INFO] Driver encerrado com sucesso.")
 
     return render_template("produtos_meli.html", resultado=None)
 
