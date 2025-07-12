@@ -807,6 +807,56 @@ def buscar_loja():
         flash(f"Erro ao buscar loja: {e}", "error")
         return redirect("/produtos")
 
+import requests
+from bs4 import BeautifulSoup
+from flask import request, render_template, redirect, url_for, flash
+
+@app.route("/buscar-meli", methods=["GET", "POST"])
+def buscar_meli():
+    if request.method == "POST":
+        url = request.form.get("url")
+
+        if not url or "mercadolivre.com" not in url:
+            flash("URL inválida do Mercado Livre.", "error")
+            return redirect(url_for("buscar_meli"))
+
+        try:
+            headers = {
+                "User-Agent": "Mozilla/5.0"
+            }
+            response = requests.get(url, headers=headers)
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            # Título da página
+            titulo_pagina = soup.title.string.strip() if soup.title else "Página do Meli"
+
+            # Produtos encontrados
+            produtos = []
+            cards = soup.select("li.ui-search-layout__item")
+
+            for card in cards[:12]:  # Limite para exibição
+                nome = card.select_one("h2.ui-search-item__title")
+                preco = card.select_one("span.andes-money-amount__fraction")
+                imagem = card.select_one("img")
+                link = card.select_one("a.ui-search-link")
+
+                if nome and preco and imagem and link:
+                    produtos.append({
+                        "titulo": nome.get_text(strip=True),
+                        "preco": preco.get_text(strip=True),
+                        "imagem": imagem.get("src"),
+                        "link": link.get("href")
+                    })
+
+            return render_template("produtos_meli.html", titulo=titulo_pagina, produtos=produtos, url_original=url)
+
+        except Exception as e:
+            print(f"Erro ao buscar produtos do Meli: {e}")
+            flash("Erro ao buscar produtos do Mercado Livre.", "error")
+            return redirect(url_for("buscar_meli"))
+
+    return render_template("produtos_meli.html", produtos=None)
+
 @app.route("/atualizar-buscas")
 def atualizar_buscas():
     import time, hashlib, requests, json, re
