@@ -827,7 +827,7 @@ def buscar_meli():
 
         if not url:
             flash("URL não fornecida.", "erro")
-            return render_template("produto_meli.html", produto=None)
+            return render_template("produtos_meli.html", produto=None)
 
         try:
             headers = {
@@ -838,7 +838,7 @@ def buscar_meli():
 
             if response.status_code != 200:
                 flash("Erro ao acessar o link do produto.", "erro")
-                return render_template("produto_meli.html", produto=None)
+                return render_template("produtos_meli.html", produto=None)
 
             soup = BeautifulSoup(response.text, "html.parser")
 
@@ -849,7 +849,7 @@ def buscar_meli():
             if not (titulo and preco and imagem):
                 print("[LOG] Elementos não encontrados corretamente.")
                 flash("Produto não encontrado ou estrutura da página mudou.", "erro")
-                return render_template("produto_meli.html", produto=None)
+                return render_template("produtos_meli.html", produto=None)
 
             produto = {
                 "titulo": titulo.get_text(strip=True),
@@ -859,15 +859,14 @@ def buscar_meli():
             }
 
             print("[LOG] Produto extraído com sucesso:", produto)
-            return render_template("produto_meli.html", produto=produto)
+            return render_template("produtos_meli.html", produto=produto)
 
         except Exception as e:
             print("[ERRO] Falha ao processar produto:", e)
             flash("Erro ao processar o link do produto.", "erro")
-            return render_template("produto_meli.html", produto=None)
+            return render_template("produtos_meli.html", produto=None)
 
-    return render_template("produto_meli.html", produto=None)
-
+    return render_template("produtos_meli.html", produto=None)
     
 @app.route("/atualizar-buscas")
 def atualizar_buscas():
