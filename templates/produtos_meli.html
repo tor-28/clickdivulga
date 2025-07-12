@@ -27,7 +27,7 @@
     <div style="background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 40px; max-width: 700px;">
       <form method="POST">
         <label for="url_meli">Cole o link do produto do Mercado Livre:</label>
-        <input type="text" name="url_meli" id="url_meli" placeholder="Ex: https://www.mercadolivre.com.br/..." required
+        <input type="text" name="url_meli" id="url_meli" placeholder="Ex: https://mercadolivre.com/sec/abc123" required
                style="width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #ccc;">
         <button type="submit" style="margin-top: 20px; background-color: #f7b500; color: #333; font-weight: bold; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer;">🔍 Buscar Produto</button>
       </form>
@@ -57,9 +57,21 @@
     </div>
     {% elif produto is not none %}
     <div style="padding: 20px; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 20px;">
-      Nenhum produto encontrado ou estrutura da página não reconhecida.
+      Nenhum produto encontrado ou a estrutura da página mudou.
     </div>
     {% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div style="margin-top: 20px;">
+          {% for category, message in messages %}
+            <div style="padding: 15px; border-radius: 8px; background-color: {% if category == 'erro' %}#f8d7da{% else %}#d4edda{% endif %}; color: #000;">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
   </div>
 </body>
 </html>
