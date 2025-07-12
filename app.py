@@ -14,6 +14,12 @@ from bs4 import BeautifulSoup
 import re
 import json
 
+# ➕ IMPORTANTE PARA USO DO SELENIUM
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+import time
+
 # ✅ Geração de descrições e benefícios (IA simplificada)
 def gerar_descricao(titulo):
     frases = [
@@ -810,65 +816,70 @@ def buscar_loja():
         flash(f"Erro ao buscar loja: {e}", "error")
         return redirect("/produtos")
 
-import requests
-from bs4 import BeautifulSoup
-from flask import request, render_template, redirect, url_for, flash
-
-from flask import render_template, request
-import requests
-from bs4 import BeautifulSoup
-
-@app.route("/buscar-meli", methods=["GET", "POST"])
-@verificar_login
-def buscar_meli():
+@app.route("/buscar-produto-meli", methods=["GET", "POST"])
+def buscar_produto_meli():
     if request.method == "POST":
-        url = request.form.get("url_meli")
-        print("[LOG] URL recebida:", url)
+        link_afiliado = request.form.get("url_meli")
 
-        if not url:
+        if not link_afiliado:
             flash("URL não fornecida.", "erro")
-            return render_template("produtos_meli.html", produto=None)
+            return render_template("produtos_meli.html", resultado=None)
 
         try:
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+            # Configuração do Selenium headless
+            options = Options()
+            options.add_argument("--headless=new")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+
+            driver = webdriver.Chrome(options=options)
+            driver.get(link_afiliado)
+            time.sleep(3)
+
+            # Clica no botão "Ir ao produto"
+            try:
+                botao = driver.find_element(By.XPATH, "//a[contains(., 'Ir ao produto')]")
+                botao.click()
+                print("[INFO] Clicou no botão 'Ir ao produto'...")
+                time.sleep(3)
+            except:
+                flash("Botão 'Ir ao produto' não encontrado.", "erro")
+                driver.quit()
+                return render_template("produtos_meli.html", resultado=None)
+
+            # Troca para nova aba
+            driver.switch_to.window(driver.window_handles[-1])
+
+            # Extrair os dados da página do produto
+            nome = driver.find_element(By.CLASS_NAME, "ui-pdp-title").text.strip()
+            preco_atual = driver.find_element(By.CLASS_NAME, "andes-money-amount__fraction").text.strip()
+            try:
+                preco_original = driver.find_element(By.CLASS_NAME, "andes-money-amount__discount").text.strip()
+            except:
+                preco_original = None
+
+            try:
+                imagem = driver.find_element(By.CSS_SELECTOR, "img.ui-pdp-image").get_attribute("src")
+            except:
+                imagem = None
+
+            resultado = {
+                "nome": nome,
+                "preco_atual": preco_atual,
+                "preco_original": preco_original,
+                "imagem": imagem,
+                "link_final": driver.current_url
             }
-            response = requests.get(url, headers=headers)
-            print("[LOG] Status da resposta:", response.status_code)
 
-            if response.status_code != 200:
-                flash("Erro ao acessar o link do produto.", "erro")
-                return render_template("produtos_meli.html", produto=None)
-
-            soup = BeautifulSoup(response.text, "html.parser")
-
-            titulo = soup.select_one("h1.ui-pdp-title")
-            preco_desconto = soup.select_one("span.andes-money-amount__fraction")
-            preco_original = soup.select_one("span.ui-pdp-price__second-line span.andes-money-amount__fraction")
-            imagem = soup.select_one("img.ui-pdp-image") or soup.select_one("img[data-testid='gallery-image-main']")
-
-            if not (titulo and preco_desconto and imagem):
-                print("[LOG] Elementos não encontrados corretamente.")
-                flash("Produto não encontrado ou estrutura da página mudou.", "erro")
-                return render_template("produtos_meli.html", produto=None)
-
-            produto = {
-                "titulo": titulo.get_text(strip=True),
-                "preco_desconto": preco_desconto.get_text(strip=True),
-                "preco_original": preco_original.get_text(strip=True) if preco_original else None,
-                "imagem": imagem["src"],
-                "link": url
-            }
-
-            print("[LOG] Produto extraído:", produto)
-            return render_template("produtos_meli.html", produto=produto)
+            driver.quit()
+            return render_template("produtos_meli.html", resultado=resultado)
 
         except Exception as e:
             print("[ERRO]", e)
-            flash("Erro ao processar o link do produto.", "erro")
-            return render_template("produtos_meli.html", produto=None)
+            flash("Erro ao processar a URL.", "erro")
+            return render_template("produtos_meli.html", resultado=None)
 
-    return render_template("produtos_meli.html", produto=None)
+    return render_template("produtos_meli.html", resultado=None)
     
 @app.route("/atualizar-buscas")
 def atualizar_buscas():
