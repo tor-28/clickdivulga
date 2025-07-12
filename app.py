@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 import requests
 import random
+from bs4 import BeautifulSoup  
 
 # ✅ Geração de descrições e benefícios (IA simplificada)
 def gerar_descricao(titulo):
