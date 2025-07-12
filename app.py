@@ -825,94 +825,49 @@ def buscar_loja():
         flash(f"Erro ao buscar loja: {e}", "error")
         return redirect("/produtos")
 
-@app.route("/buscar-meli", methods=["GET", "POST"])
-def buscar_produto_meli():
-    if request.method == "POST":
-        link_afiliado = request.form.get("url_meli")
+@app.route('/buscar-meli', methods=['GET', 'POST'])
+def buscar_meli():
+    if 'token' not in session:
+        return redirect('/login')
 
-        if not link_afiliado:
-            flash("URL não fornecida.", "erro")
-            print("[ERRO] Nenhuma URL fornecida no formulário.")
-            return render_template("produtos_meli.html", resultado=None)
+    produto = None
 
-        driver = None
+    if request.method == 'POST':
+        url = request.form.get('url_meli')
+
+        if not url or 'mercadolivre.com' not in url:
+            flash('Link inválido. Insira um link do Mercado Livre.', 'erro')
+            return render_template('produtos_meli.html', produto=None)
+
         try:
-            # Configuração do Selenium Headless
-            options = Options()
-            options.add_argument("--headless=new")
-            options.add_argument("--no-sandbox")
-            options.add_argument("--disable-dev-shm-usage")
+            # Faz requisição para a VPS que roda o extrator
+            vps_url = 'http://89.117.32.226:5005/extrair-meli'
+            response = requests.get(vps_url, params={'link': url}, timeout=15)
 
-            driver = webdriver.Chrome(options=options)
-            print(f"[INFO] Acessando link: {link_afiliado}")
-            driver.get(link_afiliado)
-            time.sleep(3)
+            if response.status_code == 200:
+                dados = response.json()
 
-            # Tenta localizar e clicar no botão "Ir para produto"
-            try:
-                wait = WebDriverWait(driver, 10)
-                botao = wait.until(
-                    EC.element_to_be_clickable((By.XPATH, "//a[contains(text(), 'Ir para produto')]"))
-                )
-                botao.click()
-                print("[INFO] Botão 'Ir para produto' clicado com sucesso.")
-                time.sleep(3)
-            except Exception as e:
-                print("[ERRO] Botão 'Ir para produto' não encontrado:", str(e))
-                flash("Botão 'Ir para produto' não encontrado ou não carregou a tempo.", "erro")
-                return render_template("produtos_meli.html", resultado=None)
+                if 'titulo' in dados and dados['titulo']:
+                    # Pega a primeira imagem válida
+                    imagem = next((img for img in dados.get('imagens', []) if img.startswith('http')), None)
 
-            # Troca para nova aba
-            driver.switch_to.window(driver.window_handles[-1])
-            print("[INFO] Troca para a aba final feita.")
-
-            # Extrair os dados do produto
-            try:
-                nome = driver.find_element(By.CLASS_NAME, "ui-pdp-title").text.strip()
-            except:
-                nome = "[ERRO AO OBTER TÍTULO]"
-                print("[ERRO] Título não encontrado.")
-
-            try:
-                preco_atual = driver.find_element(By.CLASS_NAME, "andes-money-amount__fraction").text.strip()
-            except:
-                preco_atual = None
-                print("[ERRO] Preço atual não encontrado.")
-
-            try:
-                preco_original = driver.find_element(By.CLASS_NAME, "andes-money-amount__discount").text.strip()
-            except:
-                preco_original = None
-                print("[INFO] Produto não possui preço original com desconto.")
-
-            try:
-                imagem = driver.find_element(By.CSS_SELECTOR, "img.ui-pdp-image").get_attribute("src")
-            except:
-                imagem = None
-                print("[ERRO] Imagem do produto não localizada.")
-
-            resultado = {
-                "nome": nome,
-                "preco_atual": preco_atual,
-                "preco_original": preco_original,
-                "imagem": imagem,
-                "link_final": driver.current_url
-            }
-
-            print("[INFO] Produto extraído com sucesso:", resultado)
-            return render_template("produtos_meli.html", resultado=resultado)
+                    produto = {
+                        'titulo': dados['titulo'],
+                        'imagem': imagem,
+                        'preco_original': None,
+                        'preco_desconto': None,
+                        'link': url
+                    }
+                else:
+                    flash('Nenhum produto encontrado ou a estrutura da página mudou.', 'erro')
+                    produto = None
+            else:
+                flash('Erro ao consultar servidor externo.', 'erro')
 
         except Exception as e:
-            print("[ERRO AO PROCESSAR TUDO]", str(e))
-            flash("Erro ao processar a URL do produto.", "erro")
-            return render_template("produtos_meli.html", resultado=None)
+            flash(f'Erro ao processar o link: {str(e)}', 'erro')
 
-        finally:
-            if driver:
-                driver.quit()
-                print("[INFO] Driver encerrado com sucesso.")
-
-    return render_template("produtos_meli.html", resultado=None)
+    return render_template('produtos_meli.html', produto=produto)
 
 @app.route("/atualizar-buscas")
 def atualizar_buscas():
