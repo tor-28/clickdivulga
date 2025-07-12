@@ -843,26 +843,28 @@ def buscar_meli():
             soup = BeautifulSoup(response.text, "html.parser")
 
             titulo = soup.select_one("h1.ui-pdp-title")
-            preco = soup.select_one("span.andes-money-amount__fraction")
+            preco_desconto = soup.select_one("span.andes-money-amount__fraction")
+            preco_original = soup.select_one("span.ui-pdp-price__second-line span.andes-money-amount__fraction")
             imagem = soup.select_one("img.ui-pdp-image") or soup.select_one("img[data-testid='gallery-image-main']")
 
-            if not (titulo and preco and imagem):
+            if not (titulo and preco_desconto and imagem):
                 print("[LOG] Elementos não encontrados corretamente.")
                 flash("Produto não encontrado ou estrutura da página mudou.", "erro")
                 return render_template("produtos_meli.html", produto=None)
 
             produto = {
                 "titulo": titulo.get_text(strip=True),
-                "preco": preco.get_text(strip=True),
+                "preco_desconto": preco_desconto.get_text(strip=True),
+                "preco_original": preco_original.get_text(strip=True) if preco_original else None,
                 "imagem": imagem["src"],
                 "link": url
             }
 
-            print("[LOG] Produto extraído com sucesso:", produto)
+            print("[LOG] Produto extraído:", produto)
             return render_template("produtos_meli.html", produto=produto)
 
         except Exception as e:
-            print("[ERRO] Falha ao processar produto:", e)
+            print("[ERRO]", e)
             flash("Erro ao processar o link do produto.", "erro")
             return render_template("produtos_meli.html", produto=None)
 
