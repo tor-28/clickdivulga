@@ -827,47 +827,43 @@ def buscar_loja():
 
 @app.route('/buscar-meli', methods=['GET', 'POST'])
 def buscar_meli():
-    if 'token' not in session:
-        return redirect('/login')
+    print("✅ Acessando rota /buscar-meli")
+    print("📦 Sessão atual:", dict(session))
 
-    produto = None
+    if 'token' not in session:
+        print("⛔ Token não encontrado na sessão. Redirecionando para login.")
+        return redirect('/login')
 
     if request.method == 'POST':
         url = request.form.get('url_meli')
+        print(f"🔎 Link recebido do formulário: {url}")
 
-        if not url or 'mercadolivre.com' not in url:
-            flash('Link inválido. Insira um link do Mercado Livre.', 'erro')
+        if not url:
+            flash('Link inválido.', 'erro')
             return render_template('produtos_meli.html', produto=None)
 
         try:
-            # Faz requisição para a VPS que roda o extrator
-            vps_url = 'http://89.117.32.226:5005/extrair-meli'
-            response = requests.get(vps_url, params={'link': url}, timeout=15)
+            response = requests.get(f'http://89.117.32.226:5005/extrair-meli?link={url}')
+            print(f"📡 Requisição para VPS retornou: {response.status_code}")
+            data = response.json()
+            print("📥 Dados recebidos:", data)
 
-            if response.status_code == 200:
-                dados = response.json()
-
-                if 'titulo' in dados and dados['titulo']:
-                    # Pega a primeira imagem válida
-                    imagem = next((img for img in dados.get('imagens', []) if img.startswith('http')), None)
-
-                    produto = {
-                        'titulo': dados['titulo'],
-                        'imagem': imagem,
-                        'preco_original': None,
-                        'preco_desconto': None,
-                        'link': url
-                    }
-                else:
-                    flash('Nenhum produto encontrado ou a estrutura da página mudou.', 'erro')
-                    produto = None
+            if 'titulo' in data and data['titulo']:
+                produto = {
+                    'titulo': data['titulo'],
+                    'imagens': data.get('imagens', [])
+                }
+                return render_template('produtos_meli.html', produto=produto)
             else:
-                flash('Erro ao consultar servidor externo.', 'erro')
-
+                flash('Produto não encontrado ou estrutura da página mudou.', 'erro')
+                return render_template('produtos_meli.html', produto=None)
         except Exception as e:
-            flash(f'Erro ao processar o link: {str(e)}', 'erro')
+            print("❌ Erro ao buscar produto:", str(e))
+            flash('Erro ao buscar o produto.', 'erro')
+            return render_template('produtos_meli.html', produto=None)
 
-    return render_template('produtos_meli.html', produto=produto)
+    # GET request
+    return render_template('produtos_meli.html', produto=None)
 
 @app.route('/enviar-meli', methods=['POST'])
 def enviar_meli():
