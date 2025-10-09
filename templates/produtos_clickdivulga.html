@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Produtos - ClickDivulga</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/grupos.css') }}">
+</head>
+<body>
+  <div class="sidebar">
+  <img src="{{ url_for('static', filename='img/logo-clickdivulga.png') }}" alt="ClickDivulga" style="max-width: 160px; display: block; margin: 0 auto 12px;">
+  <div class="menu">
+    <a href="/painel"><i>🏠</i> Dashboard</a>
+    <a href="/criar-link"><i>➕</i> Criar Link</a>
+    <a href="/grupos"><i>📊</i> Desempenho de Grupos</a>
+    <a href="/produtos" class="active"><i>🛍️</i> Produtos</a>
+    <a href="/minha-api"><i>🔐</i> Config Afiliado</a>
+    <a href="/config-bot"><i>🤖</i> Telegram</a>
+    <a href="/logout"><i>🚪</i> Sair</a>
+  </div>
+</div>
+
+  <div class="content">
+    <div class="topbar">
+      <h1>🛍️ Buscar Produtos com Comissão</h1>
+    </div>
+
+    <!-- Bloco de busca -->
+    <div style="display: flex; gap: 30px; flex-wrap: wrap; margin-bottom: 40px;">
+      <!-- Busca por palavra-chave -->
+      <div style="flex: 1; background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); min-width: 300px;">
+        <h2 style="margin-bottom:20px; color:#5e3ea1;">🔎 Palavra-chave ou Link</h2>
+        <form method="POST" action="/buscar-produto" onsubmit="return validarCampos();">
+          <label for="campoCategoria">Categoria (opcional):</label>
+          <select name="categoria" id="campoCategoria" style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
+            <option value="" disabled selected>-- Selecione uma categoria --</option>
+            <option value="100001">Moda Masculina</option>
+            <option value="100002">Moda Feminina</option>
+            <option value="100003">Acessórios de Moda</option>
+            <option value="100004">Celulares e Gadgets</option>
+            <option value="100005">Casa e Decoração</option>
+            <option value="100006">Eletrônicos</option>
+            <option value="100007">Computadores e Acessórios</option>
+            <option value="100008">Eletrodomésticos</option>
+            <option value="100009">Brinquedos</option>
+            <option value="100010">Esporte e Lazer</option>
+            <option value="100011">Automotivo</option>
+            <option value="100012">Livros e Papelaria</option>
+            <option value="100013">Beleza e Cuidados</option>
+            <option value="100014">Mercado</option>
+            <option value="100016">Pet Shop</option>
+          </select>
+
+          <label for="campoKeyword">Palavra-chave:</label>
+          <input type="text" name="keyword" id="campoKeyword" placeholder="Ex: whey, ring light"
+            style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
+
+          <label for="campoUrl">Link direto:</label>
+          <input type="url" name="url" id="campoUrl" placeholder="https://shopee.com.br/..."
+            style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
+
+          <button type="submit" style="width: 100%; background-color: #5e3ea1; color: white; padding: 12px; border-radius: 8px;">🔍 Buscar Produto</button>
+        </form>
+      </div>
+
+      <!-- Busca por loja -->
+      <div style="flex: 1; background:white; padding:30px; border-radius:16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); min-width: 300px;">
+        <h2 style="margin-bottom:20px; color:#5e3ea1;">🏪 Produtos por Loja</h2>
+        <form method="POST" action="/buscar-loja">
+          <label>Nome ou link da loja:</label>
+          <input type="text" name="loja" placeholder="Ex: niveaoficial ou link da loja"
+            style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;" required>
+
+          <label>Preço mínimo:</label>
+          <input type="number" name="preco_min" step="0.01" placeholder="Ex: 50.00"
+            style="width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px;">
+
+          <label>Preço máximo:</label>
+          <input type="number" name="preco_max" step="0.01" placeholder="Ex: 200.00"
+            style="width: 100%; margin: 10px 0 20px; padding: 10px; border-radius: 8px;">
+
+          <button type="submit" style="width: 100%; background-color: #5e3ea1; color: white; padding: 12px; border-radius: 8px;">🔍 Buscar Loja</button>
+        </form>
+      </div>
+    </div>
+
+    {% if resultados %}
+    <div style="background:white; padding:30px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+      <h2 style="margin-bottom:20px;">🧠 Minhas Buscas Salvas (Atualizadas)</h2>
+      <form method="GET" style="margin-bottom: 30px; display:flex; gap:20px; flex-wrap:wrap;">
+        <select name="filtro_loja" style="padding:10px; border-radius:8px;">
+          <option value="">🏪 Todas as lojas</option>
+          {% for loja in lojas_unicas %}
+          <option value="{{ loja }}" {% if request.args.get('filtro_loja') == loja %}selected{% endif %}>{{ loja }}</option>
+          {% endfor %}
+        </select>
+
+        <input type="text" name="filtro_termo" value="{{ request.args.get('filtro_termo', '') }}" placeholder="🔍 Palavra-chave"
+          style="padding:10px; border-radius:8px; flex:1;">
+
+        <button type="submit" style="background-color:#5e3ea1; color:white; padding:10px 20px; border:none; border-radius:8px;">Filtrar</button>
+      </form>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+        {% for p in produtos_ordenados[inicio:fim] %}
+        <div style="background: #f8f8fc; padding: 20px; border-radius: 12px; width: 240px; border: 1px solid #e3dfff;">
+          <img src="{{ p.imagem }}" alt="Produto" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom: 10px;">
+          <strong style="font-size: 0.95rem;">{{ p.titulo }}</strong><br>
+          <small style="color:#888;">⏱ Atualizado em: {{ p.atualizado_em }}</small><br>
+          <small style="color:#666;">💰 R$ {{ p.preco }}</small><br>
+          <small style="color:#666;">🏪 {{ p.loja }}</small><br>
+          <small style="color:#666;">🌟 Comissão da Loja: {{ p.comissao }}%</small><br>
+          <small style="color:#666;">🎥 Live: R$ {{ p.comissao_live }} | 📱 Redes: R$ {{ p.comissao_redes }}</small><br>
+
+          <!-- Botão copiar link -->
+          <button onclick="copiarTexto('{{ p.link }}')" style="margin-top:10px; background-color:#3c8dbc; color:white; padding:6px 10px; border:none; border-radius:6px; width:100%;">🔗 Copiar Link</button>
+
+          <!-- Botão excluir -->
+          <form method="POST" action="/excluir-produto" style="margin-top:8px;">
+            <input type="hidden" name="termo_id" value="{{ p.termo_id or '' }}">
+            <input type="hidden" name="titulo" value="{{ p.titulo }}">
+            <button type="submit" style="background-color:#e74c3c; color:white; padding:6px 10px; border:none; border-radius:6px; width:100%;">🗑️ Excluir</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div style="margin-top:30px; text-align:center;">
+        {% for p in range(1, total_paginas + 1) %}
+          <a href="?pagina={{ p }}{% if request.args.get('filtro_loja') %}&filtro_loja={{ request.args.get('filtro_loja') }}{% endif %}{% if request.args.get('filtro_termo') %}&filtro_termo={{ request.args.get('filtro_termo') }}{% endif %}"
+             style="margin:0 5px; padding:8px 12px; border-radius:6px; background-color:{% if p == pagina %}#5e3ea1{% else %}#eee{% endif %}; color:{% if p == pagina %}white{% else %}black{% endif %}; text-decoration:none;">{{ p }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <script>
+    function validarCampos() {
+      const keyword = document.getElementById("campoKeyword").value.trim();
+      const url = document.getElementById("campoUrl").value.trim();
+      if (!keyword && !url) {
+        alert("Preencha pelo menos a palavra-chave ou o link da Shopee.");
+        return false;
+      }
+      return true;
+    }
+
+    function copiarTexto(texto) {
+      navigator.clipboard.writeText(texto).then(function() {
+        alert("🔗 Link copiado com sucesso!");
+      }, function(err) {
+        alert("❌ Erro ao copiar link.");
+      });
+    }
+  </script>
+</body>
+</html>

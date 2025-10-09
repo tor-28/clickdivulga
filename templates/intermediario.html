@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Grupo Exclusivo | Click Divulga</title>
+    <link rel="stylesheet" href="/static/grupos.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            background-color: #f7f7f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            height: 100vh;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            padding: 30px 40px;
+            text-align: center;
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .card img {
+            max-width: 120px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            margin: 0 0 10px;
+            font-size: 24px;
+            color: #333;
+        }
+
+        .card p {
+            color: #555;
+            font-size: 15px;
+            margin-bottom: 25px;
+        }
+
+        .btn-entrar {
+            background-color: #7b2cbf;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: 0.2s;
+        }
+
+        .btn-entrar:hover {
+            background-color: #5a189a;
+        }
+
+        .info-extra {
+            font-size: 13px;
+            color: #888;
+            margin-top: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <img src="/static/logo_clickdivulga.png" alt="Click Divulga">
+        <h2>Entrada no Grupo Exclusivo</h2>
+        <p>Esse grupo é privado para quem acompanha nossas promoções e cupons. A entrada é gratuita e o conteúdo é limitado aos participantes ativos.</p>
+
+        <a href="{{ link_grupo }}" class="btn-entrar" target="_blank" onclick="registrarClique()">✅ Entrar agora</a>
+
+        <div class="info-extra">
+            Link seguro gerado via Click Divulga.<br>
+            Sua privacidade está protegida.
+        </div>
+    </div>
+
+    <script>
+        function registrarClique() {
+            fetch("/registrar-clique-grupo/{{ slug }}")
+                .catch(err => console.error("Erro ao registrar clique:", err));
+        }
+    </script>
+</body>
+</html>
