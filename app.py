@@ -1,33 +1,15 @@
-# 🔧 Flask e dependências
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-
-# 🔐 Firebase
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
-
-# 📦 Utilitários
 import os
 import base64
 import tempfile
-import json
-import random
-import re
-import requests
-import time
-from datetime import datetime, timedelta
 from functools import wraps
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
-from bs4 import BeautifulSoup
-
-# 🤖 Selenium
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-
+import requests
+import random
 
 # ✅ Geração de descrições e benefícios (IA simplificada)
 def gerar_descricao(titulo):
@@ -444,6 +426,358 @@ def painel():
         links_recentes=links_formatados
     )
 
+
+# ✅ ROTA DE CRIAÇÃO DE LINK
+@app.route("/criar-link", methods=["GET", "POST"])
+@verificar_login
+def criar_link():
+    uid = session["usuario"]["uid"]
+
+    if request.method == "POST":
+        slug = request.form["slug"].strip()
+        url_destino = request.form["url_destino"].strip()
+        tipo = request.form["tipo"]
+        modo = request.form.get("modo", "direto")  # novo campo
+
+        existente = db.collection("links_encurtados").where("slug", "==", slug).get()
+        if existente:
+            flash("Esse slug já está em uso. Escolha outro.", "error")
+            return redirect("/criar-link")
+
+        dados = {
+            "slug": slug,
+            "url_destino": url_destino,
+            "categoria": tipo,
+            "modo": modo,
+            "uid": uid,
+            "cliques": 0,
+            "criado_em": datetime.now().isoformat()
+        }
+
+        db.collection("links_encurtados").add(dados)
+        flash("Link criado com sucesso!", "success")
+        return redirect("/criar-link")
+
+    links_ref = db.collection("links_encurtados").where("uid", "==", uid).order_by("criado_em", direction=firestore.Query.DESCENDING)
+    links_docs = links_ref.stream()
+
+    links = []
+    for doc in links_docs:
+        dados = doc.to_dict()
+        dados["id"] = doc.id
+        links.append({
+            "id": doc.id,
+            "slug": dados.get("slug"),
+            "cliques": dados.get("cliques", 0),
+            "categoria": dados.get("categoria", "indefinido"),
+            "modo": dados.get("modo", "direto")
+        })
+
+    return render_template("criar_link_clickdivulga.html", links=links)
+
+@app.route("/excluir-link/<id>")
+@verificar_login
+def excluir_link(id):
+    uid = session["usuario"]["uid"]
+
+    doc_ref = db.collection("links_encurtados").document(id)
+    doc = doc_ref.get()
+
+    if doc.exists and doc.to_dict().get("uid") == uid:
+        dados = doc.to_dict()
+        slug = dados.get("slug")
+
+        # 1. Exclui o link
+        doc_ref.delete()
+
+        # 2. Exclui todos os logs de cliques com o mesmo slug e uid
+        logs = db.collection("logs_cliques") \
+            .where("slug", "==", slug) \
+            .where("uid", "==", uid) \
+            .stream()
+        for log in logs:
+            log.reference.delete()
+
+        flash(f"Link e cliques do grupo '{slug}' excluídos com sucesso!", "success")
+    else:
+        flash("Ação não autorizada ou link inexistente.", "error")
+
+    return redirect("/criar-link")
+
+@app.route("/editar-link/<id>", methods=["GET", "POST"])
+@verificar_login
+def editar_link(id):
+    uid = session["usuario"]["uid"]
+    doc_ref = db.collection("links_encurtados").document(id)
+    doc = doc_ref.get()
+
+    if not doc.exists or doc.to_dict().get("uid") != uid:
+        flash("Link não encontrado ou acesso não autorizado.", "error")
+        return redirect("/criar-link")
+
+    if request.method == "POST":
+        slug = request.form["slug"].strip()
+        url_destino = request.form["url_destino"].strip()
+        tipo = request.form["tipo"]
+        modo = request.form.get("modo", "direto")  # NOVO CAMPO
+
+        doc_ref.update({
+            "slug": slug,
+            "url_destino": url_destino,
+            "categoria": tipo,
+            "modo": modo  # SALVANDO O MODO
+        })
+
+        flash("Link atualizado com sucesso!", "success")
+        return redirect("/criar-link")
+
+    dados = doc.to_dict()
+
+    return render_template("editar_link.html", link={
+        "id": id,
+        "slug": dados.get("slug"),
+        "url_destino": dados.get("url_destino"),
+        "categoria": dados.get("categoria"),
+        "modo": dados.get("modo", "direto")  # Para renderizar corretamente o radio
+    })
+
+@app.route("/r/<slug>")
+def redirecionar(slug):
+    doc_ref = db.collection("links_encurtados").where("slug", "==", slug).limit(1).stream()
+    doc = next(doc_ref, None)
+
+    if doc:
+        dados = doc.to_dict()
+        modo = dados.get("modo", "direto")
+        categoria = dados.get("categoria", "")
+        destino = dados.get("url_destino", "/")
+
+        doc.reference.update({
+            "cliques": firestore.Increment(1)
+        })
+
+        db.collection("logs_cliques").add({
+            "slug": slug,
+            "uid": dados.get("uid", ""),
+            "categoria": categoria,
+            "data": datetime.now(),
+            "ip": request.remote_addr,
+            "user_agent": request.headers.get("User-Agent")
+        })
+
+        if categoria == "contador":
+            return render_template("contador_clicks.html", slug=slug)
+
+        if modo == "camuflado":
+            return render_template("intermediario.html", link_grupo=destino, slug=slug)
+
+        return redirect(destino)
+
+    return "Link não encontrado", 404
+
+# ✅ ROTA PARA REGISTRAR CLIQUES REAIS (botão da página camuflada)
+@app.route("/registrar-clique-grupo/<slug>")
+def registrar_clique_grupo(slug):
+    doc_ref = db.collection("links_encurtados").where("slug", "==", slug).limit(1).stream()
+    doc = next(doc_ref, None)
+    if not doc:
+        return "Link não encontrado", 404
+
+    dados = doc.to_dict()
+    db.collection("logs_cliques").add({
+        "slug": slug,
+        "uid": dados.get("uid", ""),
+        "categoria": dados.get("categoria", ""),
+        "data": datetime.now(),
+        "ip": request.remote_addr,
+        "user_agent": request.headers.get("User-Agent"),
+        "tipo": "botao_grupo"
+    })
+
+    doc.reference.update({"cliques": firestore.Increment(1)})
+    return "", 204
+
+@app.route("/grupos", methods=["GET", "POST"])
+@verificar_login
+def grupos():
+    from pytz import timezone
+
+    uid = session["usuario"]["uid"]
+    br_tz = timezone("America/Sao_Paulo")
+
+    if request.method == "POST":
+        slug = request.form["slug"]
+        entradas = int(request.form.get("entradas", 0))
+        doc_ref = db.collection("links_encurtados") \
+            .where("uid", "==", uid) \
+            .where("slug", "==", slug) \
+            .limit(1).stream()
+        doc = next(doc_ref, None)
+        if doc:
+            doc.reference.update({"entradas": entradas})
+        return redirect("/grupos")
+
+    # Filtros
+    filtro_data = request.args.get("filtro", "todos")
+    filtro_tipo = request.args.get("tipo", "grupo")
+    dias = int(filtro_data) if filtro_data.isdigit() else None
+    data_limite = datetime.now() - timedelta(days=dias) if dias else None
+
+    # Coleta dos grupos filtrados
+    grupos_query = db.collection("links_encurtados").where("uid", "==", uid)
+    if filtro_tipo != "todos":
+        grupos_query = grupos_query.where("categoria", "==", filtro_tipo)
+    grupos_ref = grupos_query.stream()
+
+    grupos, comparativo_labels, comparativo_data = [], [], []
+    total_cliques = 0
+
+    for doc in grupos_ref:
+        dados = doc.to_dict()
+        slug = dados.get("slug")
+        criado_em = dados.get("criado_em", "")
+        try:
+            dt_criado = datetime.fromisoformat(criado_em.replace("Z", "")) if isinstance(criado_em, str) else criado_em
+            if data_limite and dt_criado < data_limite:
+                continue
+        except:
+            continue
+
+        cliques = int(dados.get("cliques", 0))
+        entradas = int(dados.get("entradas", 0))
+        conversao = round((entradas / cliques) * 100, 2) if cliques > 0 else 0
+
+        # Etiquetas visuais
+        etiquetas = []
+        if conversao >= 70:
+            etiquetas.append("🟢 Alta Conversão")
+        if cliques < 10:
+            etiquetas.append("🟡 Baixo Tráfego")
+        if entradas == 0:
+            etiquetas.append("🔴 Sem Entrada")
+
+        grupos.append({
+            "slug": slug,
+            "cliques": cliques,
+            "entradas": entradas,
+            "conversao": conversao,
+            "etiquetas": etiquetas
+        })
+
+        comparativo_labels.append(slug)
+        comparativo_data.append(cliques)
+        total_cliques += cliques
+        
+    # Resumo
+    total_grupos = len(grupos)
+    media_cliques = round(total_cliques / total_grupos, 2) if total_grupos else 0
+    mais_clicado = max(grupos, key=lambda g: g["cliques"])["slug"] if grupos else "Nenhum"
+
+    resumo = {
+        "total_cliques": total_cliques,
+        "total_grupos": total_grupos,
+        "media_cliques": media_cliques,
+        "mais_clicado": mais_clicado
+    }
+
+    # Cliques por hora (gráfico) com timezone BR
+    cliques_por_hora = [0] * 24
+    logs = db.collection("logs_cliques").where("uid", "==", uid).stream()
+    for doc in logs:
+        dados = doc.to_dict()
+        data = dados.get("data")
+        try:
+            dt = datetime.fromisoformat(data.replace("Z", "")) if isinstance(data, str) else data
+            dt = dt.astimezone(br_tz)
+            if data_limite and dt < data_limite:
+                continue
+            cliques_por_hora[dt.hour] += 1
+        except Exception as e:
+            print(f"[ERRO HORA BR] {e}")
+            continue
+
+    # Rankings
+    ranking_cliques = sorted(grupos, key=lambda g: g["cliques"], reverse=True)[:5]
+    ranking_conversao = sorted(grupos, key=lambda g: g["conversao"], reverse=True)[:5]
+    ranking_entradas = sorted(grupos, key=lambda g: g["entradas"], reverse=True)[:5]
+
+    # Recomendações inteligentes
+    recomendacoes = []
+    for g in grupos:
+        if g["conversao"] >= 80 and g["cliques"] >= 30:
+            recomendacoes.append(f"🔥 O grupo *{g['slug']}* está com alta conversão ({g['conversao']}%)")
+        if g["cliques"] >= 50 and g["entradas"] == 0:
+            recomendacoes.append(f"⚠️ O grupo *{g['slug']}* teve muitos cliques mas nenhuma entrada.")
+        if g["cliques"] <= 5:
+            recomendacoes.append(f"📉 O grupo *{g['slug']}* teve poucos cliques. Avalie sua divulgação.")
+
+    return render_template("desempenho_de_grupos.html",
+        grupos=grupos,
+        filtro=filtro_data,
+        tipo=filtro_tipo,
+        resumo=resumo,
+        cliques=cliques_por_hora,
+        ranking_cliques=ranking_cliques,
+        ranking_conversao=ranking_conversao,
+        ranking_entradas=ranking_entradas,
+        comparativo_labels=comparativo_labels,
+        comparativo_data=comparativo_data,
+        recomendacoes=recomendacoes
+    )
+
+
+@app.route("/atualizar-entradas", methods=["POST"])
+@verificar_login
+def atualizar_entradas():
+    slug = request.form.get("slug")
+    entradas = int(request.form.get("entradas", 0))
+    uid = session["usuario"]["uid"]
+
+    try:
+        ref = db.collection("links_encurtados") \
+            .where("uid", "==", uid) \
+            .where("slug", "==", slug) \
+            .limit(1).stream()
+
+        doc = next(ref, None)
+        if doc:
+            doc.reference.update({"entradas": entradas})
+            flash("Entradas atualizadas com sucesso!", "success")
+        else:
+            flash("Link não encontrado.", "error")
+
+    except Exception as e:
+        print("Erro ao atualizar entradas:", e)
+        flash("Erro ao atualizar entradas.", "error")
+
+    return redirect(url_for("grupos"))
+
+@app.route("/atualizar-categorias")
+def atualizar_categorias_links():
+    try:
+        links = db.collection("links_encurtados").stream()
+        atualizados = 0
+
+        for doc in links:
+            dados = doc.to_dict()
+            url = dados.get("url_destino", "")
+            categoria = dados.get("categoria", "")
+
+            nova_categoria = "outro"
+            if "whatsapp" in url:
+                nova_categoria = "grupo"
+            elif "shopee.com.br" in url:
+                nova_categoria = "produto"
+
+            if categoria != nova_categoria:
+                doc.reference.update({"categoria": nova_categoria})
+                atualizados += 1
+
+        return f"✅ Categorias atualizadas com sucesso. Total alterados: {atualizados}"
+    
+    except Exception as e:
+        return f"❌ Erro ao atualizar categorias: {e}"
+
 @app.route("/produtos")
 @verificar_login
 def produtos():
@@ -824,120 +1158,6 @@ def buscar_loja():
         print("❌ Erro:", e)
         flash(f"Erro ao buscar loja: {e}", "error")
         return redirect("/produtos")
-
-@app.route('/buscar-meli', methods=['GET', 'POST'])
-def buscar_meli():
-    print("✅ Acessando rota /buscar-meli")
-    print("📦 Sessão atual:", session)
-
-    if 'usuario' not in session or 'uid' not in session['usuario']:
-        print("⛔ Sessão inválida ou UID ausente. Redirecionando para login.")
-        return redirect('/login')
-
-    uid = session['usuario']['uid']
-    print(f"👤 UID identificado: {uid}")
-
-    if request.method == 'POST':
-        url = request.form.get('url_meli')
-        print(f"🔗 Link recebido: {url}")
-
-        if not url:
-            flash('Link não informado.', 'erro')
-            return render_template('produtos_meli.html', produto=None)
-
-        try:
-            # 🔄 Corrigido para usar GET + endpoint /extrair-meli
-            vps_url = os.getenv('VPS_MELI_ENDPOINT', 'http://89.117.32.226:5005/extrair-meli')
-            print(f"🌐 Fazendo requisição para a VPS: {vps_url}")
-
-            # Envia via GET com parâmetro na URL
-            response = requests.get(vps_url, params={'link': url}, timeout=30)
-
-            if response.status_code == 200:
-                dados = response.json()
-                print(f"✅ Produto retornado pela VPS: {dados}")
-                return render_template('produtos_meli.html', produto=dados)
-            else:
-                print(f"⚠️ Erro ao buscar produto. Status code: {response.status_code}")
-                flash('Erro ao buscar produto. Verifique o link.', 'erro')
-                return render_template('produtos_meli.html', produto=None)
-
-        except Exception as e:
-            print(f"❌ Erro durante requisição à VPS: {str(e)}")
-            flash('Erro interno ao buscar o produto.', 'erro')
-            return render_template('produtos_meli.html', produto=None)
-
-    return render_template('produtos_meli.html', produto=None)
-
-
-from firebase_admin import firestore
-
-@app.route('/enviar-meli', methods=['POST'])
-def enviar_meli():
-    print("✅ Rota /enviar-meli acessada")
-    
-    if 'usuario' not in session or 'uid' not in session['usuario']:
-        print("⛔ Sessão inválida. Redirecionando para login.")
-        return redirect('/login')
-
-    uid = session['usuario']['uid']
-    print(f"👤 UID: {uid}")
-
-    titulo = request.form.get('titulo')
-    imagem = request.form.get('imagem')
-    preco = request.form.get('preco')
-    link = request.form.get('link')
-
-    print(f"📦 Dados recebidos: Título={titulo}, Preço={preco}, Link={link}")
-
-    if not all([titulo, imagem, preco, link]):
-        flash('Todos os campos são obrigatórios.', 'erro')
-        print("⚠️ Campos obrigatórios ausentes.")
-        return redirect('/buscar-meli')
-
-    try:
-        # ✅ Acesso correto ao Firestore
-        doc_ref = db.collection('api_contador').document(uid).collection('telegram_config').document('bot1')
-        config = doc_ref.get().to_dict()
-
-        if not config or 'token' not in config or 'grupo1' not in config:
-            flash('Bot do Telegram não configurado corretamente.', 'erro')
-            print(f"⚠️ Bot não configurado para UID: {uid}")
-            return redirect('/buscar-meli')
-
-        bot_token = config['token']
-        chat_id = config['grupo1']
-
-        mensagem = f"""
-🟡 *{titulo}*
-
-💰 De: ~R$ XXX~
-🔥 Por: *R$ {preco}*
-
-🔗 [Compre agora]({link})
-"""
-
-        telegram_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
-        payload = {
-            'chat_id': chat_id,
-            'photo': imagem,
-            'caption': mensagem,
-            'parse_mode': 'Markdown'
-        }
-
-        r = requests.post(telegram_url, data=payload)
-        if r.status_code == 200:
-            flash('Produto enviado com sucesso para o Telegram!', 'sucesso')
-            print("✅ Produto enviado para o Telegram.")
-        else:
-            flash(f'Erro ao enviar para o Telegram: {r.text}', 'erro')
-            print(f"❌ Erro Telegram: {r.text}")
-
-    except Exception as e:
-        flash(f'Falha na comunicação com o Telegram: {str(e)}', 'erro')
-        print(f"❌ Exceção ao enviar para Telegram: {str(e)}")
-
-    return redirect('/buscar-meli')
 
 @app.route("/atualizar-buscas")
 def atualizar_buscas():
