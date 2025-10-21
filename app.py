@@ -8,6 +8,7 @@ import os
 import logging
 import random
 import requests
+import time as pytime
 
 # Env / scheduler (se usar)
 from dotenv import load_dotenv
@@ -51,6 +52,30 @@ def gerar_beneficio_extra(titulo):
         "Com avaliações incríveis!",
         "Garanta antes que acabe!"
     ])
+
+def get_allowed_authors() -> set[str]:
+    """
+    Lê a lista global de autores permitidos em:
+      admins/config/allowed_authors -> { lista: ["@a", "@b", ...] }
+    Retorna um set[str]. Lista vazia => qualquer autor é aceito.
+    """
+    try:
+        node = rtdb.reference("admins/config/allowed_authors").get() or {}
+        lista = node.get("lista") or []
+        app.logger.info('[ALLOWED] fetched n=%d ts=%d', len(lista), int(pytime.time()))
+        # normaliza para sempre começar com '@'
+        norm = []
+        for h in lista:
+            h = (h or '').strip()
+            if not h:
+                continue
+            if not h.startswith('@'):
+                h = '@' + h
+            norm.append(h)
+        return set(norm)
+    except Exception as e:
+        app.logger.warning('[ALLOWED] fetch_error error="%s"', e)
+        return set()
 
 # ✅ Função do agendador com logs de depuração
 def verificar_envio_agendado():
