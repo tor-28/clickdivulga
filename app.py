@@ -1,15 +1,24 @@
+from __future__ import annotations
+
+# Flask / utils
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-import firebase_admin
-from firebase_admin import credentials, auth, firestore
-import os
-import base64
-import tempfile
 from functools import wraps
-from dotenv import load_dotenv
 from datetime import datetime, timedelta
-from apscheduler.schedulers.background import BackgroundScheduler
-import requests
+import os
+import logging
 import random
+import requests
+
+# Env / scheduler (se usar)
+from dotenv import load_dotenv
+from apscheduler.schedulers.background import BackgroundScheduler
+
+# Firebase Admin
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import db as rtdb
+from firebase_admin import auth as fb_auth
+from firebase_admin import firestore
 
 # ✅ Geração de descrições e benefícios (IA simplificada)
 def gerar_descricao(titulo):
